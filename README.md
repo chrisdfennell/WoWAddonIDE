@@ -6,7 +6,9 @@
     <img src="https://img.shields.io/badge/WPF-Desktop-0078D6?logo=windows&logoColor=white" alt="WPF" />
   </a>
   <img src="https://img.shields.io/badge/Platform-Windows-0078D6?logo=windows&logoColor=white" alt="Windows" />
-  <img src="https://img.shields.io/badge/License-TBD-lightgray" alt="License TBD" />
+  <a href="LICENSE">
+    <img src="https://img.shields.io/badge/License-MIT-green" alt="License: MIT" />
+  </a>
   <a href="https://github.com/icsharpcode/AvalonEdit">
     <img src="https://img.shields.io/badge/Editor-AvalonEdit-4B32C3" alt="AvalonEdit" />
   </a>
@@ -241,7 +243,9 @@ PRs welcome! Good first issues:
 
 ## License
 
-TBD – choose what fits your needs (MIT recommended for tools).
+This project is licensed under the **MIT License** — see [LICENSE](LICENSE) for details.
+
+Copyright © 2025 Christopher Fennell.
 
 ---
 
