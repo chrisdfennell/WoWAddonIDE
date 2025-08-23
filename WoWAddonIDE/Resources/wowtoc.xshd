@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SyntaxDefinition name="WoWTOC" extensions=".toc" xmlns="http://icsharpcode.net/sharpdevelop/syntaxdefinition/2008">
+  <!-- Colors -->
+  <Color name="Directive" foreground="#569CD6" fontWeight="bold"/>
+  <Color name="Key"       foreground="#4FC1FF"/>
+  <Color name="Value"     foreground="#CE9178"/>
+  <Color name="Comment"   foreground="#6A9955"/>
+  <Color name="File"      foreground="#B5CEA8"/>
+
+  <RuleSet ignoreCase="false">
+    <!-- 1) Full-line comments that start with a single '#' -->
+    <Span color="Comment" begin="^\s*#(?!#)" end="$">
+      <RuleSet/>
+    </Span>
+
+    <!-- 2) Blizzard-style directives: '## Key: Value' -->
+    <!--    Outer span colors the '## Key' portion; inner span colors the value after ':' -->
+    <Span color="Directive" begin="^\s*##\s*[A-Za-z][A-Za-z0-9 _-]*" end="$">
+      <RuleSet>
+        <Span color="Value" begin=":\s*" end="$">
+          <RuleSet/>
+        </Span>
+      </RuleSet>
+    </Span>
+
+    <!-- 3) Generic 'Key: Value' lines (no leading ##) -->
+    <Span color="Key" begin="^\s*[A-Za-z][A-Za-z0-9 _-]*" end="$">
+      <RuleSet>
+        <Span color="Value" begin=":\s*" end="$">
+          <RuleSet/>
+        </Span>
+      </RuleSet>
+    </Span>
+
+    <!-- 4) Plain file references -->
+    <Rule color="File">^\s*(?:[A-Za-z0-9 _\-\./\\]+\.(?:lua|xml|toc|tga|png|jpg))\s*$</Rule>
+  </RuleSet>
+</SyntaxDefinition>

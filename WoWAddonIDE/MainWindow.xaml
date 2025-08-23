@@ -22,6 +22,8 @@
 
             <MenuItem Header="_Edit">
                 <MenuItem Header="Find in _Files..." InputGestureText="Ctrl+Shift+F" Click="FindInFiles_Click"/>
+                <MenuItem Header="Go to _Symbol..." InputGestureText="Ctrl+T" Click="GoToSymbol_Click"/>
+                <MenuItem Header="Show _Diff (buffer vs disk)" Click="ShowDiff_Click"/>
             </MenuItem>
 
             <MenuItem Header="_Project">
@@ -29,13 +31,42 @@
                 <MenuItem Header="Add _XML File..." Click="AddXml_Click"/>
                 <Separator/>
                 <MenuItem Header="_Build to AddOns" Click="Build_Click"/>
+                <MenuItem Header="Build to _Folder..." Click="BuildToFolder_Click"/>
+                <MenuItem Header="Build _Zip..." Click="BuildZip_Click"/>
+                <MenuItem Header="Open _Staging Folder" Click="OpenStagingFolder_Click"/>
                 <MenuItem Header="_Open AddOns Folder" Click="OpenAddOnsFolder_Click"/>
                 <MenuItem Header="_Clean Output" Click="Clean_Click"/>
+                <MenuItem Header="_Trigger Live Reload" Click="LiveReload_Click"/>
+            </MenuItem>
+
+            <MenuItem Header="_Git">
+                <MenuItem Header="_Initialize Repository" Click="GitInit_Click"/>
+                <MenuItem Header="_Clone..." Click="GitClone_Click"/>
+                <Separator/>
+                <MenuItem Header="Set _Remote (origin)..." Click="GitSetRemote_Click"/>
+                <MenuItem Header="_Status" Click="GitStatus_Click"/>
+                <MenuItem Header="_Commit..." Click="GitCommit_Click"/>
+                <MenuItem Header="P_ull" Click="GitPull_Click"/>
+                <MenuItem Header="Pu_sh" Click="GitPush_Click"/>
+                <MenuItem Header="_Sync (Pull then Push)" Click="GitSync_Click"/>
+                <Separator/>
+                <MenuItem Header="Create _Branch..." Click="GitCreateBranch_Click"/>
+                <MenuItem Header="_Checkout Branch..." Click="GitCheckoutBranch_Click"/>
+                <Separator/>
+                <MenuItem Header="Open on _GitHub" Click="GitOpenOnGitHub_Click"/>
+                <MenuItem Header="Create GitHub _Repo..." Click="GitCreateGitHubRepo_Click"/>
+                <MenuItem Header="Git/GitHub _Settings..." Click="GitAuth_Click"/>
+                <MenuItem Header="Open _.git Folder" Click="GitOpenDotGit_Click"/>
             </MenuItem>
 
             <MenuItem Header="_Tools">
                 <MenuItem Header="_Settings..." Click="Settings_Click"/>
                 <MenuItem Header="Generate _TOC" Click="GenerateToc_Click"/>
+                <MenuItem Header="_Theme">
+                    <MenuItem Header="_Light" Click="ThemeLight_Click"/>
+                    <MenuItem Header="_Dark"  Click="ThemeDark_Click"/>
+                </MenuItem>
+                <MenuItem Header="TOC _Editor..." Click="TocEditor_Click"/>
             </MenuItem>
 
             <MenuItem Header="_Help">
@@ -105,7 +136,7 @@
            MouseDoubleClick="ProjectTree_MouseDoubleClick"/>
 
                 <Separator Grid.Row="2" Margin="6,4"/>
-                <TextBlock Grid.Row="2" Text="Outline (Lua)" FontWeight="Bold" Margin="6,4,6,2" VerticalAlignment="Bottom"/>
+                <TextBlock Grid.Row="2" Text="Outline (Lua)" FontWeight="Bold" Margin="6,2,6,0" VerticalAlignment="Top" Grid.RowSpan="2"/>
                 <ListBox Grid.Row="3" x:Name="Outline" Margin="6" MouseDoubleClick="Outline_DoubleClick"/>
             </Grid>
             <!-- Editors -->

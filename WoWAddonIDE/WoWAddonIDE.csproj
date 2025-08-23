@@ -6,12 +6,24 @@
     <UseWPF>true</UseWPF>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationIcon>Resources\lua.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Resources\wowtoc.xshd" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Resources\lua.ico" />
+  </ItemGroup>
 
   <ItemGroup>
     <!-- AvalonEdit is published as 'AvalonEdit' (not ICSharpCode.AvalonEdit) -->
     <PackageReference Include="AvalonEdit" Version="6.3.1.120" />
+    <PackageReference Include="DiffPlex" Version="1.8.0" />
+    <PackageReference Include="LibGit2Sharp" Version="0.31.0" />
     <PackageReference Include="MoonSharp" Version="2.0.0" />
+    <PackageReference Include="Octokit" Version="14.0.0" />
     <PackageReference Include="Ookii.Dialogs.Wpf" Version="5.0.1" />
     <!-- If you want Interaction.InputBox, use a real version that exists -->
     <PackageReference Include="Microsoft.VisualBasic" Version="10.3.0" />
@@ -20,6 +32,7 @@
 
   <ItemGroup>
     <Resource Include="Resources\Lua.xshd" />
+    <Resource Include="Resources\wowtoc.xshd" />
     <Resource Include="Resources\wow_api.json" />
   </ItemGroup>
 
