@@ -406,6 +406,25 @@ namespace WoWAddonIDE
             }
         }
 
+        private async void GitSignIn_Click(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(_settings.GitHubOAuthClientId))
+            {
+                MessageBox.Show(this,
+                    "GitHub OAuth Client ID is empty. Go to Git → Git/GitHub Settings… and paste the Client ID from your OAuth App.",
+                    "GitHub Sign-in", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var w = new WoWAddonIDE.Windows.GitHubSignInWindow(_settings.GitHubOAuthClientId) { Owner = this };
+            if (w.ShowDialog() == true && !string.IsNullOrWhiteSpace(w.AccessToken))
+            {
+                _settings.GitHubToken = w.AccessToken!;
+                SaveSettings();
+                Log("Signed in to GitHub. OAuth token stored.");
+            }
+        }
+
         private void GitOpenDotGit_Click(object sender, RoutedEventArgs e)
         {
             if (!EnsureProject()) return;

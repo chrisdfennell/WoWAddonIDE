@@ -53,6 +53,7 @@
                 <MenuItem Header="Create _Branch..." Click="GitCreateBranch_Click"/>
                 <MenuItem Header="_Checkout Branch..." Click="GitCheckoutBranch_Click"/>
                 <Separator/>
+                <MenuItem Header="_Sign in with GitHub…" Click="GitSignIn_Click"/>
                 <MenuItem Header="Open on _GitHub" Click="GitOpenOnGitHub_Click"/>
                 <MenuItem Header="Create GitHub _Repo..." Click="GitCreateGitHubRepo_Click"/>
                 <MenuItem Header="Git/GitHub _Settings..." Click="GitAuth_Click"/>

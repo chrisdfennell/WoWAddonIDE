@@ -24,5 +24,8 @@ namespace WoWAddonIDE.Models
         public string GitHubToken { get; set; } = "";
         /// <summary>Default remote URL (e.g., https://github.com/you/YourAddon.git)</summary>
         public string GitRemoteUrl { get; set; } = "";
+        /// <summary>GitHub OAuth App Client ID (for OAuth sign-in)</summary>
+        public string GitHubOAuthClientId { get; set; } = "";  // from your OAuth App
+
     }
 }
