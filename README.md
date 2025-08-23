@@ -1,3 +1,24 @@
+<p align="center">
+  <a href="https://dotnet.microsoft.com/">
+    <img src="https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet&logoColor=white" alt=".NET 8" />
+  </a>
+  <a href="https://learn.microsoft.com/dotnet/desktop/wpf/">
+    <img src="https://img.shields.io/badge/WPF-Desktop-0078D6?logo=windows&logoColor=white" alt="WPF" />
+  </a>
+  <img src="https://img.shields.io/badge/Platform-Windows-0078D6?logo=windows&logoColor=white" alt="Windows" />
+  <img src="https://img.shields.io/badge/License-TBD-lightgray" alt="License TBD" />
+  <a href="https://github.com/icsharpcode/AvalonEdit">
+    <img src="https://img.shields.io/badge/Editor-AvalonEdit-4B32C3" alt="AvalonEdit" />
+  </a>
+  <a href="https://github.com/libgit2/libgit2sharp">
+    <img src="https://img.shields.io/badge/Git-LibGit2Sharp-1F6FEB?logo=git&logoColor=white" alt="LibGit2Sharp" />
+  </a>
+  <a href="https://github.com/octokit/octokit.net">
+    <img src="https://img.shields.io/badge/GitHub-Octokit-181717?logo=github&logoColor=white" alt="Octokit.NET" />
+  </a>
+  <img src="https://img.shields.io/badge/PRs-welcome-brightgreen" alt="PRs welcome" />
+</p>
+
 # WoW Addon IDE (WPF)
 
 A lightweight IDE for building **World of Warcraft** addons on Windows.  
