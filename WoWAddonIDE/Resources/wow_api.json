@@ -1,0 +1,707 @@
+[
+  {
+    "name": "print",
+    "signature": "print(...)",
+    "description": "Prints to the default chat frame."
+  },
+  {
+    "name": "pairs",
+    "signature": "pairs(t) -> iterator",
+    "description": "Iterate over key/value pairs."
+  },
+  {
+    "name": "ipairs",
+    "signature": "ipairs(t) -> iterator",
+    "description": "Iterate over integer keys in order."
+  },
+  {
+    "name": "type",
+    "signature": "type(v) -> string",
+    "description": "Returns the type name of a value."
+  },
+  {
+    "name": "tostring",
+    "signature": "tostring(v) -> string",
+    "description": "Converts a value to string."
+  },
+  {
+    "name": "tonumber",
+    "signature": "tonumber(e[, base]) -> number|nil",
+    "description": "Converts a string to number."
+  },
+  {
+    "name": "pcall",
+    "signature": "pcall(f, ...) -> ok, result|err",
+    "description": "Protected call to catch errors."
+  },
+  {
+    "name": "xpcall",
+    "signature": "xpcall(f, errHandler, ...) -> ok, result|err",
+    "description": "Protected call with custom error handler."
+  },
+  {
+    "name": "error",
+    "signature": "error(message[, level])",
+    "description": "Raises a Lua error."
+  },
+  {
+    "name": "string.match",
+    "signature": "string.match(s, p[, init]) -> captures...",
+    "description": "Pattern matching."
+  },
+  {
+    "name": "string.find",
+    "signature": "string.find(s, p[, init[, plain]]) -> start, end, caps...",
+    "description": "Find pattern."
+  },
+  {
+    "name": "string.gsub",
+    "signature": "string.gsub(s, p, repl[, n]) -> new, count",
+    "description": "Substitute pattern."
+  },
+  {
+    "name": "string.format",
+    "signature": "string.format(fmt, ...) -> string",
+    "description": "Format string."
+  },
+  {
+    "name": "table.insert",
+    "signature": "table.insert(t, [pos,] v)",
+    "description": "Insert value into table."
+  },
+  {
+    "name": "table.remove",
+    "signature": "table.remove(t[, pos]) -> v",
+    "description": "Remove value at position."
+  },
+  {
+    "name": "table.sort",
+    "signature": "table.sort(t[, comp])",
+    "description": "Sort in-place."
+  },
+  {
+    "name": "math.floor",
+    "signature": "math.floor(x) -> int",
+    "description": "Floor."
+  },
+  {
+    "name": "math.ceil",
+    "signature": "math.ceil(x) -> int",
+    "description": "Ceil."
+  },
+  {
+    "name": "math.max",
+    "signature": "math.max(x, ...) -> number",
+    "description": "Max."
+  },
+  {
+    "name": "math.min",
+    "signature": "math.min(x, ...) -> number",
+    "description": "Min."
+  },
+  {
+    "name": "CreateFrame",
+    "signature": "CreateFrame(type[, name][, parent][, template]) -> frame",
+    "description": "Creates a new frame."
+  },
+  {
+    "name": "Frame:SetPoint",
+    "signature": "frame:SetPoint(point[, relativeTo][, relativePoint][, xOfs][, yOfs])",
+    "description": "Anchors the frame."
+  },
+  {
+    "name": "Frame:ClearAllPoints",
+    "signature": "frame:ClearAllPoints()",
+    "description": "Clears anchors."
+  },
+  {
+    "name": "Frame:SetSize",
+    "signature": "frame:SetSize(width, height)",
+    "description": "Sets size."
+  },
+  {
+    "name": "Frame:Show",
+    "signature": "frame:Show()",
+    "description": "Show frame."
+  },
+  {
+    "name": "Frame:Hide",
+    "signature": "frame:Hide()",
+    "description": "Hide frame."
+  },
+  {
+    "name": "Frame:IsShown",
+    "signature": "frame:IsShown() -> boolean",
+    "description": "Shown state."
+  },
+  {
+    "name": "Frame:SetParent",
+    "signature": "frame:SetParent(parent)",
+    "description": "Reparent frame."
+  },
+  {
+    "name": "Frame:GetParent",
+    "signature": "frame:GetParent() -> frame",
+    "description": "Get parent."
+  },
+  {
+    "name": "Frame:SetScript",
+    "signature": "frame:SetScript(handler, func)",
+    "description": "Set a script: 'OnEvent','OnUpdate','OnShow','OnHide', etc."
+  },
+  {
+    "name": "Frame:RegisterEvent",
+    "signature": "frame:RegisterEvent(event)",
+    "description": "Listen to an event."
+  },
+  {
+    "name": "Frame:UnregisterEvent",
+    "signature": "frame:UnregisterEvent(event)",
+    "description": "Stop listening."
+  },
+  {
+    "name": "Frame:RegisterAllEvents",
+    "signature": "frame:RegisterAllEvents()",
+    "description": "Debug all events."
+  },
+  {
+    "name": "Frame:SetMovable",
+    "signature": "frame:SetMovable(bool)",
+    "description": "Allow moving."
+  },
+  {
+    "name": "Frame:EnableMouse",
+    "signature": "frame:EnableMouse(bool)",
+    "description": "Mouse interaction."
+  },
+  {
+    "name": "Frame:RegisterForDrag",
+    "signature": "frame:RegisterForDrag('LeftButton'[, ...])",
+    "description": "Enable dragging."
+  },
+  {
+    "name": "Frame:StartMoving",
+    "signature": "frame:StartMoving()",
+    "description": "Begin dragging."
+  },
+  {
+    "name": "Frame:StopMovingOrSizing",
+    "signature": "frame:StopMovingOrSizing()",
+    "description": "Stop moving/sizing."
+  },
+  {
+    "name": "Frame:SetClampedToScreen",
+    "signature": "frame:SetClampedToScreen(bool)",
+    "description": "Clamp inside screen."
+  },
+  {
+    "name": "Button:SetText",
+    "signature": "button:SetText(text)",
+    "description": "Set label."
+  },
+  {
+    "name": "EditBox:SetText",
+    "signature": "editbox:SetText(text)",
+    "description": "Set text."
+  },
+  {
+    "name": "EditBox:GetText",
+    "signature": "editbox:GetText() -> string",
+    "description": "Get text."
+  },
+  {
+    "name": "EditBox:SetAutoFocus",
+    "signature": "editbox:SetAutoFocus(flag)",
+    "description": "Auto focus."
+  },
+  {
+    "name": "EditBox:SetMaxLetters",
+    "signature": "editbox:SetMaxLetters(n)",
+    "description": "Max letters."
+  },
+  {
+    "name": "ScrollFrame:SetScrollChild",
+    "signature": "scroll:SetScrollChild(child)",
+    "description": "Set scroll child."
+  },
+  {
+    "name": "Texture:SetTexture",
+    "signature": "texture:SetTexture(asset)",
+    "description": "Set texture."
+  },
+  {
+    "name": "Texture:SetColorTexture",
+    "signature": "texture:SetColorTexture(r,g,b[,a])",
+    "description": "Solid color texture."
+  },
+  {
+    "name": "FontString:SetText",
+    "signature": "fontString:SetText(text)",
+    "description": "Set string text."
+  },
+  {
+    "name": "GameTooltip:SetOwner",
+    "signature": "GameTooltip:SetOwner(owner, anchor[, x, y])",
+    "description": "Owner/anchor."
+  },
+  {
+    "name": "GameTooltip:SetText",
+    "signature": "GameTooltip:SetText(text[, r,g,b][, wrap])",
+    "description": "Main text."
+  },
+  {
+    "name": "GameTooltip:AddLine",
+    "signature": "GameTooltip:AddLine(text[, r,g,b][, wrap])",
+    "description": "Add line."
+  },
+  {
+    "name": "GameTooltip:AddDoubleLine",
+    "signature": "GameTooltip:AddDoubleLine(left, right[, lr,lg,lb][, rr,rg,rb])",
+    "description": "Add two-column line."
+  },
+  {
+    "name": "GameTooltip:ClearLines",
+    "signature": "GameTooltip:ClearLines()",
+    "description": "Clear tooltip."
+  },
+  {
+    "name": "GameTooltip:Show",
+    "signature": "GameTooltip:Show()",
+    "description": "Show tooltip."
+  },
+  {
+    "name": "GameTooltip:Hide",
+    "signature": "GameTooltip:Hide()",
+    "description": "Hide tooltip."
+  },
+  {
+    "name": "C_Timer.After",
+    "signature": "C_Timer.After(seconds, callback)",
+    "description": "Delay call."
+  },
+  {
+    "name": "C_Timer.NewTicker",
+    "signature": "C_Timer.NewTicker(interval, callback[, iterations]) -> ticker",
+    "description": "Repeating timer."
+  },
+  {
+    "name": "C_Timer.NewTimer",
+    "signature": "C_Timer.NewTimer(delay, callback) -> timer",
+    "description": "One-shot timer."
+  },
+  {
+    "name": "UnitName",
+    "signature": "UnitName(unit) -> name, realm",
+    "description": "Unit name."
+  },
+  {
+    "name": "UnitGUID",
+    "signature": "UnitGUID(unit) -> guid",
+    "description": "Unit GUID."
+  },
+  {
+    "name": "UnitClass",
+    "signature": "UnitClass(unit) -> className, classFile, classID",
+    "description": "Class info."
+  },
+  {
+    "name": "UnitRace",
+    "signature": "UnitRace(unit) -> raceName, raceFile, raceID",
+    "description": "Race info."
+  },
+  {
+    "name": "UnitFactionGroup",
+    "signature": "UnitFactionGroup(unit) -> factionName, localized",
+    "description": "Faction."
+  },
+  {
+    "name": "UnitLevel",
+    "signature": "UnitLevel(unit) -> level",
+    "description": "Level."
+  },
+  {
+    "name": "UnitExists",
+    "signature": "UnitExists(unit) -> boolean",
+    "description": "Exists."
+  },
+  {
+    "name": "UnitIsDead",
+    "signature": "UnitIsDead(unit) -> boolean",
+    "description": "Dead."
+  },
+  {
+    "name": "UnitAffectingCombat",
+    "signature": "UnitAffectingCombat(unit) -> boolean",
+    "description": "In combat."
+  },
+  {
+    "name": "UnitHealth",
+    "signature": "UnitHealth(unit) -> hp",
+    "description": "Health."
+  },
+  {
+    "name": "UnitHealthMax",
+    "signature": "UnitHealthMax(unit) -> maxhp",
+    "description": "Max health."
+  },
+  {
+    "name": "UnitPower",
+    "signature": "UnitPower(unit[, type]) -> power",
+    "description": "Power."
+  },
+  {
+    "name": "UnitPowerMax",
+    "signature": "UnitPowerMax(unit[, type]) -> maxPower",
+    "description": "Max power."
+  },
+  {
+    "name": "UnitThreatPercentageOfLead",
+    "signature": "UnitThreatPercentageOfLead(unit, mobUnit) -> pct",
+    "description": "Threat percent."
+  },
+  {
+    "name": "C_UnitAuras.GetPlayerAuraBySpellID",
+    "signature": "C_UnitAuras.GetPlayerAuraBySpellID(spellID) -> aura",
+    "description": "Gets player's aura by spellID."
+  },
+  {
+    "name": "C_UnitAuras.GetAuraDataByIndex",
+    "signature": "C_UnitAuras.GetAuraDataByIndex(unit, index, filter) -> aura",
+    "description": "Aura data at index."
+  },
+  {
+    "name": "C_UnitAuras.GetAuraDataBySpellName",
+    "signature": "C_UnitAuras.GetAuraDataBySpellName(unit, spellName, filter) -> aura",
+    "description": "Aura data by spell name."
+  },
+  {
+    "name": "GetSpellInfo",
+    "signature": "GetSpellInfo(spell) -> name, subText, icon, castTime, minRange, maxRange, spellId",
+    "description": "Spell info."
+  },
+  {
+    "name": "GetSpellCooldown",
+    "signature": "GetSpellCooldown(spellID) -> start, duration, enabled, modRate",
+    "description": "Spell cooldown."
+  },
+  {
+    "name": "IsUsableSpell",
+    "signature": "IsUsableSpell(spell) -> usable, nomana",
+    "description": "Spell usability."
+  },
+  {
+    "name": "IsSpellKnown",
+    "signature": "IsSpellKnown(spellID[, isPet]) -> boolean",
+    "description": "Spell known."
+  },
+  {
+    "name": "GetItemInfo",
+    "signature": "GetItemInfo(item) -> many fields",
+    "description": "Item info."
+  },
+  {
+    "name": "GetItemCount",
+    "signature": "GetItemCount(itemID[, includeBank[, includeCharges]]) -> count",
+    "description": "Item count."
+  },
+  {
+    "name": "GetInventoryItemLink",
+    "signature": "GetInventoryItemLink('player', slot) -> link",
+    "description": "Equipped item link."
+  },
+  {
+    "name": "SendChatMessage",
+    "signature": "SendChatMessage(msg[, chatType[, language[, target]]])",
+    "description": "Send chat message."
+  },
+  {
+    "name": "DEFAULT_CHAT_FRAME:AddMessage",
+    "signature": "DEFAULT_CHAT_FRAME:AddMessage(text[, r,g,b])",
+    "description": "Print colored message."
+  },
+  {
+    "name": "CombatLogGetCurrentEventInfo",
+    "signature": "CombatLogGetCurrentEventInfo() -> ...",
+    "description": "All args of combat log event."
+  },
+  {
+    "name": "GetNumGroupMembers",
+    "signature": "GetNumGroupMembers() -> n",
+    "description": "Group size."
+  },
+  {
+    "name": "IsInGroup",
+    "signature": "IsInGroup() -> boolean",
+    "description": "In group."
+  },
+  {
+    "name": "IsInRaid",
+    "signature": "IsInRaid() -> boolean",
+    "description": "In raid."
+  },
+  {
+    "name": "C_Map.GetBestMapForUnit",
+    "signature": "C_Map.GetBestMapForUnit(unit) -> uiMapID",
+    "description": "Best map for unit."
+  },
+  {
+    "name": "C_Map.GetPlayerMapPosition",
+    "signature": "C_Map.GetPlayerMapPosition(uiMapID, unit) -> vector2D",
+    "description": "Position on map."
+  },
+  {
+    "name": "C_Map.GetMapInfo",
+    "signature": "C_Map.GetMapInfo(uiMapID) -> mapInfo",
+    "description": "Map metadata."
+  },
+  {
+    "name": "C_Map.SetUserWaypoint",
+    "signature": "C_Map.SetUserWaypoint(waypoint)",
+    "description": "Set waypoint."
+  },
+  {
+    "name": "C_Map.GetUserWaypoint",
+    "signature": "C_Map.GetUserWaypoint() -> waypoint",
+    "description": "Get waypoint."
+  },
+  {
+    "name": "C_QuestLog.GetInfo",
+    "signature": "C_QuestLog.GetInfo(index) -> info",
+    "description": "Quest info by index."
+  },
+  {
+    "name": "C_QuestLog.GetLogIndexForQuestID",
+    "signature": "C_QuestLog.GetLogIndexForQuestID(questID) -> index",
+    "description": "Find index for questID."
+  },
+  {
+    "name": "C_QuestLog.GetTitleForLogIndex",
+    "signature": "C_QuestLog.GetTitleForLogIndex(index) -> title",
+    "description": "Quest title."
+  },
+  {
+    "name": "C_QuestLog.GetQuestIDForLogIndex",
+    "signature": "C_QuestLog.GetQuestIDForLogIndex(index) -> questID",
+    "description": "QuestID at index."
+  },
+  {
+    "name": "C_QuestLog.IsOnQuest",
+    "signature": "C_QuestLog.IsOnQuest(questID) -> boolean",
+    "description": "Quest in log."
+  },
+  {
+    "name": "C_QuestLog.IsQuestFlaggedCompleted",
+    "signature": "C_QuestLog.IsQuestFlaggedCompleted(questID) -> boolean",
+    "description": "Completed state."
+  },
+  {
+    "name": "C_QuestLog.GetQuestObjectives",
+    "signature": "C_QuestLog.GetQuestObjectives(questID) -> objectives",
+    "description": "Objective list."
+  },
+  {
+    "name": "C_QuestLog.GetNumQuestLogEntries",
+    "signature": "C_QuestLog.GetNumQuestLogEntries() -> numEntries, numQuests",
+    "description": "Counts."
+  },
+  {
+    "name": "C_Container.GetContainerNumSlots",
+    "signature": "C_Container.GetContainerNumSlots(bagID) -> slots",
+    "description": "Slots in bag."
+  },
+  {
+    "name": "C_Container.GetContainerItemInfo",
+    "signature": "C_Container.GetContainerItemInfo(bagID, slot) -> info",
+    "description": "Item info for slot."
+  },
+  {
+    "name": "C_Container.PickupContainerItem",
+    "signature": "C_Container.PickupContainerItem(bagID, slot)",
+    "description": "Pickup item."
+  },
+  {
+    "name": "C_Container.UseContainerItem",
+    "signature": "C_Container.UseContainerItem(bagID, slot[, unit])",
+    "description": "Use item."
+  },
+  {
+    "name": "C_MountJournal.GetMountIDs",
+    "signature": "C_MountJournal.GetMountIDs() -> mountIDs",
+    "description": "All mount IDs."
+  },
+  {
+    "name": "C_MountJournal.GetMountInfoByID",
+    "signature": "C_MountJournal.GetMountInfoByID(mountID) -> ...",
+    "description": "Mount info."
+  },
+  {
+    "name": "C_MountJournal.SummonByID",
+    "signature": "C_MountJournal.SummonByID(mountID)",
+    "description": "Summon mount."
+  },
+  {
+    "name": "C_Calendar.OpenCalendar",
+    "signature": "C_Calendar.OpenCalendar()",
+    "description": "Open calendar (populate cache)."
+  },
+  {
+    "name": "C_Calendar.GetDate",
+    "signature": "C_Calendar.GetDate() -> weekday, month, day, year",
+    "description": "Current date."
+  },
+  {
+    "name": "C_Calendar.GetMonthInfo",
+    "signature": "C_Calendar.GetMonthInfo() -> monthInfo",
+    "description": "Month info."
+  },
+  {
+    "name": "C_ChallengeMode.GetActiveKeystoneInfo",
+    "signature": "C_ChallengeMode.GetActiveKeystoneInfo() -> mapID, level, timeRemaining",
+    "description": "Active keystone info."
+  },
+  {
+    "name": "C_ChallengeMode.GetMapTable",
+    "signature": "C_ChallengeMode.GetMapTable() -> mapIDs",
+    "description": "All CM map IDs."
+  },
+  {
+    "name": "C_MythicPlus.GetCurrentAffixes",
+    "signature": "C_MythicPlus.GetCurrentAffixes() -> affixes",
+    "description": "Current affix set."
+  },
+  {
+    "name": "C_EncounterJournal.GetInstanceForGameMap",
+    "signature": "C_EncounterJournal.GetInstanceForGameMap(uiMapID) -> instanceID",
+    "description": "Dungeon/raid instance for map."
+  },
+  {
+    "name": "EJ_GetInstanceInfo",
+    "signature": "EJ_GetInstanceInfo(instanceID) -> name, desc, bgImage, loreImage, buttonImage, dungeonAreaMapID, instanceID",
+    "description": "Instance info."
+  },
+  {
+    "name": "EJ_GetEncounterInfo",
+    "signature": "EJ_GetEncounterInfo(encounterID) -> name, desc, ...",
+    "description": "Encounter info."
+  },
+  {
+    "name": "C_UIWidgetManager.GetAllWidgetsBySetID",
+    "signature": "C_UIWidgetManager.GetAllWidgetsBySetID(setID) -> widgets",
+    "description": "Widgets in a set."
+  },
+  {
+    "name": "C_UIWidgetManager.GetTextWithStateWidgetVisualizationInfo",
+    "signature": "C_UIWidgetManager.GetTextWithStateWidgetVisualizationInfo(widgetID) -> info",
+    "description": "Text/state widget info."
+  },
+  {
+    "name": "C_TooltipInfo.GetHyperlink",
+    "signature": "C_TooltipInfo.GetHyperlink(link) -> tooltipData",
+    "description": "Build tooltip data for hyperlink."
+  },
+  {
+    "name": "C_TooltipInfo.GetUnit",
+    "signature": "C_TooltipInfo.GetUnit(unit) -> tooltipData",
+    "description": "Build tooltip data for unit."
+  },
+  {
+    "name": "C_TooltipInfo.GetSpellByID",
+    "signature": "C_TooltipInfo.GetSpellByID(spellID) -> tooltipData",
+    "description": "Build tooltip data for spell id."
+  },
+  {
+    "name": "C_VoiceChat.IsEnabled",
+    "signature": "C_VoiceChat.IsEnabled() -> boolean",
+    "description": "Voice chat enabled."
+  },
+  {
+    "name": "C_GossipInfo.GetOptions",
+    "signature": "C_GossipInfo.GetOptions() -> options",
+    "description": "Dialog options."
+  },
+  {
+    "name": "C_GossipInfo.SelectOption",
+    "signature": "C_GossipInfo.SelectOption(optionID)",
+    "description": "Select gossip option."
+  },
+  {
+    "name": "C_TradeSkillUI.OpenTradeSkill",
+    "signature": "C_TradeSkillUI.OpenTradeSkill(skillLineID)",
+    "description": "Open trade skill."
+  },
+  {
+    "name": "C_ProfSpecs.CanRefundPath",
+    "signature": "C_ProfSpecs.CanRefundPath(pathID) -> boolean",
+    "description": "Profession spec refund check."
+  },
+  {
+    "name": "RunMacroText",
+    "signature": "RunMacroText(text)",
+    "description": "Run macro string."
+  },
+  {
+    "name": "GetBindingKey",
+    "signature": "GetBindingKey(binding) -> key1, key2, ...",
+    "description": "Keys bound to action."
+  },
+  {
+    "name": "SetBinding",
+    "signature": "SetBinding(key[, command]) -> ok",
+    "description": "Bind a key."
+  },
+  {
+    "name": "SaveBindings",
+    "signature": "SaveBindings(which) -> ok",
+    "description": "Save bindings (1=account,2=character)."
+  },
+  {
+    "name": "IsAddOnLoaded",
+    "signature": "IsAddOnLoaded(name) -> loaded, reason",
+    "description": "Addon loaded?"
+  },
+  {
+    "name": "GetAddOnMetadata",
+    "signature": "GetAddOnMetadata(addon, field) -> value",
+    "description": "TOC metadata field."
+  },
+  {
+    "name": "InCombatLockdown",
+    "signature": "InCombatLockdown() -> boolean",
+    "description": "Secure combat lockdown."
+  },
+  {
+    "name": "GetTime",
+    "signature": "GetTime() -> number",
+    "description": "Time since client start (seconds)."
+  },
+  {
+    "name": "GetServerTime",
+    "signature": "GetServerTime() -> number",
+    "description": "Server time (epoch)."
+  },
+  {
+    "name": "ReloadUI",
+    "signature": "ReloadUI()",
+    "description": "Reload user interface."
+  },
+  {
+    "name": "hooksecurefunc",
+    "signature": "hooksecurefunc(funcOrTable, method, hookFunc)",
+    "description": "Securely hook a function/method."
+  },
+  {
+    "name": "LibStub",
+    "signature": "LibStub(name[, minor]) -> lib",
+    "description": "Library registry."
+  },
+  {
+    "name": "AceAddon-3.0:NewAddon",
+    "signature": "LibStub('AceAddon-3.0'):NewAddon(name[, mixins...]) -> addon",
+    "description": "New Ace3 addon."
+  },
+  {
+    "name": "AceConsole-3.0:Print",
+    "signature": "addon:Print(message)",
+    "description": "Print via AceConsole."
+  }
+]

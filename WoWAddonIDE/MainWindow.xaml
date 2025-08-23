@@ -1,0 +1,115 @@
+﻿<Window x:Class="WoWAddonIDE.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:avalonedit="http://icsharpcode.net/sharpdevelop/avalonedit"
+        mc:Ignorable="d"
+        Title="WoW Addon IDE" Height="800" Width="1200"
+        WindowStartupLocation="CenterScreen">
+    <DockPanel>
+        <!-- Menu -->
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Header="_New Project..." Click="NewProject_Click"/>
+                <MenuItem Header="_Open Project..." Click="OpenProject_Click"/>
+                <Separator/>
+                <MenuItem Header="_Save" Click="Save_Click"/>
+                <MenuItem Header="Save _All" Click="SaveAll_Click"/>
+                <Separator/>
+                <MenuItem Header="E_xit" Click="Exit_Click"/>
+            </MenuItem>
+
+            <MenuItem Header="_Edit">
+                <MenuItem Header="Find in _Files..." InputGestureText="Ctrl+Shift+F" Click="FindInFiles_Click"/>
+            </MenuItem>
+
+            <MenuItem Header="_Project">
+                <MenuItem Header="Add _Lua File..." Click="AddLua_Click"/>
+                <MenuItem Header="Add _XML File..." Click="AddXml_Click"/>
+                <Separator/>
+                <MenuItem Header="_Build to AddOns" Click="Build_Click"/>
+                <MenuItem Header="_Open AddOns Folder" Click="OpenAddOnsFolder_Click"/>
+                <MenuItem Header="_Clean Output" Click="Clean_Click"/>
+            </MenuItem>
+
+            <MenuItem Header="_Tools">
+                <MenuItem Header="_Settings..." Click="Settings_Click"/>
+                <MenuItem Header="Generate _TOC" Click="GenerateToc_Click"/>
+            </MenuItem>
+
+            <MenuItem Header="_Help">
+                <MenuItem Header="_About..." Click="About_Click"/>
+            </MenuItem>
+        </Menu>
+
+        <!-- Toolbar -->
+        <ToolBar DockPanel.Dock="Top">
+            <Button Content="New" Click="NewProject_Click"/>
+            <Button Content="Open" Click="OpenProject_Click"/>
+            <Separator/>
+            <Button Content="Save" Click="Save_Click"/>
+            <Button Content="Save All" Click="SaveAll_Click"/>
+            <Separator/>
+            <Button Content="Build" Click="Build_Click"/>
+        </ToolBar>
+
+        <!-- StatusBar -->
+        <StatusBar DockPanel.Dock="Bottom">
+            <StatusBarItem>
+                <TextBlock Name="StatusText" Text="Ready"/>
+            </StatusBarItem>
+            <StatusBarItem HorizontalAlignment="Right">
+                <TextBlock Name="PathText" Text="" />
+            </StatusBarItem>
+        </StatusBar>
+
+        <!-- Bottom Output -->
+        <Grid DockPanel.Dock="Bottom" Height="140">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+            <TextBlock Text="Output" FontWeight="Bold" Margin="6,4,6,2"/>
+            <TextBox x:Name="Output"
+                     Grid.Row="1"
+                     Margin="6"
+                     IsReadOnly="True"
+                     TextWrapping="Wrap"
+                     VerticalScrollBarVisibility="Auto"
+                     HorizontalScrollBarVisibility="Auto"/>
+        </Grid>
+
+        <!-- Main Split -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Left side: Project Explorer + Outline -->
+            <Grid Grid.Column="0" Margin="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <!-- TreeView fills -->
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="2*"/>
+                    <!-- Outline gets space too -->
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Text="Project Explorer" FontWeight="Bold" Margin="6,4,6,2"/>
+                <TreeView Grid.Row="1"
+           x:Name="ProjectTree"
+           Margin="6"
+           MouseDoubleClick="ProjectTree_MouseDoubleClick"/>
+
+                <Separator Grid.Row="2" Margin="6,4"/>
+                <TextBlock Grid.Row="2" Text="Outline (Lua)" FontWeight="Bold" Margin="6,4,6,2" VerticalAlignment="Bottom"/>
+                <ListBox Grid.Row="3" x:Name="Outline" Margin="6" MouseDoubleClick="Outline_DoubleClick"/>
+            </Grid>
+            <!-- Editors -->
+            <TabControl x:Name="EditorTabs" Grid.Column="1" Margin="6" SelectionChanged="EditorTabs_SelectionChanged"/>
+        </Grid>
+    </DockPanel>
+</Window>

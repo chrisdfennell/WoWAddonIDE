@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- AvalonEdit is published as 'AvalonEdit' (not ICSharpCode.AvalonEdit) -->
+    <PackageReference Include="AvalonEdit" Version="6.3.1.120" />
+    <PackageReference Include="MoonSharp" Version="2.0.0" />
+    <PackageReference Include="Ookii.Dialogs.Wpf" Version="5.0.1" />
+    <!-- If you want Interaction.InputBox, use a real version that exists -->
+    <PackageReference Include="Microsoft.VisualBasic" Version="10.3.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\Lua.xshd" />
+    <Resource Include="Resources\wow_api.json" />
+  </ItemGroup>
+
+</Project>

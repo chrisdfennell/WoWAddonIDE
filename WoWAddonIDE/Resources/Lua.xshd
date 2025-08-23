@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SyntaxDefinition name="Lua" extensions=".lua" xmlns="http://icsharpcode.net/sharpdevelop/syntaxdefinition/2008">
+  <!-- Colors -->
+  <Color name="Comment" foreground="#6A9955" />
+  <Color name="String"  foreground="#CE9178" />
+  <Color name="Number"  foreground="#B5CEA8" />
+  <Color name="Keyword" foreground="#569CD6" fontWeight="bold"/>
+  <Color name="Identifier" />
+  <Color name="Operator" foreground="#D4D4D4" />
+
+  <RuleSet ignoreCase="false">
+    <!-- Comments -->
+    <Span color="Comment" begin="--\[\[" end="\]\]" multiline="true"/>
+    <Span color="Comment" begin="--" end="\n"/>
+
+    <!-- Double-quoted strings with escape handling -->
+    <Span color="String" begin="&quot;" end="&quot;">
+      <RuleSet>
+        <!-- keep backslash escapes inside the string -->
+        <Span begin="\\." end=""/>
+      </RuleSet>
+    </Span>
+
+    <!-- Single-quoted strings with escape handling -->
+    <Span color="String" begin="'" end="'">
+      <RuleSet>
+        <Span begin="\\." end=""/>
+      </RuleSet>
+    </Span>
+
+    <!-- Long bracketed strings -->
+    <Span color="String" begin="\[\[" end="\]\]" multiline="true"/>
+
+    <!-- Keywords -->
+    <Keywords color="Keyword">
+      <Word>and</Word>
+      <Word>break</Word>
+      <Word>do</Word>
+      <Word>else</Word>
+      <Word>elseif</Word>
+      <Word>end</Word>
+      <Word>false</Word>
+      <Word>for</Word>
+      <Word>function</Word>
+      <Word>goto</Word>
+      <Word>if</Word>
+      <Word>in</Word>
+      <Word>local</Word>
+      <Word>nil</Word>
+      <Word>not</Word>
+      <Word>or</Word>
+      <Word>repeat</Word>
+      <Word>return</Word>
+      <Word>then</Word>
+      <Word>true</Word>
+      <Word>until</Word>
+      <Word>while</Word>
+    </Keywords>
+
+    <!-- Numbers -->
+    <Rule color="Number">
+      \b(\d+(\.\d*)?|\.\d+)([eE][\+\-]?\d+)?\b
+    </Rule>
+
+    <!-- Operators -->
+    <Rule color="Operator">
+      [\+\-\*/%#\^=~&lt;&gt;\.\:\,;\(\)\{\}\[\]]
+    </Rule>
+
+    <!-- Identifiers -->
+    <Rule color="Identifier">
+      \b[_A-Za-z][_A-Za-z0-9]*\b
+    </Rule>
+  </RuleSet>
+</SyntaxDefinition>
