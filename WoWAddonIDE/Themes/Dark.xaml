@@ -1,0 +1,17 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <SolidColorBrush x:Key="Brush.Window"           Color="#FF1E1E1E"/>
+    <SolidColorBrush x:Key="Brush.Panel"            Color="#FF2B2B2B"/>
+    <SolidColorBrush x:Key="Brush.Chrome"           Color="#FF333333"/>
+    <SolidColorBrush x:Key="Brush.Border"           Color="#33FFFFFF"/>
+    <SolidColorBrush x:Key="Brush.FG"               Color="#FFDADADA"/>
+    <SolidColorBrush x:Key="Brush.Accent"           Color="#FF569CD6"/>
+
+    <SolidColorBrush x:Key="Brush.EditorBG"         Color="#FF1E1E1E"/>
+    <SolidColorBrush x:Key="Brush.EditorFG"         Color="#FFDADADA"/>
+    <SolidColorBrush x:Key="Brush.EditorLine"       Color="#FF8C8C8C"/>
+    <SolidColorBrush x:Key="Brush.EditorSelection"  Color="#335E81CE"/>
+    <SolidColorBrush x:Key="Brush.SelectionBorder"  Color="#FF569CD6"/>
+
+</ResourceDictionary>

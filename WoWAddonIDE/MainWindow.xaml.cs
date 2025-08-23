@@ -1,7 +1,7 @@
 ﻿using ICSharpCode.AvalonEdit;
 using ICSharpCode.AvalonEdit.Highlighting;
 using ICSharpCode.AvalonEdit.Editing;
-using Microsoft.VisualBasic; // remove if you replace InputBox
+using Microsoft.VisualBasic; // used for Interaction.InputBox
 using Newtonsoft.Json;
 using Ookii.Dialogs.Wpf;
 using System;
@@ -22,7 +22,6 @@ using System.Threading.Tasks;
 using LibGit2Sharp;
 using Octokit;
 using System.Windows.Controls.Primitives;
-using static WoWAddonIDE.Models.IDESettings;
 using Application = System.Windows.Application;
 
 namespace WoWAddonIDE
@@ -54,7 +53,7 @@ namespace WoWAddonIDE
             // Initialize completion/highlighting (loads wow_api.json for completion)
             _completion = new CompletionService();
 
-            // Register Lua highlighting robustly
+            // Register Lua & TOC highlighting
             EnsureLuaHighlightRegistered();
             EnsureTocHighlightRegistered();
 
@@ -72,7 +71,7 @@ namespace WoWAddonIDE
                 ? "AddOns Path: (not set) — Tools > Settings..."
                 : $"AddOns Path: {_settings.AddOnsPath}";
 
-            // Sanity logs so we can diagnose quickly
+            // Sanity logs
             if (_completion.LuaHighlight == null && HighlightingManager.Instance.GetDefinition("Lua") == null)
                 Log("Lua highlight NOT available — check Resources/Lua.xshd (Build Action: Resource) and XML.");
             else
@@ -82,10 +81,35 @@ namespace WoWAddonIDE
             this.InputBindings.Add(new KeyBinding(
                 new RelayCommand(_ => FindInFiles_Click(this, new RoutedEventArgs())),
                 new KeyGesture(Key.F, ModifierKeys.Control | ModifierKeys.Shift)));
+
+            // THEME: initialize + apply + listen for changes
+            ThemeManager.Initialize(_settings);
+            ThemeManager.Persist = SaveSettings;
+            ThemeManager.ApplyTheme(_settings.ThemeMode); // System/Light/Dark
+
+            ThemeManager.ThemeChanged += () =>
+            {
+                foreach (TabItem tab in EditorTabs.Items)
+                    if (tab.Content is TextEditor ed)
+                    {
+                        ThemeManager.ApplyToEditor(ed);
+                        if (ed.SyntaxHighlighting != null)
+                            RetintHighlighting(ed.SyntaxHighlighting, IsDarkThemeActive());
+                    }
+            };
+        }
+
+        // Returns true if current theme is dark (after considering System mode)
+        private bool IsDarkThemeActive()
+        {
+            var mode = _settings.ThemeMode == ThemeMode.System
+                ? ThemeManager.GetOsTheme()
+                : _settings.ThemeMode;
+            return mode == ThemeMode.Dark;
         }
 
         // ---------------------------------------------------------------------
-        // Robust Lua XSHD loader: probes resource, pack URI, disk, and manifest
+        // Robust Lua XSHD loader
         // ---------------------------------------------------------------------
         private void EnsureLuaHighlightRegistered()
         {
@@ -105,12 +129,9 @@ namespace WoWAddonIDE
                     Log(s != null ? "Lua.xshd found via relative resource." : "Relative resource NOT found.");
                     if (s != null) return s;
                 }
-                catch (Exception ex)
-                {
-                    Log($"Relative resource error: {ex.Message}");
-                }
+                catch (Exception ex) { Log($"Relative resource error: {ex.Message}"); }
 
-                // 2) Pack URI (auto-detect assembly name)
+                // 2) Pack URI
                 try
                 {
                     var asmName = Assembly.GetExecutingAssembly().GetName().Name ?? "WoWAddonIDE";
@@ -118,36 +139,22 @@ namespace WoWAddonIDE
                     Log(s != null ? "Lua.xshd found via pack URI." : "Pack URI NOT found.");
                     if (s != null) return s;
                 }
-                catch (Exception ex)
-                {
-                    Log($"Pack URI error: {ex.Message}");
-                }
+                catch (Exception ex) { Log($"Pack URI error: {ex.Message}"); }
 
-                // 3) Disk: bin\Resources\Lua.xshd or bin\Lua.xshd
+                // 3) Disk
                 try
                 {
                     var baseDir = AppDomain.CurrentDomain.BaseDirectory;
                     var p1 = Path.Combine(baseDir, "Resources", "Lua.xshd");
                     var p2 = Path.Combine(baseDir, "Lua.xshd");
 
-                    if (File.Exists(p1))
-                    {
-                        Log($"Lua.xshd found on disk: {p1}");
-                        return File.OpenRead(p1);
-                    }
-                    if (File.Exists(p2))
-                    {
-                        Log($"Lua.xshd found on disk: {p2}");
-                        return File.OpenRead(p2);
-                    }
+                    if (File.Exists(p1)) { Log($"Lua.xshd found on disk: {p1}"); return File.OpenRead(p1); }
+                    if (File.Exists(p2)) { Log($"Lua.xshd found on disk: {p2}"); return File.OpenRead(p2); }
                     Log("Disk probe NOT found (bin/Resources or bin root).");
                 }
-                catch (Exception ex)
-                {
-                    Log($"Disk probe error: {ex.Message}");
-                }
+                catch (Exception ex) { Log($"Disk probe error: {ex.Message}"); }
 
-                // 4) Embedded manifest (if incorrectly added as EmbeddedResource)
+                // 4) Embedded manifest
                 try
                 {
                     var asm = Assembly.GetExecutingAssembly();
@@ -160,10 +167,7 @@ namespace WoWAddonIDE
                     }
                     Log("No manifest resource named *Lua.xshd* found.");
                 }
-                catch (Exception ex)
-                {
-                    Log($"Manifest probe error: {ex.Message}");
-                }
+                catch (Exception ex) { Log($"Manifest probe error: {ex.Message}"); }
 
                 return null;
             }
@@ -203,11 +207,7 @@ namespace WoWAddonIDE
         private void GitInit_Click(object sender, RoutedEventArgs e)
         {
             if (!EnsureProject()) return;
-            try
-            {
-                GitService.InitRepo(_project!.RootPath);
-                Log("Git: repository initialized.");
-            }
+            try { GitService.InitRepo(_project!.RootPath); Log("Git: repository initialized."); }
             catch (Exception ex) { MessageBox.Show(this, ex.Message, "Git Init", MessageBoxButton.OK, MessageBoxImage.Error); }
         }
 
@@ -216,7 +216,7 @@ namespace WoWAddonIDE
             var url = Microsoft.VisualBasic.Interaction.InputBox("Clone URL (HTTPS):", "Git Clone", _settings.GitRemoteUrl);
             if (string.IsNullOrWhiteSpace(url)) return;
 
-            var dlg = new Ookii.Dialogs.Wpf.VistaFolderBrowserDialog { Description = "Select target folder to clone into" };
+            var dlg = new VistaFolderBrowserDialog { Description = "Select target folder to clone into" };
             if (dlg.ShowDialog(this) != true) return;
 
             try
@@ -225,7 +225,7 @@ namespace WoWAddonIDE
                 var path = GitService.Clone(url, dest, _settings);
                 Log($"Git: cloned into {path}");
 
-                // Optionally open as project if it contains a .toc
+                // Optionally open as project
                 var toc = Directory.GetFiles(path, "*.toc", SearchOption.TopDirectoryOnly).FirstOrDefault();
                 if (toc != null)
                 {
@@ -257,10 +257,7 @@ namespace WoWAddonIDE
         private void GitStatus_Click(object sender, RoutedEventArgs e)
         {
             if (!EnsureProject()) return;
-            try
-            {
-                foreach (var line in GitService.Status(_project!.RootPath)) Log(line);
-            }
+            try { foreach (var line in GitService.Status(_project!.RootPath)) Log(line); }
             catch (Exception ex) { MessageBox.Show(this, ex.Message, "Git Status", MessageBoxButton.OK, MessageBoxImage.Error); }
         }
 
@@ -272,7 +269,7 @@ namespace WoWAddonIDE
                 var win = new WoWAddonIDE.Windows.GitCommitWindow { Owner = this };
                 if (win.ShowDialog() == true)
                 {
-                    SaveAll_Click(sender, e); // save before commit
+                    SaveAll_Click(sender, e);
                     GitService.CommitAll(_project!.RootPath, _settings, win.CommitMessage);
                     Log("Git: committed.");
                 }
@@ -379,7 +376,7 @@ namespace WoWAddonIDE
                 // Initial commit/push
                 try { GitService.CommitAll(_project!.RootPath, _settings, "Initial commit"); } catch { /* ignore */ }
                 GitService.Push(_project!.RootPath, _settings);
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = repo.HtmlUrl, UseShellExecute = true });
+                Process.Start(new ProcessStartInfo { FileName = repo.HtmlUrl, UseShellExecute = true });
             }
             catch (Octokit.AuthorizationException)
             {
@@ -391,8 +388,7 @@ namespace WoWAddonIDE
                     " • If creating in an organization with SAML SSO, open your PAT on GitHub and click 'Authorize' for that org.",
                     "GitHub authorization", MessageBoxButton.OK, MessageBoxImage.Warning);
 
-                // Handy fallback: open the 'new repo' page
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = "https://github.com/new", UseShellExecute = true });
+                Process.Start(new ProcessStartInfo { FileName = "https://github.com/new", UseShellExecute = true });
             }
             catch (Octokit.ForbiddenException ex)
             {
@@ -683,8 +679,7 @@ print(ADDON_NAME .. ' loaded!')
 
                 Status("Build Zip completed.");
                 Log($"Package written: {zipPath}");
-                // Open Explorer selecting the zip
-                System.Diagnostics.Process.Start("explorer.exe", $"/select,\"{zipPath}\"");
+                Process.Start("explorer.exe", $"/select,\"{zipPath}\"");
             }
             catch (Exception ex)
             {
@@ -717,7 +712,6 @@ print(ADDON_NAME .. ' loaded!')
             }
         }
 
-
         private void OpenAddOnsFolder_Click(object sender, RoutedEventArgs e)
         {
             if (string.IsNullOrWhiteSpace(_settings.AddOnsPath) || !Directory.Exists(_settings.AddOnsPath))
@@ -726,7 +720,7 @@ print(ADDON_NAME .. ' loaded!')
                     MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
-            System.Diagnostics.Process.Start("explorer.exe", _settings.AddOnsPath);
+            Process.Start("explorer.exe", _settings.AddOnsPath);
         }
 
         private void OpenStagingFolder_Click(object sender, RoutedEventArgs e)
@@ -736,7 +730,7 @@ print(ADDON_NAME .. ' loaded!')
                 : _settings.StagingPath;
 
             try { Directory.CreateDirectory(staging); } catch { /* ignore */ }
-            System.Diagnostics.Process.Start("explorer.exe", staging);
+            Process.Start("explorer.exe", staging);
         }
 
         private void Clean_Click(object sender, RoutedEventArgs e) => Output.Clear();
@@ -816,7 +810,7 @@ print(ADDON_NAME .. ' loaded!')
                 IsExpanded = true
             };
 
-            // Primary TOC (the one MainWindow uses for the project)
+            // Primary TOC
             string? primaryToc = File.Exists(_project.TocPath)
                 ? Path.GetFullPath(_project.TocPath)
                 : null;
@@ -885,7 +879,7 @@ print(ADDON_NAME .. ' loaded!')
         // ============================ Diff Viewer ============================
         private void ShowDiff_Click(object sender, RoutedEventArgs e)
         {
-            if (EditorTabs.SelectedItem is not TabItem tab || tab.Content is not ICSharpCode.AvalonEdit.TextEditor ed) return;
+            if (EditorTabs.SelectedItem is not TabItem tab || tab.Content is not TextEditor ed) return;
             if (tab.Tag is not string path || !File.Exists(path)) return;
 
             var disk = File.ReadAllText(path);
@@ -910,41 +904,43 @@ print(ADDON_NAME .. ' loaded!')
                 }
             }
 
-            var editor = new ICSharpCode.AvalonEdit.TextEditor
+            var editor = new TextEditor
             {
                 ShowLineNumbers = true,
                 FontFamily = new System.Windows.Media.FontFamily("Consolas"),
-                VerticalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Auto,
-                HorizontalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Auto
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Auto
             };
+
+            ThemeManager.ApplyToEditor(editor);
 
             // QoL
             editor.Options.HighlightCurrentLine = true;
             editor.Options.IndentationSize = 4;
             editor.Options.ConvertTabsToSpaces = true;
 
-            // THEME (light/dark) — apply simple brushes; see Theme helpers below
-            ApplyThemeToEditor(editor);
-
             // Syntax highlighting
             if (path.EndsWith(".lua", StringComparison.OrdinalIgnoreCase))
             {
-                editor.SyntaxHighlighting = _completion.LuaHighlight
-                    ?? ICSharpCode.AvalonEdit.Highlighting.HighlightingManager.Instance.GetDefinition("Lua");
+                var def = _completion.LuaHighlight ?? HighlightingManager.Instance.GetDefinition("Lua");
+                editor.SyntaxHighlighting = def;
+                RetintHighlighting(def, IsDarkThemeActive());
             }
             else if (path.EndsWith(".xml", StringComparison.OrdinalIgnoreCase))
             {
-                editor.SyntaxHighlighting = ICSharpCode.AvalonEdit.Highlighting.HighlightingManager.Instance.GetDefinition("XML");
+                editor.SyntaxHighlighting = HighlightingManager.Instance.GetDefinition("XML");
             }
             else if (path.EndsWith(".toc", StringComparison.OrdinalIgnoreCase))
             {
-                editor.SyntaxHighlighting = ICSharpCode.AvalonEdit.Highlighting.HighlightingManager.Instance.GetDefinition("WoWTOC");
+                var def = HighlightingManager.Instance.GetDefinition("WoWTOC");
+                editor.SyntaxHighlighting = def;
+                RetintHighlighting(def, IsDarkThemeActive());
             }
 
             // Load file
             editor.Text = File.ReadAllText(path);
 
-            // Inline diagnostics (simple) — attach transformer for Lua only
+            // Inline diagnostics (Lua only)
             if (path.EndsWith(".lua", StringComparison.OrdinalIgnoreCase))
             {
                 var diag = new LuaDiagnosticsTransformer();
@@ -976,7 +972,7 @@ print(ADDON_NAME .. ' loaded!')
                 }
             };
 
-            // Hover docs (WoW API) — use TextView hover
+            // Hover docs
             var tv = editor.TextArea.TextView;
             tv.MouseHover += (s, e) =>
             {
@@ -989,10 +985,7 @@ print(ADDON_NAME .. ' loaded!')
 
                 if (_apiDocs.TryGetValue(word, out var entry))
                 {
-                    var text =
-        $@"{entry.name}
-{entry.signature}
-{entry.description}";
+                    var text = $"{entry.name}\n{entry.signature}\n{entry.description}";
                     var tt = new ToolTip { Content = text };
                     ToolTipService.SetShowDuration(tt, 20000);
                     editor.ToolTip = tt;
@@ -1038,31 +1031,25 @@ print(ADDON_NAME .. ' loaded!')
 
             // When opening a TOC, validate and log issues
             if (path.EndsWith(".toc", StringComparison.OrdinalIgnoreCase))
-            {
                 foreach (var m in ValidateToc(path)) Log(m);
-            }
 
-            // Update outline for this file
             RefreshOutlineForActive();
         }
 
         // ---------------------- Go to Definition ----------------------
-        private void GoToDefinition(ICSharpCode.AvalonEdit.TextEditor ed)
+        private void GoToDefinition(TextEditor ed)
         {
             if (_project == null) return;
-            // Refresh index if stale
             if ((DateTime.Now - _symbolIndexBuilt).TotalSeconds > 10) RebuildSymbolIndex();
 
-            // current word at caret
             var word = GetWordAtOffset(ed.Text, ed.CaretOffset);
             if (string.IsNullOrWhiteSpace(word)) return;
 
             if (_symbolIndex.TryGetValue(word, out var locs) && locs.Count > 0)
             {
-                // If multiple, pick the first for now (we can add a chooser later)
                 var l = locs[0];
                 OpenFileInTab(l.File);
-                if (EditorTabs.SelectedItem is TabItem tab && tab.Content is ICSharpCode.AvalonEdit.TextEditor target)
+                if (EditorTabs.SelectedItem is TabItem tab && tab.Content is TextEditor target)
                 {
                     target.ScrollToLine(l.Line);
                     target.CaretOffset = Math.Min(target.Document.TextLength, target.Document.GetOffset(l.Line, 1));
@@ -1076,48 +1063,17 @@ print(ADDON_NAME .. ' loaded!')
         }
 
         // ---------------------- Theme Application ----------------------
-        private void ApplyThemeToEditor(ICSharpCode.AvalonEdit.TextEditor ed)
+        private void ApplyThemeToEditor(TextEditor ed)
         {
-            if (_settings.Theme == IdeTheme.Dark)
-            {
-                ed.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(30, 30, 30));
-                ed.Foreground = System.Windows.Media.Brushes.Gainsboro;
-                ed.LineNumbersForeground = System.Windows.Media.Brushes.DarkGray;
-
-                // Selection styling (AvalonEdit TextArea owns these DPs)
-                ed.TextArea.SelectionBrush = new System.Windows.Media.SolidColorBrush(
-                    System.Windows.Media.Color.FromRgb(60, 80, 120));
-                ed.TextArea.SelectionBorder = null; // optional
-            }
-            else
-            {
-                // Reset to defaults
-                ed.ClearValue(Control.BackgroundProperty);
-                ed.ClearValue(Control.ForegroundProperty);
-                ed.ClearValue(ICSharpCode.AvalonEdit.TextEditor.LineNumbersForegroundProperty);
-
-                // Clear AvalonEdit’s selection brushes (IMPORTANT: not TextBoxBase)
-                ed.TextArea.ClearValue(ICSharpCode.AvalonEdit.Editing.TextArea.SelectionBrushProperty);
-                ed.TextArea.ClearValue(ICSharpCode.AvalonEdit.Editing.TextArea.SelectionBorderProperty);
-            }
+            ThemeManager.ApplyToEditor(ed);
+            if (ed.SyntaxHighlighting != null)
+                RetintHighlighting(ed.SyntaxHighlighting, IsDarkThemeActive());
         }
 
         // ---------------------- Theme Menu Clicks ----------------------
-        private void ThemeLight_Click(object sender, RoutedEventArgs e)
-        {
-            _settings.Theme = IdeTheme.Light; SaveSettings();
-            // reapply to open editors
-            foreach (TabItem tab in EditorTabs.Items)
-                if (tab.Content is ICSharpCode.AvalonEdit.TextEditor ed) ApplyThemeToEditor(ed);
-        }
-
-        private void ThemeDark_Click(object sender, RoutedEventArgs e)
-        {
-            _settings.Theme = IdeTheme.Dark; SaveSettings();
-            foreach (TabItem tab in EditorTabs.Items)
-                if (tab.Content is ICSharpCode.AvalonEdit.TextEditor ed) ApplyThemeToEditor(ed);
-        }
-
+        private void ThemeSystem_Click(object s, RoutedEventArgs e) { ThemeManager.ApplyTheme(ThemeMode.System); SaveSettings(); }
+        private void ThemeLight_Click(object s, RoutedEventArgs e) { ThemeManager.ApplyTheme(ThemeMode.Light); SaveSettings(); }
+        private void ThemeDark_Click(object s, RoutedEventArgs e) { ThemeManager.ApplyTheme(ThemeMode.Dark); SaveSettings(); }
 
         // ========================= Symbol Index =========================
         private void RebuildSymbolIndex()
@@ -1203,10 +1159,10 @@ print(ADDON_NAME .. ' loaded!')
                 {
                     foreach (var candidate in new[]
                     {
-                "Resources/WoWTOC.xshd",
-                "Resources/wowtoc.xshd",        // tolerate lowercase filename
-                "Resources/WowToc.xshd"         // tolerate mixed case
-            })
+                        "Resources/WoWTOC.xshd",
+                        "Resources/wowtoc.xshd",
+                        "Resources/WowToc.xshd"
+                    })
                     {
                         var s = Application.GetResourceStream(new Uri(candidate, UriKind.Relative))?.Stream;
                         if (s != null) { Log($"WoWTOC.xshd found via relative resource: {candidate}"); return s; }
@@ -1215,16 +1171,16 @@ print(ADDON_NAME .. ' loaded!')
                 }
                 catch (Exception ex) { Log($"Relative resource error (TOC): {ex.Message}"); }
 
-                // 2) Pack URI with assembly; try common casings
+                // 2) Pack URI
                 try
                 {
                     var asmName = Assembly.GetExecutingAssembly().GetName().Name ?? "WoWAddonIDE";
                     foreach (var candidate in new[]
                     {
-                $"/{asmName};component/Resources/WoWTOC.xshd",
-                $"/{asmName};component/Resources/wowtoc.xshd",
-                $"/{asmName};component/Resources/WowToc.xshd"
-            })
+                        $"/{asmName};component/Resources/WoWTOC.xshd",
+                        $"/{asmName};component/Resources/wowtoc.xshd",
+                        $"/{asmName};component/Resources/WowToc.xshd"
+                    })
                     {
                         var s = Application.GetResourceStream(new Uri(candidate, UriKind.Relative))?.Stream;
                         if (s != null) { Log($"WoWTOC.xshd found via pack URI: {candidate}"); return s; }
@@ -1233,17 +1189,17 @@ print(ADDON_NAME .. ' loaded!')
                 }
                 catch (Exception ex) { Log($"Pack URI error (TOC): {ex.Message}"); }
 
-                // 3) Disk fallbacks (if someone set Build Action = Content/Copy)
+                // 3) Disk fallbacks
                 try
                 {
                     var baseDir = AppDomain.CurrentDomain.BaseDirectory;
                     foreach (var p in new[]
                     {
-                Path.Combine(baseDir, "Resources", "WoWTOC.xshd"),
-                Path.Combine(baseDir, "Resources", "wowtoc.xshd"),
-                Path.Combine(baseDir, "WoWTOC.xshd"),
-                Path.Combine(baseDir, "wowtoc.xshd")
-            })
+                        Path.Combine(baseDir, "Resources", "WoWTOC.xshd"),
+                        Path.Combine(baseDir, "Resources", "wowtoc.xshd"),
+                        Path.Combine(baseDir, "WoWTOC.xshd"),
+                        Path.Combine(baseDir, "wowtoc.xshd")
+                    })
                     {
                         if (File.Exists(p)) { Log($"WoWTOC.xshd found on disk: {p}"); return File.OpenRead(p); }
                     }
@@ -1251,7 +1207,7 @@ print(ADDON_NAME .. ' loaded!')
                 }
                 catch (Exception ex) { Log($"Disk probe error (TOC): {ex.Message}"); }
 
-                // 4) Embedded manifest (if mistakenly added as EmbeddedResource)
+                // 4) Embedded manifest
                 try
                 {
                     var asm = Assembly.GetExecutingAssembly();
@@ -1335,6 +1291,34 @@ print(ADDON_NAME .. ' loaded!')
         }
 
         // ====================== Outline helpers ======================
+
+        private void RetintHighlighting(IHighlightingDefinition def, bool dark)
+        {
+            if (def == null) return;
+
+            var named = def.NamedHighlightingColors;
+
+            ICSharpCode.AvalonEdit.Highlighting.HighlightingColor? Find(string name) =>
+                named.FirstOrDefault(c => string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase));
+
+            void Set(string name, byte r, byte g, byte b)
+            {
+                var hc = Find(name);
+                if (hc != null)
+                {
+                    hc.Foreground = new ICSharpCode.AvalonEdit.Highlighting.SimpleHighlightingBrush(
+                        System.Windows.Media.Color.FromRgb(r, g, b));
+                }
+            }
+
+            if (dark)
+            {
+                Set("Comment", 0x6A, 0x99, 0x55);
+                Set("String", 0xCE, 0x91, 0x78);
+                Set("Number", 0xB5, 0xCE, 0xA8);
+                Set("Keyword", 0x56, 0x9C, 0xD6);
+            }
+        }
 
         private void RefreshOutlineForActive()
         {
@@ -1520,25 +1504,24 @@ print(ADDON_NAME .. ' loaded!')
                 }
             }
         }
-        // -------------------- Go to Symbol --------------------
+
         private void GoToSymbol_Click(object sender, RoutedEventArgs e)
         {
             if (_project == null) return;
 
-            // Make sure the index is fresh enough (10s window)
             if ((DateTime.Now - _symbolIndexBuilt).TotalSeconds > 10)
                 RebuildSymbolIndex();
 
             var dlg = new WoWAddonIDE.Windows.SymbolSearchWindow
             {
                 Owner = this,
-                Index = _symbolIndex.ToDictionary(k => k.Key, v => v.Value) // shallow copy for safety
+                Index = _symbolIndex.ToDictionary(k => k.Key, v => v.Value)
             };
 
             dlg.NavigateTo += loc =>
             {
                 OpenFileInTab(loc.File);
-                if (EditorTabs.SelectedItem is TabItem tab && tab.Content is ICSharpCode.AvalonEdit.TextEditor ed)
+                if (EditorTabs.SelectedItem is TabItem tab && tab.Content is TextEditor ed)
                 {
                     ed.ScrollToLine(loc.Line);
                     ed.CaretOffset = Math.Min(ed.Document.TextLength, ed.Document.GetOffset(loc.Line, 1));
@@ -1548,6 +1531,7 @@ print(ADDON_NAME .. ' loaded!')
 
             dlg.ShowDialog();
         }
+
         private void DuplicateLine(TextEditor ed)
         {
             var doc = ed.Document;
@@ -1565,11 +1549,7 @@ print(ADDON_NAME .. ' loaded!')
             bool IsWordChar(char c) =>
                 char.IsLetterOrDigit(c) || c == '_' || c == '.' || c == ':'; // allow table.member and method:Call
 
-            // If the caret is between two tokens, look left first
-            if (start > 0 && !IsWordChar(text[start - 1]) && start < text.Length && IsWordChar(text[start]))
-            {
-                end++;
-            }
+            if (start > 0 && !IsWordChar(text[start - 1]) && start < text.Length && IsWordChar(text[start])) end++;
 
             while (start > 0 && IsWordChar(text[start - 1])) start--;
             while (end < text.Length && IsWordChar(text[end])) end++;
@@ -1584,6 +1564,47 @@ print(ADDON_NAME .. ' loaded!')
             public string signature { get; set; } = "";
             public string description { get; set; } = "";
         }
+
+        // ====================================================================
+        // CLICK HANDLER STUBS (so XAML compiles). They call your real methods.
+        // ====================================================================
+
+        // File
+        private void New_Click(object s, RoutedEventArgs e) => NewProject_Click(s, e);
+        private void Open_Click(object s, RoutedEventArgs e) => OpenProject_Click(s, e);
+
+        // Edit
+        private void Find_Click(object s, RoutedEventArgs e)
+        {
+            // simple inline find (falls back to Find in Files if no editor)
+            if (EditorTabs.SelectedItem is TabItem tab && tab.Content is TextEditor ed)
+            {
+                var q = Interaction.InputBox("Find text:", "Find", ed.SelectedText ?? "");
+                if (!string.IsNullOrEmpty(q))
+                {
+                    var idx = ed.Text.IndexOf(q, ed.CaretOffset, StringComparison.OrdinalIgnoreCase);
+                    if (idx < 0) idx = ed.Text.IndexOf(q, 0, StringComparison.OrdinalIgnoreCase);
+                    if (idx >= 0)
+                    {
+                        ed.Select(idx, q.Length);
+                        ed.ScrollToLine(ed.Document.GetLineByOffset(idx).LineNumber);
+                        ed.Focus();
+                        Status($"Found: {q}");
+                    }
+                    else Status($"'{q}' not found");
+                }
+            }
+            else
+            {
+                FindInFiles_Click(s, e);
+            }
+        }
+
+        // Project
+        private void OpenAddonsFolder_Click(object s, RoutedEventArgs e) => OpenAddOnsFolder_Click(s, e);
+
+        // Toolbar buttons already point to existing handlers:
+        // Save_Click, SaveAll_Click, Build_Click, BuildZip_Click are defined above.
     }
 
     // Small command helper for keybindings
