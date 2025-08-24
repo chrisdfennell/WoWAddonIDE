@@ -1,4 +1,25 @@
 <p align="center">
+  <a href="https://github.com/chrisdfennell/WoWAddonIDE/releases/latest">
+    <img src="https://img.shields.io/github/v/release/chrisdfennell/WoWAddonIDE?display_name=tag&sort=semver" alt="Latest Release" />
+  </a>
+  <a href="https://github.com/chrisdfennell/WoWAddonIDE/releases/latest">
+    <img src="https://img.shields.io/github/release-date/chrisdfennell/WoWAddonIDE" alt="Release Date" />
+  </a>
+  <a href="https://github.com/chrisdfennell/WoWAddonIDE/releases">
+    <img src="https://img.shields.io/github/downloads/chrisdfennell/WoWAddonIDE/total" alt="Total Downloads" />
+  </a>
+  <a href="https://github.com/chrisdfennell/WoWAddonIDE/commits/main">
+    <img src="https://img.shields.io/github/last-commit/chrisdfennell/WoWAddonIDE" alt="Last Commit" />
+  </a>
+  <a href="https://github.com/chrisdfennell/WoWAddonIDE/issues">
+    <img src="https://img.shields.io/github/issues/chrisdfennell/WoWAddonIDE" alt="Open Issues" />
+  </a>
+  <a href="https://github.com/chrisdfennell/WoWAddonIDE/pulls">
+    <img src="https://img.shields.io/github/issues-pr/chrisdfennell/WoWAddonIDE" alt="Open PRs" />
+  </a>
+  <a href="https://github.com/chrisdfennell/WoWAddonIDE/stargazers">
+    <img src="https://img.shields.io/github/stars/chrisdfennell/WoWAddonIDE" alt="GitHub Stars" />
+  </a>
   <a href="https://dotnet.microsoft.com/">
     <img src="https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet&logoColor=white" alt=".NET 8" />
   </a>
@@ -21,70 +42,64 @@
   <img src="https://img.shields.io/badge/PRs-welcome-brightgreen" alt="PRs welcome" />
 </p>
 
-# WoW Addon IDE (WPF)
+<h1 align="center">WoW Addon IDE (WPF)</h1>
+<p align="center">A lightweight IDE for building <b>World of Warcraft</b> addons on Windows.</p>
 
-A lightweight IDE for building **World of Warcraft** addons on Windows.  
-Built with **WPF + AvalonEdit**, it includes Lua/XML syntax highlighting, IntelliSense-style completion, WoW API hover docs, a project explorer, safe build/publish helpers, and Git/GitHub integration.
+---
+
+## 📸 Screenshots
+
+> Put screenshots in <code>docs/</code> (or <code>assets/</code>) in your repo and adjust the paths below.
+
+<p align="center">
+  <img src="docs/screenshot-main.png" alt="Main editor" width="900"/><br/>
+  <em>Main editor with Lua highlighting, outline, and completion.</em>
+</p>
+
+<p align="center">
+  <img src="docs/screenshot-help.png" alt="Help window" width="420"/>
+  &nbsp;&nbsp;
+  <img src="docs/screenshot-settings.png" alt="Settings window" width="420"/>
+</p>
+
+---
+
+## ✨ Highlights
+
+- **Lua + XML syntax highlighting**
+  - Custom `Lua.xshd` and `WoWTOC.xshd` definitions (AvalonEdit).
+  - Theme-aware colors; tuned for readability.
+- **Autocomplete & parameter hints**
+  - Lua keywords, WoW API names (from `wow_api.json`), buffer identifiers, snippets.
+  - Signature help on `(` for known functions.
+- **Hover docs for WoW API**
+  - Tooltips sourced from `Resources/wow_api.json` (extensible/importable).
+- **Outline panel (Lua)**
+  - Jump to `function`, `local function`, etc.
+- **Find in files** (**Ctrl+Shift+F**) and **Go to definition** (**F12**).
+- **Project Explorer** + **TOC generator & editor**.
+- **Build options**
+  - **Build** → copy to your WoW **AddOns** folder (safe copy).
+  - **Build to Folder…**, **Build Zip…**.
+- **Live reload helper**
+  - Writes a `Reload.flag` you can watch to call `ReloadUI()`.
+- **Git & GitHub integration**
+  - LibGit2Sharp + Octokit workflows (init/clone/commit/push/branches/releases).
 
 > ✅ Designed to be safe by default: the **Build** command will not wipe your source folder or your AddOns folder by mistake.
 
 ---
 
-## Highlights
-
-- **Lua + XML syntax highlighting**
-  - Custom `Lua.xshd` and `WoWTOC.xshd` (TOC) definitions (AvalonEdit).
-  - Theme-aware colors (retinted for light/dark automatically).
-
-- **Autocomplete & parameter hints**
-  - Completion for Lua keywords, WoW API names, globals, and snippets.
-  - Signature help on `(` with parameter tooltips.
-
-- **Hover docs for WoW API**
-  - Tooltips sourced from `Resources/wow_api.json`.
-
-- **Outline panel (Lua)**
-  - Quick jump to `function name(...)` and `local name = function(...)`.
-
-- **Find in files (Ctrl+Shift+F)** and **Go to definition (F12)**
-  - Simple symbol index across your project; jumps to file/line.
-
-- **Project Explorer** with TOC generator & editor
-  - Generate default `.toc`, validate file references and required keys.
-  - GUI TOC editor for `Interface`, `Title`, `Notes`, and file list.
-
-- **Build options**
-  - **Build** → copy to your WoW **AddOns** folder (safe copy).
-  - **Build to Folder…** → copy to any folder.
-  - **Build Zip…** → make a distributable zip (DiffPlex for diff viewer).
-
-- **Live reload helper**
-  - Writes a `Reload.flag` file your addon can watch and call `ReloadUI()`.
-
-- **Git & GitHub integration**
-  - Init/Clone/Status/Commit/Pull/Push/Sync, branches, open on GitHub.
-  - Create GitHub repo (PAT), or OAuth sign-in (device code flow) if enabled.
-  - Uses **LibGit2Sharp** and **Octokit**.
-
-- **Light/Dark/System themes**
-  - Global theme engine + retinting for editors/XSHD.
-  - Manual choice persists; otherwise follows OS setting.
-
----
-
-## Getting Started
+## 🚀 Getting Started
 
 ### Prerequisites
-
 - Windows 10/11
-- Visual Studio 2022+ (with **.NET Desktop** workload)
-- .NET 7 or 8 SDK (project targets WPF)
-- WoW retail installed (optional, for Build to AddOns convenience)
+- Visual Studio 2022+ (**.NET Desktop** workload)
+- .NET 8 SDK
+- WoW retail installed (optional, for AddOns path detection)
 
 ### Restore packages
-
-The project uses NuGet for:
-
+The project uses NuGet packages:
 - `ICSharpCode.AvalonEdit`
 - `Ookii.Dialogs.Wpf`
 - `Newtonsoft.Json`
@@ -92,164 +107,103 @@ The project uses NuGet for:
 - `LibGit2Sharp`
 - `Octokit`
 
-Open the solution and **Build** to restore packages automatically.
+Build the solution to restore packages automatically.
 
 ### Resource files (important)
-
-These files must be added with **Build Action = Resource**:
-
+Ensure these exist with **Build Action = Resource**:
 ```
 /Resources/Lua.xshd
 /Resources/WoWTOC.xshd
 /Resources/wow_api.json
-/Themes/Base.xaml
-/Themes/Light.xaml
-/Themes/Dark.xaml
 ```
-
-> If the highlight isn’t applied, check the **Output** panel: the app logs when it can’t find or load an XSHD (invalid XML, wrong build action/path, etc.).
+If highlighting fails, check the Output log—loading errors are reported.
 
 ### First run
-
-1. **Tools → Settings**  
-   Set your WoW **AddOns** folder (detected automatically for standard installs).
-2. **File → New** or **File → Open** a folder containing your addon's `.toc`.
-
-You’re good to code!
+1. **Tools → Settings** → set your WoW **AddOns** folder (auto-detected when possible).
+2. **File → New** or **Open** a folder containing your addon's `.toc`.
 
 ---
 
-## Typical Workflow
+## 🧭 Workflow
 
-1. **Create/Open** a project folder (where the `.toc` lives).
+1. Create/Open a project folder (where the `.toc` lives).
 2. Edit `.lua` / `.xml` files in tabs.
-3. Use **Outline** to jump around functions, **Ctrl+Shift+F** to search.
-4. **Build** to copy safely into your AddOns folder, or **Build Zip…** to package.
+3. Use **Outline** to jump around functions; **Ctrl+Shift+F** to search.
+4. **Build** to copy safely into AddOns, or **Build Zip…** to package.
 5. Use **Git** menu to commit/push or create a GitHub repo.
 
 ---
 
-## Git & GitHub
+## 🎨 Theming
 
-### Git identity
-- Set your identity in **Git/GitHub Settings…** (`GitUserName`, `GitUserEmail`).
-
-### Remotes
-- **Git → Set Remote (origin)…** to add an HTTPS remote.
-
-### PAT vs OAuth
-- **Create GitHub Repo…** requires permissions:
-  - Easiest is a **classic PAT** with `repo` scope, pasted into **Git/GitHub Settings…**.
-  - OAuth device flow can be used if the **GitHub OAuth App** for this IDE has **Device Flow** enabled. The app opens a code and URL; sign in with passkeys/2FA in your browser.
-
-> If you see “Resource not accessible by personal access token”, your token lacks scopes or SAML SSO isn’t authorized for your org. You can always create the repo on GitHub and then **Set Remote** + **Push**.
+- `ThemeManager.ApplyTheme(System|Light|Dark)` – global theme
+- `ThemeManager.ApplyToEditor(editor)` – AvalonEdit brushes (background, selection, caret, current line, line numbers)
+- XSHD retinting for syntax highlighting
 
 ---
 
-## Build Safety
+## ⌨️ Shortcuts
 
-To prevent accidentally nuking your source or live AddOns folder:
-
-- The IDE computes **absolute source and target paths** and refuses to build when they’re identical.
-- If your project already lives **inside** AddOns, **Build** is disabled by default (toggleable in Settings).
-
----
-
-## Theming
-
-Theme files:
-```
-/Themes/Base.xaml      # shared styles
-/Themes/Light.xaml     # light palette (Brush.* keys)
-/Themes/Dark.xaml      # dark palette (Brush.* keys)
-```
-
-Runtime engine:
-- `ThemeManager.Initialize(settings)` – loads theme and sets up OS monitoring.
-- `ThemeManager.ApplyTheme(System|Light|Dark)` – applies and persists.
-- `ThemeManager.ApplyToEditor(editor)` – sets AvalonEdit brushes (background, foreground, current line border, selection, and line numbers).
-
-If you add new colors (e.g., `Brush.EditorCurrentLineBG`), `ApplyToEditor` will pick them up automatically.
-
----
-
-## Keyboard Shortcuts
-
-- **Ctrl+/** — Toggle line comment
+- **Ctrl+/** — Toggle comment
 - **Ctrl+D** — Duplicate line
-- **F12** — Go to definition (project symbol index)
+- **F12** — Go to definition
 - **Ctrl+Shift+F** — Find in files
-- **Ctrl+T** — Workspace symbol search
-- **Ctrl+S** — Save
-- **Ctrl+Shift+S** — Save All
+- **Ctrl+S** — Save / **Ctrl+Shift+S** — Save All
 
 ---
 
-## Troubleshooting
+## 🧰 Troubleshooting
 
-**“Lua highlight def is NULL”**  
-The IDE couldn’t load `Lua.xshd`. Check:
-- The file is at `Resources/Lua.xshd` (case-sensitive in pack URIs).
-- **Build Action = Resource**.
-- XSHD XML is valid. The Output panel shows the first XML error line/column.
-
-**TOC highlight error**  
-Same checks as above for `Resources/WoWTOC.xshd`. Regex support in XSHD is limited—use `<Rule ... />` or `<Keywords/>`/`<Span/>` as supported by AvalonEdit.
-
-**GitHub 400 device_flow_disabled**  
-Your OAuth App must explicitly enable **Device Flow**. Alternatively use a **classic PAT** with `repo` scope.
-
-**Build cleared my folder?**  
-It shouldn’t. The IDE only cleans the **destination** when it’s different from the source. If you changed settings manually to allow builds inside AddOns, be careful.
+- **Lua highlight null** → ensure `Resources/Lua.xshd` exists, has Build Action = Resource, and valid XML.
+- **TOC highlight error** → same checks for `WoWTOC.xshd`.
+- **GitHub device flow disabled** → either enable device flow on your OAuth App or use a classic PAT with `repo` scope.
+- **Build safety** → source/target identity check prevents destructive copies.
 
 ---
 
-## Project Structure
+## 🗂 Project Structure
 
 ```
 WoWAddonIDE/
  ├─ Models/
  ├─ Services/
- │   ├─ ThemeManager.cs          # runtime theme engine
- │   ├─ CompletionService.cs     # autocomplete + parameter hints
- │   ├─ SymbolService.cs         # project symbol index
- │   ├─ GitService.cs            # LibGit2Sharp glue
- │   └─ LuaLint.cs               # simple inline diagnostics
- ├─ Windows/                     # dialogs (Find, Diff, TOC, Git, etc.)
+ │   ├─ ThemeManager.cs
+ │   ├─ CompletionService.cs
+ │   ├─ SymbolService.cs
+ │   ├─ GitService.cs
+ │   └─ LuaLint.cs
+ ├─ Windows/
  ├─ Resources/
  │   ├─ Lua.xshd
  │   ├─ WoWTOC.xshd
  │   └─ wow_api.json
- ├─ Themes/
- │   ├─ Base.xaml
- │   ├─ Light.xaml
- │   └─ Dark.xaml
+ ├─ Themes/ (optional)
  ├─ MainWindow.xaml / .cs
  └─ README.md
 ```
 
 ---
 
-## Contributing
+## 🤝 Contributing
 
-PRs welcome! Good first issues:
-- Better Lua grammar (keywords/strings/numbers/operators).
-- Smarter symbol index (locals, method calls, require/module patterns).
-- Live reload bridge addon (watch flag → `ReloadUI()`).
-- Unit tests for .toc parser & validator.
-- More theme polish (high-contrast, custom palettes).
+PRs welcome! Ideas:
+- Improved Lua grammar & TOC rules
+- Smarter symbol index
+- Live reload companion addon
+- Theme variants & accessibility
+- Tests for TOC parser/validator
 
 ---
 
-## License
+## 📄 License
 
-This project is licensed under the **MIT License** — see [LICENSE](LICENSE) for details.
+Licensed under the **MIT License** — see [LICENSE](LICENSE).
 
 Copyright © 2025 Christopher Fennell.
 
 ---
 
-## Acknowledgements
+## 🙏 Acknowledgements
 
 - [AvalonEdit](https://github.com/icsharpcode/AvalonEdit)
 - [LibGit2Sharp](https://github.com/libgit2/libgit2sharp)
