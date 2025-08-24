@@ -36,4 +36,8 @@
     <Resource Include="Resources\wow_api.json" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Docs\" />
+  </ItemGroup>
+
 </Project>
