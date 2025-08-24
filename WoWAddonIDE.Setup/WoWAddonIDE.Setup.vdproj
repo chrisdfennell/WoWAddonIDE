@@ -49,6 +49,14 @@
         "PrivateKeyFile" = "8:"
         "TimeStampServer" = "8:"
         "InstallerBootstrapper" = "3:2"
+            "BootstrapperCfg:{63ACBE69-63AA-4F98-B2B6-99F9E24495F2}"
+            {
+            "Enabled" = "11:TRUE"
+            "PromptEnabled" = "11:TRUE"
+            "PrerequisitesLocation" = "2:1"
+            "Url" = "8:"
+            "ComponentsUrl" = "8:"
+            }
         }
         "Release"
         {
@@ -65,6 +73,14 @@
         "PrivateKeyFile" = "8:"
         "TimeStampServer" = "8:"
         "InstallerBootstrapper" = "3:2"
+            "BootstrapperCfg:{63ACBE69-63AA-4F98-B2B6-99F9E24495F2}"
+            {
+            "Enabled" = "11:TRUE"
+            "PromptEnabled" = "11:TRUE"
+            "PrerequisitesLocation" = "2:1"
+            "Url" = "8:"
+            "ComponentsUrl" = "8:"
+            }
         }
     }
     "Deployable"
@@ -171,16 +187,16 @@
         "Product"
         {
         "Name" = "8:Microsoft Visual Studio"
-        "ProductName" = "8:WoWAddonIDE"
-        "ProductCode" = "8:{95981FCF-33AC-4107-A2AC-3FFC456AD9FE}"
-        "PackageCode" = "8:{7E8FA6C2-D025-4EB9-97CC-554D17C06878}"
+        "ProductName" = "8:WoW Addon IDE"
+        "ProductCode" = "8:{CBB171F9-91CC-4EAF-95CB-F094746667B5}"
+        "PackageCode" = "8:{CF8CB3B4-4738-4179-890A-799843641AB7}"
         "UpgradeCode" = "8:{87017828-73A4-42B7-999F-66543571DEBE}"
         "AspNetVersion" = "8:2.0.50727.0"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:TRUE"
-        "ProductVersion" = "8:1.0.0"
+        "ProductVersion" = "8:1.1.0"
         "Manufacturer" = "8:Fennell"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:"
@@ -722,7 +738,7 @@
         {
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_8AD8B2BDDE9048FAA5167B1B064DF2C0"
             {
-            "SourcePath" = "8:..\\WoWAddonIDE\\obj\\Debug\\net8.0-windows\\WoWAddonIDE.dll"
+            "SourcePath" = "8:..\\WoWAddonIDE\\obj\\Release\\net8.0-windows\\WoWAddonIDE.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_59FF2E06D0C44CF4BEAF786ACBD287B7"
@@ -750,7 +766,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_E92D9AFB68F0490FB297138CCCA7C402"
             {
-            "SourcePath" = "8:..\\WoWAddonIDE\\obj\\Debug\\net8.0-windows\\apphost.exe"
+            "SourcePath" = "8:..\\WoWAddonIDE\\obj\\Release\\net8.0-windows\\apphost.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_59FF2E06D0C44CF4BEAF786ACBD287B7"

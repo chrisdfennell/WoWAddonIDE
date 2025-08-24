@@ -74,7 +74,6 @@
             <MenuItem Header="_Help">
                 <MenuItem Header="_Help (F1)" Click="Help_Click" InputGestureText="F1"/>
                 <Separator/>
-                <!-- Reuse your existing About handler to avoid duplicates -->
                 <MenuItem Header="_About…" Click="About_Click"/>
             </MenuItem>
         </Menu>
@@ -161,25 +160,51 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Left column: Project + Outline -->
+            <!-- Left column: Project + Outline + Colors -->
             <Grid Grid.Row="0" Grid.Column="0">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
+                    <!-- Project -->
                     <RowDefinition Height="6"/>
+                    <!-- Splitter -->
                     <RowDefinition Height="*"/>
+                    <!-- Outline -->
+                    <RowDefinition Height="6"/>
+                    <!-- Splitter -->
+                    <RowDefinition Height="Auto"/>
+                    <!-- Colors -->
                 </Grid.RowDefinitions>
 
                 <GroupBox Header="Project Explorer" Grid.Row="0" Margin="0,0,0,6">
                     <TreeView x:Name="ProjectTree"
-                              SelectedItemChanged="ProjectTree_SelectedItemChanged"
-                              MouseDoubleClick="ProjectTree_MouseDoubleClick"/>
+          SelectedItemChanged="ProjectTree_SelectedItemChanged"
+          MouseDoubleClick="ProjectTree_MouseDoubleClick">
+                        <TreeView.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Open" Click="ProjectTree_Open_Click"/>
+                                <Separator/>
+                                <MenuItem Header="Open Containing Folder" Click="ProjectTree_Reveal_Click"/>
+                                <MenuItem Header="Copy Full Path" Click="ProjectTree_CopyPath_Click"/>
+                                <MenuItem Header="Copy Relative Path" Click="ProjectTree_CopyRelPath_Click"/>
+                            </ContextMenu>
+                        </TreeView.ContextMenu>
+                    </TreeView>
                 </GroupBox>
 
                 <GridSplitter Grid.Row="1" Height="6" HorizontalAlignment="Stretch" />
 
-                <GroupBox Header="Outline (Lua)" Grid.Row="2">
+                <GroupBox Header="Outline (Lua)" Grid.Row="2" Margin="0,0,0,6">
                     <ListBox x:Name="Outline"
                              MouseDoubleClick="Outline_DoubleClick"/>
+                </GroupBox>
+
+                <GridSplitter Grid.Row="3" Height="6" HorizontalAlignment="Stretch" />
+
+                <!-- NEW: Colors section for swatches -->
+                <GroupBox Header="Colors" Grid.Row="4">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <WrapPanel x:Name="SwatchWrap" Margin="4"/>
+                    </ScrollViewer>
                 </GroupBox>
             </Grid>
 

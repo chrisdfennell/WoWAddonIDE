@@ -6,7 +6,7 @@ using System.Windows.Controls;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Ookii.Dialogs.Wpf;                 // for VistaFolderBrowserDialog
+using Ookii.Dialogs.Wpf;
 using WoWAddonIDE.Models;
 
 namespace WoWAddonIDE.Windows

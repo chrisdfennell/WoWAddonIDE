@@ -1,74 +1,125 @@
-﻿using ICSharpCode.AvalonEdit.Document;
-using ICSharpCode.AvalonEdit.Rendering;
+﻿// Services/LuaDiagnosticsTransformer.cs
 using System;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
-using System.Windows;
-using System.Windows.Media;
+using System.Linq;
+using System.Windows; // TextDecoration, TextDecorationCollection, TextDecorationLocation
+using ICSharpCode.AvalonEdit.Document;
+using ICSharpCode.AvalonEdit.Rendering;
+using Media = System.Windows.Media; // WPF brushes/colors
 
 namespace WoWAddonIDE.Services
 {
-    public class LuaDiagnosticsTransformer : DocumentColorizingTransformer
+    public sealed class LuaDiagnosticsTransformer : DocumentColorizingTransformer
     {
-        static readonly Regex Tabs = new(@"\t", RegexOptions.Compiled);
-        static readonly Regex Trailing = new(@"[ \t]+(?=\r?$)", RegexOptions.Compiled);
+        public enum Severity { Info, Warning, Error }
 
-        // very rough global capture: NAME = something at column 0
-        static readonly Regex GlobalAssign = new(@"^[A-Za-z_]\w*\s*=", RegexOptions.Compiled);
+        private sealed class Diag
+        {
+            public int Start;
+            public int Length;
+            public Severity Sev;
+            public string Message = "";
+        }
 
-        private HashSet<string> _globals = new(StringComparer.OrdinalIgnoreCase);
+        private readonly List<Diag> _diags = new();
 
         public void Reanalyze(string text)
         {
-            _globals.Clear();
+            _diags.Clear();
+            if (string.IsNullOrEmpty(text)) return;
+
             var lines = text.Split('\n');
-            foreach (var raw in lines)
+            int offset = 0;
+            int parenBalance = 0;
+
+            for (int i = 0; i < lines.Length; i++)
             {
-                var line = raw.TrimEnd('\r');
-                var m = GlobalAssign.Match(line);
-                if (m.Success)
-                {
-                    var name = m.Value[..m.Value.IndexOf('=')].Trim();
-                    if (!_globals.Add(name))
+                var line = lines[i];
+
+                var idxTodo = line.IndexOf("TODO", StringComparison.OrdinalIgnoreCase);
+                if (idxTodo >= 0)
+                    _diags.Add(new Diag { Start = offset + idxTodo, Length = 4, Sev = Severity.Info, Message = "TODO" });
+
+                var idxFix = line.IndexOf("FIXME", StringComparison.OrdinalIgnoreCase);
+                if (idxFix >= 0)
+                    _diags.Add(new Diag { Start = offset + idxFix, Length = 5, Sev = Severity.Warning, Message = "FIXME" });
+
+                int endTrim = line.Length;
+                while (endTrim > 0 && (line[endTrim - 1] == ' ' || line[endTrim - 1] == '\t' || line[endTrim - 1] == '\r'))
+                    endTrim--;
+                if (endTrim < line.Length && endTrim > 0)
+                    _diags.Add(new Diag
                     {
-                        // duplicate; keep set as-is (we'll mark lines during colorize pass)
-                    }
+                        Start = offset + endTrim - 1,
+                        Length = (line.Length - endTrim + 1),
+                        Sev = Severity.Info,
+                        Message = "Trailing whitespace"
+                    });
+
+                foreach (var ch in line)
+                {
+                    if (ch == '(') parenBalance++;
+                    else if (ch == ')') parenBalance--;
                 }
+
+                offset += line.Length + 1; // include '\n'
+            }
+
+            if (parenBalance != 0)
+            {
+                _diags.Add(new Diag
+                {
+                    Start = Math.Max(0, text.Length - 1),
+                    Length = 1,
+                    Sev = Severity.Error,
+                    Message = "Unbalanced parentheses"
+                });
             }
         }
 
         protected override void ColorizeLine(DocumentLine line)
         {
-            var text = CurrentContext.Document.GetText(line.Offset, line.Length);
-            foreach (Match m in Tabs.Matches(text))
-                Underline(line.Offset + m.Index, m.Length, Colors.Orange);
+            if (_diags.Count == 0) return;
 
-            foreach (Match m in Trailing.Matches(text))
-                Underline(line.Offset + m.Index, m.Length, Colors.IndianRed);
+            int lineStart = line.Offset;
+            int lineEnd = lineStart + line.Length;
 
-            // crude duplicate global detection
-            var gm = GlobalAssign.Match(text);
-            if (gm.Success)
+            foreach (var d in _diags)
             {
-                var name = gm.Value[..gm.Value.IndexOf('=')].Trim();
-                // If more than one occurrence in doc, underline all assigns
-                int count = 0;
-                foreach (var g in _globals) { if (string.Equals(g, name, StringComparison.OrdinalIgnoreCase)) count++; }
-                if (count > 1)
-                    Underline(line.Offset + gm.Index, gm.Length, Colors.Gold);
+                int start = Math.Max(d.Start, lineStart);
+                int end = Math.Min(d.Start + d.Length, lineEnd);
+                if (start >= end) continue;
+
+                var brush = BrushFor(d.Sev);
+                var pen = new Media.Pen(brush, 1) { DashStyle = Media.DashStyles.Dash };
+
+                ChangeLinePart(start, end, element =>
+                {
+                    var props = element.TextRunProperties;
+
+                    // Color the text
+                    props.SetForegroundBrush(brush);
+
+                    // Add a dashed underline
+                    var decoration = new TextDecoration
+                    {
+                        Location = TextDecorationLocation.Underline,
+                        Pen = pen,
+                        PenThicknessUnit = TextDecorationUnit.FontRecommended
+                    };
+
+                    var list = props.TextDecorations?.ToList() ?? new List<TextDecoration>();
+                    list.Add(decoration);
+                    props.SetTextDecorations(new TextDecorationCollection(list));
+                });
             }
         }
 
-        private void Underline(int startOffset, int length, Color color)
+        private static Media.Brush BrushFor(Severity sev) => sev switch
         {
-            ChangeLinePart(startOffset, startOffset + length, (el) =>
-            {
-                el.TextRunProperties.SetForegroundBrush(new SolidColorBrush(color));
-                var deco = el.TextRunProperties.TextDecorations ?? new TextDecorationCollection();
-                deco = deco.Clone();
-                deco.Add(TextDecorations.Underline[0]);
-                el.TextRunProperties.SetTextDecorations(deco);
-            });
-        }
+            Severity.Error => new Media.SolidColorBrush(Media.Color.FromRgb(0xE0, 0x5A, 0x4A)),
+            Severity.Warning => new Media.SolidColorBrush(Media.Color.FromRgb(0xD7, 0x91, 0x00)),
+            _ => new Media.SolidColorBrush(Media.Color.FromRgb(0x2A, 0x88, 0xD8)),
+        };
     }
 }

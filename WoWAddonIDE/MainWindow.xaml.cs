@@ -2,13 +2,15 @@
 using ICSharpCode.AvalonEdit.Editing;
 using ICSharpCode.AvalonEdit.Highlighting;
 using LibGit2Sharp;
-using Microsoft.VisualBasic; // used for Interaction.InputBox
+using Microsoft.VisualBasic;
 using Microsoft.Win32;
 using Newtonsoft.Json;
 using Octokit;
 using Ookii.Dialogs.Wpf;
 using System;
 using System.Collections.Generic;
+using WinForms = System.Windows.Forms;
+using System.Globalization;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
@@ -26,7 +28,7 @@ using System.Xml.Linq;
 using WoWAddonIDE.Models;
 using WoWAddonIDE.Services;
 using WoWAddonIDE.Windows;
-using Application = System.Windows.Application;
+using MediaColor = System.Windows.Media.Color;
 
 namespace WoWAddonIDE
 {
@@ -142,6 +144,150 @@ namespace WoWAddonIDE
             catch { GitBranchText.Text = ""; }
         }
 
+        private void WireWowColorClick(ICSharpCode.AvalonEdit.TextEditor editor)
+        {
+            // Listen to the bubbling custom event from swatches
+            editor.TextArea.TextView.AddHandler(
+                WoWAddonIDE.Services.WowColorInlineGenerator.ColorSwatchClickedEvent,
+                new RoutedEventHandler((s, e) =>
+                {
+                    // IMPORTANT: use OriginalSource (the Border swatch), not Source (TextView)
+                    if (e.OriginalSource is not FrameworkElement fe) return;
+                    if (fe.Tag is not int start) return;                  // start offset of "|cAARRGGBB"
+                    if (start + 10 > editor.Document.TextLength) return;  // "|c" + 8 hex
+
+                    string hex = editor.Document.GetText(start + 2, 8);   // read AARRGGBB
+                    if (!uint.TryParse(hex, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var argb)) return;
+
+                    var current = MediaColor.FromArgb(
+                        (byte)((argb >> 24) & 0xFF),
+                        (byte)((argb >> 16) & 0xFF),
+                        (byte)((argb >> 8) & 0xFF),
+                        (byte)(argb & 0xFF));
+
+                    // Your picker takes the starting color in its ctor
+                    var picker = new WoWAddonIDE.Windows.ColorPickerWindow(current) { Owner = this };
+                    if (picker.ShowDialog() == true)
+                    {
+                        var chosen = picker.SelectedColor; // MediaColor
+                        string newHex = $"{chosen.A:X2}{chosen.R:X2}{chosen.G:X2}{chosen.B:X2}";
+                        editor.Document.Replace(start, 10, "|c" + newHex);
+
+                        RefreshColorSwatches(editor.Text);
+                        Status($"Color updated to #{newHex}");
+                    }
+
+                    e.Handled = true;
+                }),
+                /* handledEventsToo */ true
+            );
+        }
+
+        // Find a WoW color code enclosing the given offset.
+        // Returns start of the "|c" and the 8-digit AARRGGBB hex.
+        private static bool TryGetWowColorAtOffset(string text, int offset, out int prefixStart, out string argbHex)
+        {
+            prefixStart = -1; argbHex = "";
+            if (string.IsNullOrEmpty(text)) return false;
+
+            // Find the last "|c" before/at the click
+            int probe = Math.Min(Math.Max(offset, 0), text.Length);
+            int cIdx = text.LastIndexOf("|c", probe, StringComparison.Ordinal);
+            if (cIdx < 0 || cIdx + 10 > text.Length) return false;   // "|c" + 8 hex chars
+
+            string hex = text.Substring(cIdx + 2, 8);
+            if (!IsHex8(hex)) return false;
+
+            // Make sure there isn't a closing |r before the click (i.e. we’re still inside)
+            int rIdx = text.IndexOf("|r", cIdx + 10, StringComparison.Ordinal);
+            if (rIdx != -1 && offset > rIdx) return false;
+
+            prefixStart = cIdx;
+            argbHex = hex.ToUpperInvariant();
+            return true;
+        }
+
+        private static bool IsHex8(string s)
+        {
+            if (s == null || s.Length != 8) return false;
+            for (int i = 0; i < 8; i++)
+            {
+                char c = s[i];
+                bool ok = (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+                if (!ok) return false;
+            }
+            return true;
+        }
+
+        // Simple color picker (WinForms) — add a reference to System.Windows.Forms
+        private static System.Windows.Media.Color? PickColor(System.Windows.Media.Color initial)
+        {
+            var dlg = new System.Windows.Forms.ColorDialog
+            {
+                FullOpen = true,
+                AllowFullOpen = true,
+                AnyColor = true,
+                Color = System.Drawing.Color.FromArgb(initial.A, initial.R, initial.G, initial.B)
+            };
+            var res = dlg.ShowDialog();
+            if (res == System.Windows.Forms.DialogResult.OK)
+            {
+                var c = dlg.Color;
+                return System.Windows.Media.Color.FromArgb((byte)c.A, (byte)c.R, (byte)c.G, (byte)c.B);
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// If the mouse is within a WoW color span (|cAARRGGBB ... |r),
+        /// returns the index where the 8-digit hex starts (right after "|c").
+        /// </summary>
+        private static bool TryGetWowColorHexAt(string text, int offset, out int hexStart)
+        {
+            hexStart = -1;
+            if (string.IsNullOrEmpty(text)) return false;
+
+            // Look backwards a bit for "|c"
+            int probeStart = Math.Max(0, offset - 16);
+            int pipeIdx = text.LastIndexOf("|c", offset >= 1 ? offset - 1 : 0,
+                                           (offset >= 1 ? offset - 1 : 0) - probeStart + 1,
+                                           StringComparison.Ordinal);
+            if (pipeIdx < 0) return false;
+
+            int h = pipeIdx + 2; // start of the 8 hex digits
+            if (h + 8 > text.Length) return false;
+
+            // Ensure the 8 chars are hex
+            for (int i = 0; i < 8; i++)
+            {
+                char ch = text[h + i];
+                if (!Uri.IsHexDigit(ch)) return false;
+            }
+
+            // Ensure the click offset is actually inside this colored span (before the matching |r)
+            int rIdx = text.IndexOf("|r", h + 8, StringComparison.Ordinal);
+            if (rIdx < 0) return false;
+
+            if (offset < pipeIdx || offset > rIdx) return false;
+
+            hexStart = h;
+            return true;
+        }
+
+        private static bool TryParseARGB(string hex, out byte A, out byte R, out byte G, out byte B)
+        {
+            A = R = G = B = 0;
+            if (hex?.Length != 8) return false;
+            try
+            {
+                A = byte.Parse(hex.Substring(0, 2), NumberStyles.HexNumber);
+                R = byte.Parse(hex.Substring(2, 2), NumberStyles.HexNumber);
+                G = byte.Parse(hex.Substring(4, 2), NumberStyles.HexNumber);
+                B = byte.Parse(hex.Substring(6, 2), NumberStyles.HexNumber);
+                return true;
+            }
+            catch { return false; }
+        }
 
         private void GitBlameActive_Click(object sender, RoutedEventArgs e)
         {
@@ -1061,7 +1207,7 @@ print(ADDON_NAME .. ' loaded!')
                 if (editor != null)
                 {
                     // Set editor options based on settings
-                    editor.FontFamily = new FontFamily(ThemeManager.Settings.EditorFontFamily);
+                    editor.FontFamily = new System.Windows.Media.FontFamily(ThemeManager.Settings.EditorFontFamily);
                     editor.FontSize = ThemeManager.Settings.EditorFontSize;
                     editor.Options.IndentationSize = ThemeManager.Settings.EditorTabSize;
                     editor.WordWrap = ThemeManager.Settings.EditorWordWrap;
@@ -1179,11 +1325,31 @@ print(ADDON_NAME .. ' loaded!')
 
             void AddDir(TreeViewItem parent, string dir)
             {
-                foreach (var sub in Directory.GetDirectories(dir).OrderBy(d => d, StringComparer.OrdinalIgnoreCase))
+                IEnumerable<string> subdirs;
+                try { subdirs = Directory.GetDirectories(dir); }
+                catch { return; }
+
+                foreach (var sub in subdirs.OrderBy(d => d, StringComparer.OrdinalIgnoreCase))
                 {
+                    var name = Path.GetFileName(sub);
+
+                    // Hide version-control / IDE folders
+                    if (name.Equals(".git", StringComparison.OrdinalIgnoreCase) ||
+                        name.Equals(".vs", StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    // Also skip hidden/system directories just in case
+                    try
+                    {
+                        var di = new DirectoryInfo(sub);
+                        if ((di.Attributes & (FileAttributes.Hidden | FileAttributes.System)) != 0)
+                            continue;
+                    }
+                    catch { /* ignore attribute read issues */ }
+
                     var node = new TreeViewItem
                     {
-                        Header = Path.GetFileName(sub),
+                        Header = name,
                         Tag = sub,
                         IsExpanded = false
                     };
@@ -1191,16 +1357,22 @@ print(ADDON_NAME .. ' loaded!')
                     parent.Items.Add(node);
                 }
 
-                foreach (var file in Directory.GetFiles(dir).OrderBy(f => f, StringComparer.OrdinalIgnoreCase))
-                {
-                    // Skip the primary TOC we already inserted at the top
-                    if (primaryToc != null &&
-                        string.Equals(Path.GetFullPath(file), primaryToc, StringComparison.OrdinalIgnoreCase))
-                        continue;
+                IEnumerable<string> files;
+                try { files = Directory.GetFiles(dir); }
+                catch { return; }
 
-                    // Hide images (optional)
+                foreach (var file in files.OrderBy(f => f, StringComparer.OrdinalIgnoreCase))
+                {
                     var ext = Path.GetExtension(file).ToLowerInvariant();
+
+                    // (existing behavior) hide images if you want
                     if (ext is ".tga" or ".png" or ".jpg") continue;
+
+                    // Optionally hide Git dotfiles (uncomment if desired)
+                    // var fname = Path.GetFileName(file);
+                    // if (fname.Equals(".gitignore", StringComparison.OrdinalIgnoreCase) ||
+                    //     fname.Equals(".gitattributes", StringComparison.OrdinalIgnoreCase))
+                    //     continue;
 
                     parent.Items.Add(new TreeViewItem
                     {
@@ -1257,7 +1429,7 @@ print(ADDON_NAME .. ' loaded!')
                 }
             }
 
-            var editor = new TextEditor
+            var editor = new ICSharpCode.AvalonEdit.TextEditor
             {
                 ShowLineNumbers = true,
                 FontFamily = new System.Windows.Media.FontFamily("Consolas"),
@@ -1265,12 +1437,16 @@ print(ADDON_NAME .. ' loaded!')
                 HorizontalScrollBarVisibility = ScrollBarVisibility.Auto
             };
 
+            // Apply app/editor theme and common options
             ThemeManager.ApplyToEditor(editor);
-
-            // QoL
             editor.Options.HighlightCurrentLine = true;
             editor.Options.IndentationSize = 4;
             editor.Options.ConvertTabsToSpaces = true;
+
+            // WoW color chips + click-to-pick
+            editor.TextArea.TextView.ElementGenerators.Add(new WoWAddonIDE.Services.WowColorInlineGenerator());
+            WireWowColorClick(editor);
+
 
             // Syntax highlighting
             if (path.EndsWith(".lua", StringComparison.OrdinalIgnoreCase))
@@ -1290,8 +1466,8 @@ print(ADDON_NAME .. ' loaded!')
                 RetintHighlighting(def, IsDarkThemeActive());
             }
 
-            // Load file
-            editor.Text = File.ReadAllText(path);
+            // Load file text
+            editor.Text = System.IO.File.ReadAllText(path);
 
             // Inline diagnostics (Lua only)
             if (path.EndsWith(".lua", StringComparison.OrdinalIgnoreCase))
@@ -1339,8 +1515,8 @@ print(ADDON_NAME .. ' loaded!')
                 if (_apiDocs.TryGetValue(word, out var entry))
                 {
                     var text = $"{entry.name}\n{entry.signature}\n{entry.description}";
-                    var tt = new ToolTip { Content = text };
-                    ToolTipService.SetShowDuration(tt, 20000);
+                    var tt = new System.Windows.Controls.ToolTip { Content = text };
+                    System.Windows.Controls.ToolTipService.SetShowDuration(tt, 20000);
                     editor.ToolTip = tt;
                 }
                 else
@@ -1350,13 +1526,18 @@ print(ADDON_NAME .. ' loaded!')
             };
             tv.MouseHoverStopped += (s, e) => { editor.ToolTip = null; };
 
-            // Track changes + outline refresh
+            // Track changes: mark dirty, refresh outline, refresh color swatches
             editor.TextChanged += (s, e) =>
             {
                 MarkTabDirty(path, true);
                 if (path.EndsWith(".lua", StringComparison.OrdinalIgnoreCase))
                     RefreshOutlineForActive();
+
+                RefreshColorSwatches(editor.Text); // keep swatch panel in sync
             };
+
+            // Initial swatch build on open
+            RefreshColorSwatches(editor.Text);
 
             // Editor commands
             editor.InputBindings.Add(new KeyBinding(
@@ -1367,11 +1548,14 @@ print(ADDON_NAME .. ' loaded!')
                 new RelayCommand(_ => DuplicateLine(editor)),
                 new KeyGesture(Key.D, ModifierKeys.Control))); // Ctrl+D
 
-            // F12: Go to Definition
             editor.InputBindings.Add(new KeyBinding(
                 new RelayCommand(_ => GoToDefinition(editor)),
                 new KeyGesture(Key.F12)));
 
+            // Context menu
+            AttachEditorContextMenu(editor, path);
+
+            // Create and select tab
             var tabItem = new TabItem
             {
                 Header = System.IO.Path.GetFileName(path),
@@ -1382,13 +1566,38 @@ print(ADDON_NAME .. ' loaded!')
             EditorTabs.Items.Add(tabItem);
             EditorTabs.SelectedItem = tabItem;
 
-            // When opening a TOC, validate and log issues
+            // Validate TOC when opening .toc
             if (path.EndsWith(".toc", StringComparison.OrdinalIgnoreCase))
                 foreach (var m in ValidateToc(path)) Log(m);
 
             RefreshOutlineForActive();
         }
 
+
+        private void RefreshColorSwatches(string text)
+        {
+            var colors = ColorSwatchExtractor.BuildSwatches(text);
+
+            if (SwatchWrap != null)
+            {
+                SwatchWrap.Children.Clear();
+                foreach (var c in colors)
+                {
+                    SwatchWrap.Children.Add(new System.Windows.Controls.Border
+                    {
+                        Width = 18,
+                        Height = 18,
+                        Margin = new Thickness(2),
+                        Background = new System.Windows.Media.SolidColorBrush(
+                            System.Windows.Media.Color.FromArgb(c.A, c.R, c.G, c.B)),
+                        BorderBrush = System.Windows.Media.Brushes.DimGray,
+                        BorderThickness = new Thickness(1),
+                        ToolTip = $"#{c.A:X2}{c.R:X2}{c.G:X2}{c.B:X2}"
+                    });
+                }
+            }
+        }
+        
         // ---------------------- Go to Definition ----------------------
         private void GoToDefinition(TextEditor ed)
         {
@@ -1899,6 +2108,42 @@ print(ADDON_NAME .. ' loaded!')
             }
         }
 
+        private string? SelectedTreePath()
+        {
+            if (ProjectTree.SelectedItem is TreeViewItem tvi && tvi.Tag is string p) return p;
+            return null;
+        }
+
+        private void ProjectTree_Open_Click(object s, RoutedEventArgs e)
+        {
+            var p = SelectedTreePath(); if (p == null) return;
+            if (File.Exists(p)) OpenFileInTab(p);
+            else if (Directory.Exists(p)) Process.Start("explorer.exe", p);
+        }
+
+        private void ProjectTree_Reveal_Click(object s, RoutedEventArgs e)
+        {
+            var p = SelectedTreePath(); if (p == null) return;
+            if (File.Exists(p)) Process.Start("explorer.exe", $"/select,\"{p}\"");
+            else if (Directory.Exists(p)) Process.Start("explorer.exe", p);
+        }
+
+        private void ProjectTree_CopyPath_Click(object s, RoutedEventArgs e)
+        {
+            var p = SelectedTreePath(); if (p == null) return;
+            try { System.Windows.Clipboard.SetText(p); } catch { }
+        }
+
+        private void ProjectTree_CopyRelPath_Click(object s, RoutedEventArgs e)
+        {
+            var p = SelectedTreePath(); if (p == null) return;
+            try
+            {
+                var rel = (_project != null) ? Path.GetRelativePath(_project.RootPath, p) : p;
+                System.Windows.Clipboard.SetText(rel);
+            }
+            catch { }
+        }
         private void GoToSymbol_Click(object sender, RoutedEventArgs e)
         {
             if (_project == null) return;
@@ -1999,15 +2244,128 @@ print(ADDON_NAME .. ' loaded!')
 
         // Toolbar buttons already point to existing handlers:
         // Save_Click, SaveAll_Click, Build_Click, BuildZip_Click are defined above.
-    }
 
-    // Small command helper for keybindings
-    public class RelayCommand : ICommand
-    {
-        private readonly Action<object?> _exec; private readonly Func<object?, bool>? _can;
-        public RelayCommand(Action<object?> exec, Func<object?, bool>? can = null) { _exec = exec; _can = can; }
-        public bool CanExecute(object? p) => _can?.Invoke(p) ?? true;
-        public void Execute(object? p) => _exec(p);
-        public event EventHandler? CanExecuteChanged { add { } remove { } }
+
+        // === Editor context menu ===
+        private void AttachEditorContextMenu(ICSharpCode.AvalonEdit.TextEditor ed, string filePath)
+        {
+            var cm = new System.Windows.Controls.ContextMenu();
+
+            // Local helper to make menu items
+            MenuItem MI(string header, RoutedEventHandler click, string gesture = null)
+            {
+                var m = new MenuItem { Header = header };
+                if (!string.IsNullOrWhiteSpace(gesture)) m.InputGestureText = gesture;
+                m.Click += click;
+                return m;
+            }
+
+            // Undo/Redo
+            var miUndo = MI("Undo", (s, e) => ed.Undo(), "Ctrl+Z");
+            var miRedo = MI("Redo", (s, e) => ed.Redo(), "Ctrl+Y");
+            cm.Items.Add(miUndo);
+            cm.Items.Add(miRedo);
+            cm.Items.Add(new Separator());
+
+            // Cut/Copy/Paste/Select All
+            var miCut = MI("Cut", (s, e) => ed.Cut(), "Ctrl+X");
+            var miCopy = MI("Copy", (s, e) => ed.Copy(), "Ctrl+C");
+            var miPaste = MI("Paste", (s, e) => ed.Paste(), "Ctrl+V");
+            var miSelAll = MI("Select All", (s, e) => ed.SelectAll(), "Ctrl+A");
+
+            cm.Items.Add(miCut);
+            cm.Items.Add(miCopy);
+            cm.Items.Add(miPaste);
+            cm.Items.Add(new Separator());
+            cm.Items.Add(miSelAll);
+            cm.Items.Add(new Separator());
+
+            // IDE actions
+            cm.Items.Add(MI("Go to Definition", (s, e) => GoToDefinition(ed), "F12"));
+            cm.Items.Add(MI("Find…", (s, e) => Find_Click(this, new RoutedEventArgs()), "Ctrl+F"));
+            cm.Items.Add(MI("Find in Files…", (s, e) => FindInFiles_Click(this, new RoutedEventArgs()), "Ctrl+Shift+F"));
+            cm.Items.Add(new Separator());
+
+            cm.Items.Add(MI("Toggle Comment", (s, e) => ToggleComment(ed), "Ctrl+/"));
+            cm.Items.Add(MI("Duplicate Line", (s, e) => DuplicateLine(ed), "Ctrl+D"));
+            cm.Items.Add(new Separator());
+
+            // View toggles
+            cm.Items.Add(MI("Toggle Word Wrap", (s, e) =>
+            {
+                ed.WordWrap = !ed.WordWrap;
+                Status("Word wrap: " + (ed.WordWrap ? "ON" : "OFF"));
+            }));
+
+            cm.Items.Add(MI("Toggle Invisibles", (s, e) =>
+            {
+                bool flag = !ed.Options.ShowSpaces;
+                ed.Options.ShowSpaces = flag;
+                ed.Options.ShowTabs = flag;
+                ed.Options.ShowEndOfLine = flag;
+                Status("Invisibles: " + (flag ? "ON" : "OFF"));
+            }));
+
+            cm.Items.Add(new Separator());
+
+            // File ops
+            cm.Items.Add(MI("Open Containing Folder", (s, e) =>
+            {
+                try
+                {
+                    if (System.IO.File.Exists(filePath))
+                        Process.Start("explorer.exe", $"/select,\"{filePath}\"");
+                    else
+                        Process.Start("explorer.exe", System.IO.Path.GetDirectoryName(filePath) ?? ".");
+                }
+                catch { }
+            }));
+
+            cm.Items.Add(MI("Copy Full Path", (s, e) =>
+            {
+                try { System.Windows.Clipboard.SetText(filePath); } catch { }
+            }));
+
+            cm.Items.Add(MI("Copy Relative Path", (s, e) =>
+            {
+                try
+                {
+                    var rel = (_project != null)
+                        ? System.IO.Path.GetRelativePath(_project.RootPath, filePath)
+                        : filePath;
+                    System.Windows.Clipboard.SetText(rel);
+                }
+                catch { }
+            }));
+
+            // Enable/disable dynamically on open
+            cm.Opened += (s, e) =>
+            {
+                bool hasSel = !string.IsNullOrEmpty(ed.SelectedText);
+                miCut.IsEnabled = hasSel;
+                miCopy.IsEnabled = hasSel;
+
+                // ✅ Correct place for undo/redo state
+                var stack = ed.Document?.UndoStack;
+                miUndo.IsEnabled = stack?.CanUndo ?? false;
+                miRedo.IsEnabled = stack?.CanRedo ?? false;
+
+                try { miPaste.IsEnabled = System.Windows.Clipboard.ContainsText(); }
+                catch { miPaste.IsEnabled = true; }
+            };
+
+            ed.ContextMenu = cm;
+        }
+
+
+        // Small command helper for keybindings
+        public class RelayCommand : ICommand
+        {
+            private readonly Action<object?> _exec; private readonly Func<object?, bool>? _can;
+            public RelayCommand(Action<object?> exec, Func<object?, bool>? can = null) { _exec = exec; _can = can; }
+            public bool CanExecute(object? p) => _can?.Invoke(p) ?? true;
+            public void Execute(object? p) => _exec(p);
+            public event EventHandler? CanExecuteChanged { add { } remove { } }
+        }
     }
 }
