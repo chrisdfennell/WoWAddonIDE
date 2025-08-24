@@ -4,10 +4,29 @@
              StartupUri="MainWindow.xaml">
     <Application.Resources>
         <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <!-- Base contains styles and brush *keys*; no colors here -->
-                <ResourceDictionary Source="Themes/Base.xaml"/>
-            </ResourceDictionary.MergedDictionaries>
+            <!-- Base colors (light, fixed) -->
+            <Color x:Key="Color.Background">#FFFDFDFD</Color>
+            <Color x:Key="Color.Foreground">#FF1E1E1E</Color>
+            <Color x:Key="Color.Border">#FFCCCCCC</Color>
+            <Color x:Key="Color.EditorLine">#FFE5E5E5</Color>
+            <Color x:Key="Color.EditorSelection">#FFD0E7FF</Color>
+            <Color x:Key="Color.SelectionBorder">#FF86A5C6</Color>
+
+            <!-- App brushes (names your code already uses) -->
+            <SolidColorBrush x:Key="App.BackgroundBrush" Color="{StaticResource Color.Background}"/>
+            <SolidColorBrush x:Key="App.ForegroundBrush" Color="{StaticResource Color.Foreground}"/>
+            <SolidColorBrush x:Key="Brush.Window"       Color="{StaticResource Color.Background}"/>
+            <SolidColorBrush x:Key="Brush.Border"       Color="{StaticResource Color.Border}"/>
+
+            <!-- Editor brushes used by ThemeManager.ApplyToEditor -->
+            <SolidColorBrush x:Key="Brush.EditorBG"        Color="#FFFFFFFF"/>
+            <SolidColorBrush x:Key="Brush.EditorFG"        Color="#FF000000"/>
+            <SolidColorBrush x:Key="Brush.EditorLine"      Color="{StaticResource Color.EditorLine}"/>
+            <SolidColorBrush x:Key="Brush.EditorCurrentLineBG" Color="#FFF7F7F7"/>
+            <SolidColorBrush x:Key="Brush.EditorSelection" Color="{StaticResource Color.EditorSelection}"/>
+            <Pen x:Key="Brush.SelectionBorder" 
+             Thickness="1"
+             Brush="#FF86A5C6"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

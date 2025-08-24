@@ -80,6 +80,11 @@ namespace WoWAddonIDE
                 ? "AddOns Path: (not set) — Tools > Settings..."
                 : $"AddOns Path: {_settings.AddOnsPath}";
 
+            this.InputBindings.Add(new KeyBinding(
+                new RelayCommand(_ => OpenCommandPalette_Click(this, new RoutedEventArgs())),
+                new KeyGesture(Key.P, ModifierKeys.Control | ModifierKeys.Shift)));
+
+
             // Sanity logs
             if (_completion.LuaHighlight == null && HighlightingManager.Instance.GetDefinition("Lua") == null)
                 Log("Lua highlight NOT available — check Resources/Lua.xshd (Build Action: Resource) and XML.");
