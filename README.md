@@ -50,14 +50,14 @@
 ## 📸 Screenshots
 
 <p align="center">
-  <img src="Docs/screenshot-main.png" alt="Main editor" width="900"/><br/>
+  <img src="https://github.com/chrisdfennell/WoWAddonIDE/blob/master/WoWAddonIDE/Docs/screenshot-main.png" alt="Main editor" width="900"/><br/>
   <em>Main editor with Lua highlighting, outline, and completion.</em>
 </p>
 
 <p align="center">
-  <img src="Docs/screenshot-help.png" alt="Help window" width="420"/>
+  <img src="https://github.com/chrisdfennell/WoWAddonIDE/blob/master/WoWAddonIDE/Docs/screenshot-main.png" alt="Help window" width="420"/>
   &nbsp;&nbsp;
-  <img src="Docs/screenshot-settings.png" alt="Settings window" width="420"/>
+  <img src="https://github.com/chrisdfennell/WoWAddonIDE/blob/master/WoWAddonIDE/Docs/screenshot-settings.png" alt="Settings window" width="420"/>
 </p>
 
 ---
