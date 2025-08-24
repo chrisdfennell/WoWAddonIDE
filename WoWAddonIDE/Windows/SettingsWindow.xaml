@@ -1,39 +1,119 @@
 ﻿<Window x:Class="WoWAddonIDE.Windows.SettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Settings" Height="260" Width="640" WindowStartupLocation="CenterOwner">
-    <Grid Margin="12">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="Auto"/>
-        </Grid.ColumnDefinitions>
+        Title="Settings" Width="760" Height="419"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="10">
+        <StackPanel Orientation="Vertical" Margin="2" >
 
-        <TextBlock Grid.Row="0" Grid.Column="0" Text="AddOns Path:" VerticalAlignment="Center" Margin="0,0,8,0"/>
-        <TextBox  x:Name="AddOns" Grid.Row="0" Grid.Column="1" Margin="0,0,8,8"/>
-        <Button   Grid.Row="0" Grid.Column="2" Content="Browse..." Margin="0,0,0,8" Click="BrowseAddOns_Click"/>
+            <!-- General -->
+            <GroupBox Header="General" Margin="0,0,0,10">
+                <Grid Margin="8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="10"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="10"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="150"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-        <TextBlock Grid.Row="1" Grid.Column="0" Text="Staging Path:" VerticalAlignment="Center" Margin="0,0,8,0"/>
-        <TextBox  x:Name="Staging" Grid.Row="1" Grid.Column="1" Margin="0,0,8,8"/>
-        <Button   Grid.Row="1" Grid.Column="2" Content="Browse..." Margin="0,0,0,8" Click="BrowseStaging_Click"/>
+                    <!-- AddOns Path -->
+                    <TextBlock Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Text="AddOns Path:"/>
+                    <TextBox   x:Name="AddOnsPathBox"
+                               Grid.Row="0" Grid.Column="1" Margin="6,0,6,0"
+                               Text="{Binding AddOnsPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    <Button    Grid.Row="0" Grid.Column="2" Width="90" Margin="0,0,0,0" Content="Browse..."
+                               Click="BrowseAddOns_Click"/>
 
-        <CheckBox x:Name="AllowInside" Grid.Row="2" Grid.ColumnSpan="3" Content="Allow building when project is already inside AddOns (NOT recommended)" Margin="0,0,0,8"/>
+                    <!-- Project Root -->
+                    <TextBlock Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" Text="Project Root (optional):"/>
+                    <TextBox   x:Name="ProjectRootBox"
+                               Grid.Row="2" Grid.Column="1" Margin="6,0,6,0"
+                               Text="{Binding DefaultProjectRoot, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    <Button    Grid.Row="2" Grid.Column="2" Width="90" Content="Browse..."
+                               Click="BrowseProjectRoot_Click"/>
 
-        <StackPanel Grid.Row="3" Grid.ColumnSpan="3">
-            <TextBlock Text="Package Excludes (extensions, comma/space separated):" Margin="0,0,0,4"/>
-            <TextBox x:Name="Excludes"/>
+                    <!-- Open folder after build -->
+                    <CheckBox  Grid.Row="4" Grid.Column="1" Content="Open AddOns folder after build"
+                               IsChecked="{Binding OpenAddOnsAfterBuild, Mode=TwoWay}"/>
+                </Grid>
+            </GroupBox>
+
+            <!-- Editor -->
+            <GroupBox Header="Editor (Lua)" Margin="0,0,0,10">
+                <Grid Margin="8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="8"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="8"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="150"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="150"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Font family / size -->
+                    <TextBlock Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Text="Font Family:"/>
+                    <ComboBox  x:Name="FontFamilyBox"
+                               Grid.Row="0" Grid.Column="1" Margin="6,0,20,0"
+                               IsEditable="True"
+                               Text="{Binding EditorFontFamily, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                    <TextBlock Grid.Row="0" Grid.Column="2" VerticalAlignment="Center" Text="Font Size:"/>
+                    <ComboBox  x:Name="FontSizeBox"
+                               Grid.Row="0" Grid.Column="3" Margin="6,0,0,0"
+                               IsEditable="True"
+                               Text="{Binding EditorFontSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                    <!-- Tab size -->
+                    <TextBlock Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" Text="Tab Size:"/>
+                    <ComboBox  x:Name="TabSizeBox"
+                               Grid.Row="2" Grid.Column="1" Margin="6,0,20,0"
+                               IsEditable="True"
+                               Text="{Binding EditorTabSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                    <!-- toggles -->
+                    <CheckBox Grid.Row="4" Grid.Column="1" Content="Word Wrap"
+                              IsChecked="{Binding EditorWordWrap, Mode=TwoWay}"/>
+                    <CheckBox Grid.Row="4" Grid.Column="3" Content="Show invisibles"
+                              IsChecked="{Binding EditorShowInvisibles, Mode=TwoWay}"/>
+                </Grid>
+            </GroupBox>
+
+            <!-- API Docs -->
+            <GroupBox Header="API Docs" Margin="0,0,0,10">
+                <Grid Margin="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="150"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="WoW API JSON:"/>
+                    <TextBox   x:Name="ApiDocsPathBox"
+                               Grid.Column="1" Margin="6,0,6,0"
+                               Text="{Binding ApiDocsPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    <Button    Grid.Column="2" Width="90" Content="Browse..." Click="BrowseApiDocs_Click"/>
+                </Grid>
+            </GroupBox>
+
+            <!-- Buttons -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" >
+                <Button Content="Restore Defaults" Margin="0,0,8,0" Click="RestoreDefaults_Click"/>
+                <Button Content="Apply"            Margin="0,0,8,0" Click="Apply_Click"/>
+                <Button Content="OK"               Margin="0,0,8,0" IsDefault="True" Click="OK_Click"/>
+                <Button Content="Cancel"                       IsCancel="True"/>
+            </StackPanel>
+
         </StackPanel>
-
-        <StackPanel Grid.Row="4" Grid.ColumnSpan="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
-            <Button Content="OK" Width="100" Margin="0,0,8,0" Click="Ok_Click"/>
-            <Button Content="Cancel" Width="100" Click="Cancel_Click"/>
-        </StackPanel>
-    </Grid>
+    </ScrollViewer>
 </Window>

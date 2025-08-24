@@ -3,6 +3,7 @@ using ICSharpCode.AvalonEdit.Editing;
 using ICSharpCode.AvalonEdit.Highlighting;
 using LibGit2Sharp;
 using Microsoft.VisualBasic; // used for Interaction.InputBox
+using Microsoft.Win32;
 using Newtonsoft.Json;
 using Octokit;
 using Ookii.Dialogs.Wpf;
@@ -12,19 +13,19 @@ using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Xml;
 using System.Xml.Linq;
 using WoWAddonIDE.Models;
 using WoWAddonIDE.Services;
 using WoWAddonIDE.Windows;
-using Microsoft.Win32;
-using System.Net.Http;
 using Application = System.Windows.Application;
 
 namespace WoWAddonIDE
@@ -58,6 +59,11 @@ namespace WoWAddonIDE
                 "WoWAddonIDE", "settings.json");
 
             _settings = LoadSettings();
+
+            this.InputBindings.Add(
+                new KeyBinding(
+                    new RelayCommand(_ => OpenHelpWindow()),
+                    new KeyGesture(Key.F1)));
 
             // Initialize completion/highlighting (loads wow_api.json for completion)
             _completion = new CompletionService();
@@ -230,6 +236,16 @@ namespace WoWAddonIDE
             Status($"Theme: {next}");
         }
 
+        private void About_Click(object sender, RoutedEventArgs e)
+        {
+            new WoWAddonIDE.Windows.AboutWindow { Owner = this }.ShowDialog();
+        }
+
+        private void Help_Click(object sender, RoutedEventArgs e)
+        {
+            OpenHelpWindow();
+        }
+
         // ---- Navigation helpers ----
         private void Toolbar_GoToDef_Click(object sender, RoutedEventArgs e)
         {
@@ -331,7 +347,7 @@ namespace WoWAddonIDE
         {
             // Reload the embedded default Resources/wow_api.json
             LoadApiDocs();
-            _completion.SetApiDocs(_apiDocs.Keys);
+            _completion.SetApiNames(_apiDocs.Keys);
             Status($"API docs reloaded: {_apiDocs.Count} entries.");
             Log("API docs reloaded from embedded resource.");
         }
@@ -392,7 +408,7 @@ namespace WoWAddonIDE
                     _apiDocs[e.name] = e; // overwrite/merge by name
             }
 
-            _completion.SetApiDocs(_apiDocs.Keys);
+            _completion.SetApiNames(_apiDocs.Keys);
             Status($"API docs merged: {before} → {_apiDocs.Count}");
         }
 
@@ -1025,17 +1041,79 @@ print(ADDON_NAME .. ' loaded!')
 
         // ========================= Tools Menu ========================
 
-        private void Settings_Click(object sender, RoutedEventArgs e)
+        public void Settings_Click(object? sender, RoutedEventArgs e)
         {
-            var dlg = new SettingsWindow(_settings) { Owner = this };
+            var dlg = new SettingsWindow(ThemeManager.Settings) { Owner = this };
             if (dlg.ShowDialog() == true)
             {
-                _settings = dlg.Settings;
-                SaveSettings();
-                PathText.Text = $"AddOns Path: {_settings.AddOnsPath}";
-                Log("Settings saved.");
+                // SettingsWindow already persisted + applied theme.
+                // Optionally re-apply editor visuals to open editors:
+                ReapplyEditorThemeToOpenTabs();
             }
         }
+
+        private void ReapplyEditorThemeToOpenTabs()
+        {
+            // If you host AvalonEdit in tabs, re-scan and apply:
+            foreach (var tab in EditorTabs.Items.Cast<TabItem>())
+            {
+                var editor = FindDescendant<ICSharpCode.AvalonEdit.TextEditor>(tab);
+                if (editor != null)
+                {
+                    // Set editor options based on settings
+                    editor.FontFamily = new FontFamily(ThemeManager.Settings.EditorFontFamily);
+                    editor.FontSize = ThemeManager.Settings.EditorFontSize;
+                    editor.Options.IndentationSize = ThemeManager.Settings.EditorTabSize;
+                    editor.WordWrap = ThemeManager.Settings.EditorWordWrap;
+
+                    // Apply theme brushes (light)
+                    ThemeManager.ApplyToEditor(editor);
+                }
+            }
+        }
+
+        private async void ApiDocsImportFromWow_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var addons = ThemeManager.Settings.AddOnsPath;
+                if (string.IsNullOrWhiteSpace(addons) || !Directory.Exists(addons))
+                {
+                    MessageBox.Show(this,
+                        "AddOns Path is not set or invalid.\n\nTools → Settings → AddOns Path",
+                        "Import WoW API", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                // Optional status UI if you have a StatusText block
+                // StatusText.Text = "Importing WoW API…";
+
+                var entries = await WowApiImporter.ImportFromWowAsync(addons);
+                _completion.SetApiNames(_apiDocs.Keys);
+
+                // StatusText.Text = $"WoW API loaded: {entries.Count} functions.";
+                MessageBox.Show(this, $"Loaded {entries.Count} API entries.",
+                    "WoW API", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, ex.Message, "WoW API Import",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private static T? FindDescendant<T>(DependencyObject root) where T : DependencyObject
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+            {
+                var child = VisualTreeHelper.GetChild(root, i);
+                if (child is T t) return t;
+                var deeper = FindDescendant<T>(child);
+                if (deeper != null) return deeper;
+            }
+            return null;
+        }
+
 
         private void GenerateToc_Click(object sender, RoutedEventArgs e)
         {
@@ -1054,19 +1132,6 @@ print(ADDON_NAME .. ' loaded!')
             File.WriteAllText(tocPath, content);
             Log("Regenerated .toc");
             OpenFileInTab(tocPath);
-        }
-
-        private void About_Click(object sender, RoutedEventArgs e)
-        {
-            MessageBox.Show(this,
-                "WoW Addon IDE (WPF)\n\n" +
-                "• Lua & XML syntax highlighting\n" +
-                "• Autocomplete + parameter hints\n" +
-                "• Hover docs (WoW API)\n" +
-                "• Project explorer + TOC generator\n" +
-                "• Safe Build to AddOns / Build to Folder / Build Zip\n" +
-                "• Find in Files (Ctrl+Shift+F), Outline, Toggle comment (Ctrl+/), Duplicate line (Ctrl+D)\n",
-                "About", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         // ====================== Project Tree / Tabs ======================
@@ -1580,6 +1645,12 @@ print(ADDON_NAME .. ' loaded!')
 
         // ====================== Outline helpers ======================
 
+        private void OpenHelpWindow()
+        {
+            new WoWAddonIDE.Windows.HelpWindow { Owner = this }.ShowDialog();
+        }
+
+        // In MainWindow.xaml.cs
         private void RetintHighlighting(IHighlightingDefinition def, bool dark)
         {
             if (def == null) return;
@@ -1599,14 +1670,49 @@ print(ADDON_NAME .. ' loaded!')
                 }
             }
 
+            // Try to brighten the most common token categories.
+            // (If a category name isn't present in the XSHD, it's simply skipped.)
             if (dark)
             {
-                Set("Comment", 0x6A, 0x99, 0x55);
-                Set("String", 0xCE, 0x91, 0x78);
-                Set("Number", 0xB5, 0xCE, 0xA8);
-                Set("Keyword", 0x56, 0x9C, 0xD6);
+                // DARK THEME — brighter, higher contrast
+                Set("Comment", 0x9E, 0xE8, 0x6C); // light spring green
+                Set("String", 0xFF, 0xC7, 0x80); // bright peach
+                Set("Number", 0xB2, 0xFF, 0x59); // lime-ish
+                Set("Keyword", 0x8A, 0xB4, 0xFF); // bright azure
+                Set("Preprocessor", 0xFF, 0xAB, 0x91); // salmon
+                Set("Type", 0x80, 0xCB, 0xC4); // teal
+                Set("Identifier", 0xE6, 0xEE, 0xFF); // near-white blue
+                Set("Operator", 0xF5, 0x78, 0x5D); // coral
+                Set("Punctuation", 0xC7, 0x92, 0xEA); // purple
+                Set("Method", 0xFF, 0xEA, 0x00); // vivid yellow
+                Set("Property", 0xCF, 0xD8, 0xDC); // light gray
+                Set("Namespace", 0xA7, 0xFF, 0xEB); // mint
+                                                    // Lua-specific (if present in your XSHD)
+                Set("TableKey", 0xFF, 0xD7, 0x00); // gold
+                Set("Boolean", 0x64, 0xFF, 0xDA); // aquamarine
+                Set("Nil", 0xFF, 0x8A, 0x80); // soft red
+            }
+            else
+            {
+                // LIGHT THEME — still brighter, but tuned for light backgrounds
+                Set("Comment", 0x43, 0xA0, 0x47); // rich green
+                Set("String", 0xD8, 0x63, 0x15); // bright orange
+                Set("Number", 0x0D, 0x47, 0xA1); // strong blue
+                Set("Keyword", 0x6A, 0x1B, 0x9A); // vivid violet
+                Set("Preprocessor", 0xC2, 0x21, 0x21); // red
+                Set("Type", 0x00, 0x57, 0x73); // deep teal
+                Set("Identifier", 0x21, 0x21, 0x21); // near-black
+                Set("Operator", 0x88, 0x17, 0x11); // dark coral
+                Set("Punctuation", 0x4A, 0x14, 0x8C); // deep purple
+                Set("Method", 0xE6, 0x6F, 0x00); // amber
+                Set("Property", 0x37, 0x47, 0x4F); // blue-gray
+                Set("Namespace", 0x00, 0x77, 0x5A); // jade
+                Set("TableKey", 0xB7, 0x77, 0x00); // goldenrod
+                Set("Boolean", 0x00, 0x79, 0x6B); // teal
+                Set("Nil", 0xB7, 0x1C, 0x1C); // crimson
             }
         }
+
 
         private void RefreshOutlineForActive()
         {

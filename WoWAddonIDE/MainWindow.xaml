@@ -60,6 +60,7 @@
             <MenuItem Header="_Tools">
                 <MenuItem Header="Git/GitHub _Settings…" Click="GitAuth_Click"/>
                 <Separator/>
+                <MenuItem Header="_Settings…" Click="Settings_Click"/>
                 <MenuItem Header="_Theme" Visibility="Collapsed">
                     <MenuItem Header="_System" Click="ThemeSystem_Click"/>
                     <MenuItem Header="_Light"  Click="ThemeLight_Click"/>
@@ -71,7 +72,10 @@
             </MenuItem>
 
             <MenuItem Header="_Help">
-                <MenuItem Header="_About" Click="About_Click"/>
+                <MenuItem Header="_Help (F1)" Click="Help_Click" InputGestureText="F1"/>
+                <Separator/>
+                <!-- Reuse your existing About handler to avoid duplicates -->
+                <MenuItem Header="_About…" Click="About_Click"/>
             </MenuItem>
         </Menu>
 

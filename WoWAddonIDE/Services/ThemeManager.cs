@@ -1,6 +1,6 @@
-﻿using System;
-using System.Linq;
-using System.Reflection;
+﻿// Services/ThemeManager.cs
+using System;
+using System.Reflection;                 // for reflection on CaretBrush
 using System.Windows;
 using System.Windows.Media;
 using ICSharpCode.AvalonEdit;
@@ -10,70 +10,139 @@ namespace WoWAddonIDE.Services
 {
     public static class ThemeManager
     {
-        // Compatibility shim for old callers – we no longer detect OS theme.
-        public static ThemeMode GetOsTheme() => ThemeMode.Light;
+        // Single live instance other code reads
+        public static IDESettings Settings { get; } = new IDESettings();
 
-        public static IDESettings Settings { get; private set; } = new IDESettings();
-        public static Action? Persist { get; set; }
+        // Persist hook you wire in App.xaml.cs
+        public static Action? Persist;
+
+        // Raised when ApplyTheme changes visuals
         public static event Action? ThemeChanged;
 
-        public static void Initialize(IDESettings settings)
+        // Call once at startup to copy loaded settings into the live instance
+        public static void Initialize(IDESettings loaded)
         {
-            Settings = settings ?? new IDESettings();
-            ApplyLightTheme();   // always light
+            UpdateFrom(loaded);
+            ApplyTheme(Settings.ThemeMode);
         }
 
-        public static void ApplyTheme(ThemeMode _) => ApplyLightTheme(); // keep signature, ignore arg
-
-        private static void ApplyLightTheme()
+        // Copy fields into the live instance (no reference swap)
+        public static void UpdateFrom(IDESettings src)
         {
-            var app = Application.Current.Resources;
+            if (src == null) return;
 
-            // Ensure the expected keys exist (in case App.xaml missed them)
-            app["App.BackgroundBrush"] = app["App.BackgroundBrush"] ?? new SolidColorBrush(Colors.White);
-            app["App.ForegroundBrush"] = app["App.ForegroundBrush"] ?? new SolidColorBrush(Color.FromRgb(30, 30, 30));
-            app["Brush.Window"] = app["Brush.Window"] ?? app["App.BackgroundBrush"];
-            app["Brush.Border"] = app["Brush.Border"] ?? new SolidColorBrush(Color.FromRgb(204, 204, 204));
+            Settings.ThemeMode = src.ThemeMode;
+            Settings.MainWindowWidth = src.MainWindowWidth;
+            Settings.MainWindowHeight = src.MainWindowHeight;
+            Settings.MainWindowMaximized = src.MainWindowMaximized;
 
-            app["Brush.EditorBG"] = app["Brush.EditorBG"] ?? new SolidColorBrush(Colors.White);
-            app["Brush.EditorFG"] = app["Brush.EditorFG"] ?? new SolidColorBrush(Colors.Black);
-            app["Brush.EditorLine"] = app["Brush.EditorLine"] ?? new SolidColorBrush(Color.FromRgb(229, 229, 229));
-            app["Brush.EditorCurrentLineBG"] = app["Brush.EditorCurrentLineBG"] ?? new SolidColorBrush(Color.FromRgb(247, 247, 247));
-            app["Brush.EditorSelection"] = app["Brush.EditorSelection"] ?? new SolidColorBrush(Color.FromRgb(208, 231, 255));
-            app["Brush.SelectionBorder"] = app["Brush.SelectionBorder"] ?? new Pen(new SolidColorBrush(Color.FromRgb(134, 165, 198)), 1);
+            Settings.AddOnsPath = src.AddOnsPath;
+            Settings.StagingPath = src.StagingPath;
+            Settings.LastProjectPath = src.LastProjectPath;
+            Settings.DefaultProjectRoot = src.DefaultProjectRoot;
 
-            // Some global defaults (optional)
-            app["TextElement.Foreground"] = app["App.ForegroundBrush"];
-            app["Window.Background"] = app["Brush.Window"];
+            Settings.PackageExcludes = src.PackageExcludes;
+            Settings.AllowBuildInsideAddOns = src.AllowBuildInsideAddOns;
+            Settings.OpenAddOnsAfterBuild = src.OpenAddOnsAfterBuild;
 
-            Settings.ThemeMode = ThemeMode.Light;  // keep persisted value consistent
-            Persist?.Invoke();
+            Settings.GitUserName = src.GitUserName;
+            Settings.GitUserEmail = src.GitUserEmail;
+            Settings.GitRemoteUrl = src.GitRemoteUrl;
+            Settings.GitHubToken = src.GitHubToken;
+            Settings.GitHubOAuthClientId = src.GitHubOAuthClientId;
+
+            Settings.TabSize = src.TabSize;
+            Settings.ConvertTabsToSpaces = src.ConvertTabsToSpaces;
+            Settings.HighlightCurrentLine = src.HighlightCurrentLine;
+
+            Settings.EditorFontFamily = src.EditorFontFamily;
+            Settings.EditorFontSize = src.EditorFontSize;
+            Settings.EditorWordWrap = src.EditorWordWrap;
+            Settings.EditorShowInvisibles = src.EditorShowInvisibles;
+
+            Settings.ApiDocsPath = src.ApiDocsPath;
+        }
+
+        // If some code still queries “OS theme”
+        public static ThemeMode GetOsTheme() => ThemeMode.Light; // you chose light-only now
+
+        public static void ApplyTheme(ThemeMode mode)
+        {
+            // Light-only: normalize any input to Light
+            Settings.ThemeMode = ThemeMode.Light;
+
+            // App-level brushes used by various windows
+            var res = Application.Current?.Resources;
+            if (res != null)
+            {
+                res["App.BackgroundBrush"] = Brushes.White;
+                res["App.ForegroundBrush"] = Brushes.Black;
+                res["Brush.Border"] = new SolidColorBrush(Color.FromArgb(0x33, 0x00, 0x00, 0x00));
+            }
+
             ThemeChanged?.Invoke();
         }
 
         public static void ApplyToEditor(TextEditor ed)
         {
-            Brush bg = appRes<Brush>("Brush.EditorBG") ?? Brushes.White;
-            Brush fg = appRes<Brush>("Brush.EditorFG") ?? Brushes.Black;
-            Brush line = appRes<Brush>("Brush.EditorLine") ?? new SolidColorBrush(Color.FromRgb(229, 229, 229));
-            Brush sel = appRes<Brush>("Brush.EditorSelection") ?? new SolidColorBrush(Color.FromRgb(208, 231, 255));
-            Pen selBorder = appRes<Pen>("Brush.SelectionBorder") ?? new Pen(line, 1);
+            if (ed == null) return;
 
-            ed.Background = bg;
-            ed.Foreground = fg;
+            // Light theme look
+            ed.Background = Brushes.White;
+            ed.Foreground = Brushes.Black;
 
-            ed.TextArea.SelectionBrush = sel;
-            ed.TextArea.SelectionBorder = selBorder;
-            ed.TextArea.SelectionCornerRadius = 2;
+            // Line numbers & selection
+            ed.ShowLineNumbers = true;
+            ed.LineNumbersForeground = new SolidColorBrush(Color.FromRgb(0x88, 0x99, 0xAA));
+            ed.TextArea.SelectionBrush = new SolidColorBrush(Color.FromArgb(0x55, 0x33, 0x99, 0xFF));
+            ed.TextArea.SelectionBorder = null;
 
-            ed.Options.HighlightCurrentLine = true;
-            ed.TextArea.TextView.CurrentLineBorder = new Pen(line, 1);
-            ed.TextArea.TextView.CurrentLineBackground = appRes<Brush>("Brush.EditorCurrentLineBG");
+            // Subtle current line highlight
+            ed.TextArea.TextView.CurrentLineBorder = null;
+            ed.TextArea.TextView.CurrentLineBackground =
+                new SolidColorBrush(Color.FromArgb(0x18, 0xFF, 0xFF, 0xFF));
 
-            ed.TextArea.TextView.InvalidateVisual();
+            // Caret color — use reflection so this compiles on all AvalonEdit versions
+            try
+            {
+                // Prefer TextArea.Caret.CaretBrush if it exists
+                var caret = ed.TextArea.Caret;
+                var caretBrushProp = caret.GetType().GetProperty("CaretBrush", BindingFlags.Public | BindingFlags.Instance);
+                if (caretBrushProp != null && caretBrushProp.CanWrite)
+                {
+                    caretBrushProp.SetValue(caret, Brushes.Black, null);
+                }
+                else
+                {
+                    // Some versions expose CaretBrush on TextEditor
+                    var editorCaretBrushProp = ed.GetType().GetProperty("CaretBrush", BindingFlags.Public | BindingFlags.Instance);
+                    if (editorCaretBrushProp != null && editorCaretBrushProp.CanWrite)
+                        editorCaretBrushProp.SetValue(ed, Brushes.Black, null);
+                }
+            }
+            catch
+            {
+                // If neither property exists, we just keep the default caret
+            }
+
+            // Fonts & editor options from settings
+            var s = Settings;
+            if (!string.IsNullOrWhiteSpace(s.EditorFontFamily))
+                ed.FontFamily = new FontFamily(s.EditorFontFamily);
+            if (s.EditorFontSize > 0)
+                ed.FontSize = s.EditorFontSize;
+
+            // Use the friendly alias properties if your IDESettings exposes them;
+            // otherwise map to the legacy fields in your IDESettings implementation.
+            ed.Options.IndentationSize = Math.Max(1, s.EditorTabSize);
+            ed.Options.ConvertTabsToSpaces = s.UseSpacesInsteadOfTabs;
+            ed.Options.HighlightCurrentLine = s.EditorHighlightCurrentLine;
+            ed.WordWrap = s.EditorWordWrap;
+
+            // Invisibles
+            ed.Options.ShowSpaces = s.EditorShowInvisibles;
+            ed.Options.ShowTabs = s.EditorShowInvisibles;
+            ed.Options.ShowEndOfLine = s.EditorShowInvisibles;
         }
-
-        private static T? appRes<T>(string key) where T : class =>
-            Application.Current.TryFindResource(key) as T;
     }
 }

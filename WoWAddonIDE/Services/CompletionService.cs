@@ -2,7 +2,6 @@
 using ICSharpCode.AvalonEdit.Document;
 using ICSharpCode.AvalonEdit.Editing;
 using ICSharpCode.AvalonEdit.Highlighting;
-using ICSharpCode.AvalonEdit.Highlighting.Xshd;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -30,12 +29,11 @@ namespace WoWAddonIDE.Services
         {
             "and","break","do","else","elseif","end","false","for","function",
             "goto","if","in","local","nil","not","or","repeat","return","then",
-            "true","until","while","pairs","ipairs","require","pcall","xpcall","type","table","string","math","debug"
+            "true","until","while","pairs","ipairs","require","pcall","xpcall",
+            "type","table","string","math","debug"
         };
 
         private List<WoWApiEntry> _api = new();
-
-        // NEW: fast set of API *names* you can import dynamically (no signatures/desc required)
         private HashSet<string> _apiNames = new(StringComparer.OrdinalIgnoreCase);
 
         public IHighlightingDefinition? LuaHighlight { get; private set; }
@@ -44,16 +42,22 @@ namespace WoWAddonIDE.Services
         {
             LuaHighlight = LoadLuaHighlight();
             _api = LoadWoWApi();
-            // Seed _apiNames from bundled data (so they’re included even before imports)
             _apiNames.UnionWith(_api.Select(a => a.name));
         }
 
-        // Allow MainWindow to inject API names parsed from user-imported JSON
-        public void SetApiDocs(IEnumerable<string> apiNames)
+        /// <summary>Replace the WoW API entries (e.g., after MoonSharp import).</summary>
+        public void SetApiDocs(IEnumerable<WoWApiEntry> entries)
         {
-            _apiNames = new HashSet<string>(apiNames ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase);
-            // Also keep any names from built-in docs so suggestions don’t regress
+            _api = entries?.ToList() ?? new List<WoWApiEntry>();
+            _apiNames.Clear();
             _apiNames.UnionWith(_api.Select(a => a.name));
+        }
+
+        /// <summary>Optional: add extra API names without signatures/descriptions.</summary>
+        public void SetApiNames(IEnumerable<string> names)
+        {
+            if (names == null) return;
+            _apiNames.UnionWith(names);
         }
 
         private static IHighlightingDefinition? LoadLuaHighlight()
@@ -66,15 +70,15 @@ namespace WoWAddonIDE.Services
                     var s = Application.GetResourceStream(new Uri("Resources/Lua.xshd", UriKind.Relative))?.Stream;
                     if (s != null) return s;
 
-                    // 2) Pack URI (replace WoWAddonIDE with your assembly name if different)
+                    // 2) Pack URI (update assembly name if needed)
                     s = Application.GetResourceStream(new Uri("/WoWAddonIDE;component/Resources/Lua.xshd", UriKind.Relative))?.Stream;
                     if (s != null) return s;
 
-                    // 3) File next to exe (handy if you want to just drop it in bin/)
+                    // 3) Disk next to exe (bin/Resources/Lua.xshd)
                     var disk = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "Lua.xshd");
                     if (File.Exists(disk)) return File.OpenRead(disk);
 
-                    // 4) Embedded resource (if someone set EmbeddedResource)
+                    // 4) Embedded resource fallback
                     var asm = typeof(CompletionService).Assembly;
                     var resName = asm.GetManifestResourceNames().FirstOrDefault(n =>
                         n.EndsWith("Lua.xshd", StringComparison.OrdinalIgnoreCase));
@@ -89,7 +93,6 @@ namespace WoWAddonIDE.Services
                 using var reader = new XmlTextReader(stream);
                 var def = ICSharpCode.AvalonEdit.Highlighting.Xshd.HighlightingLoader.Load(reader, HighlightingManager.Instance);
 
-                // Register so it’s also accessible by name/extension
                 HighlightingManager.Instance.RegisterHighlighting("Lua", new[] { ".lua" }, def);
                 return def;
             }
@@ -103,13 +106,33 @@ namespace WoWAddonIDE.Services
         {
             try
             {
-                using var s = Application.GetResourceStream(new Uri("Resources/wow_api.json", UriKind.Relative))?.Stream;
-                if (s == null) return new List<WoWApiEntry>();
-                using var sr = new StreamReader(s);
+                // Try relative pack resource
+                using var s = Application.GetResourceStream(new Uri("Resources/wow_api.json", UriKind.Relative))?.Stream
+                              ?? Application.GetResourceStream(new Uri("/WoWAddonIDE;component/Resources/wow_api.json", UriKind.Relative))?.Stream;
+
+                if (s == null)
+                {
+                    // Disk fallback
+                    var onDisk = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "wow_api.json");
+                    if (File.Exists(onDisk))
+                        using (var fs = File.OpenRead(onDisk))
+                            return DeserializeApi(fs);
+                    return new List<WoWApiEntry>();
+                }
+
+                return DeserializeApi(s);
+            }
+            catch
+            {
+                return new List<WoWApiEntry>();
+            }
+
+            static List<WoWApiEntry> DeserializeApi(Stream stream)
+            {
+                using var sr = new StreamReader(stream);
                 var json = sr.ReadToEnd();
                 return JsonConvert.DeserializeObject<List<WoWApiEntry>>(json) ?? new List<WoWApiEntry>();
             }
-            catch { return new List<WoWApiEntry>(); }
         }
 
         /// <summary>
@@ -119,7 +142,6 @@ namespace WoWAddonIDE.Services
         {
             if (area?.Document == null) return;
 
-            // buffer identifiers
             var bufferWords = ExtractIdentifiers(area.Document)
                 .Where(w => w.Length >= 3)
                 .Take(500);
@@ -128,7 +150,7 @@ namespace WoWAddonIDE.Services
 
             var candidates = _luaKeywords
                 .Concat(apiNamesFromEntries)
-                .Concat(_apiNames)        // <- imported names merged here
+                .Concat(_apiNames)
                 .Concat(bufferWords)
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .Where(w => w.StartsWith(currentWord, StringComparison.OrdinalIgnoreCase))
@@ -149,7 +171,7 @@ namespace WoWAddonIDE.Services
                     data.Add(new RichCompletionData(c, c, "Identifier"));
             }
 
-            // Snippets (typed triggers start with '!')
+            // Snippet triggers (prefixed with '!')
             if ("!slash".StartsWith(currentWord, StringComparison.OrdinalIgnoreCase))
                 data.Add(Snippets.SlashCommandSnippet());
             if ("!ace".StartsWith(currentWord, StringComparison.OrdinalIgnoreCase))
@@ -194,8 +216,8 @@ namespace WoWAddonIDE.Services
             var caret = area.Caret.Offset;
             var doc = area.Document;
 
-            // word immediately before the '('
-            int pos = caret - 2; // caret is after '('; step to char before it
+            // char just before the trigger (e.g., '(')
+            int pos = caret - 2;
             if (pos < 0) return "";
             while (pos >= 0 && (char.IsWhiteSpace(doc.GetCharAt(pos)) || doc.GetCharAt(pos) == triggerChar))
                 pos--;
@@ -272,13 +294,9 @@ namespace WoWAddonIDE.Services
             _selectedIndex = 0;
         }
 
-        // INotifyPropertyChanged (required by IOverloadProvider)
         public event PropertyChangedEventHandler? PropertyChanged;
+        private void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
-        private void OnPropertyChanged(string name)
-            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-
-        // IOverloadProvider members
         public int SelectedIndex
         {
             get => _selectedIndex;
@@ -286,7 +304,6 @@ namespace WoWAddonIDE.Services
             {
                 if (value == _selectedIndex) return;
                 _selectedIndex = value;
-                // notify dependent properties as well
                 OnPropertyChanged(nameof(SelectedIndex));
                 OnPropertyChanged(nameof(CurrentHeader));
                 OnPropertyChanged(nameof(CurrentContent));
@@ -295,12 +312,8 @@ namespace WoWAddonIDE.Services
         }
 
         public int Count => 1;
-
         public object CurrentHeader => _header;
-
         public object CurrentContent => _desc;
-
-        // Must be string, not object
         public string CurrentIndexText => "1 of 1";
     }
 
@@ -358,10 +371,7 @@ end");
 
         public void Complete(TextArea textArea, ISegment completionSegment, EventArgs insertionRequestEventArgs)
         {
-            // replace trigger with snippet body
             textArea.Document.Replace(completionSegment, _insert);
-
-            // put caret at end of inserted text
             textArea.Caret.Offset = completionSegment.Offset + _insert.Length;
             textArea.Focus();
         }
