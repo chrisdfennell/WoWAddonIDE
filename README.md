@@ -49,17 +49,15 @@
 
 ## 📸 Screenshots
 
-> Put screenshots in <code>docs/</code> (or <code>assets/</code>) in your repo and adjust the paths below.
-
 <p align="center">
-  <img src="docs/screenshot-main.png" alt="Main editor" width="900"/><br/>
+  <img src="Docs/screenshot-main.png" alt="Main editor" width="900"/><br/>
   <em>Main editor with Lua highlighting, outline, and completion.</em>
 </p>
 
 <p align="center">
-  <img src="docs/screenshot-help.png" alt="Help window" width="420"/>
+  <img src="Docs/screenshot-help.png" alt="Help window" width="420"/>
   &nbsp;&nbsp;
-  <img src="docs/screenshot-settings.png" alt="Settings window" width="420"/>
+  <img src="Docs/screenshot-settings.png" alt="Settings window" width="420"/>
 </p>
 
 ---
