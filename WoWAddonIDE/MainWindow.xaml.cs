@@ -1,27 +1,30 @@
 ﻿using ICSharpCode.AvalonEdit;
-using ICSharpCode.AvalonEdit.Highlighting;
 using ICSharpCode.AvalonEdit.Editing;
+using ICSharpCode.AvalonEdit.Highlighting;
+using LibGit2Sharp;
 using Microsoft.VisualBasic; // used for Interaction.InputBox
 using Newtonsoft.Json;
+using Octokit;
 using Ookii.Dialogs.Wpf;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Xml;
+using System.Xml.Linq;
 using WoWAddonIDE.Models;
 using WoWAddonIDE.Services;
 using WoWAddonIDE.Windows;
-using System.Diagnostics;
-using System.Threading.Tasks;
-using LibGit2Sharp;
-using Octokit;
-using System.Windows.Controls.Primitives;
+using Microsoft.Win32;
+using System.Net.Http;
 using Application = System.Windows.Application;
 
 namespace WoWAddonIDE
@@ -31,6 +34,12 @@ namespace WoWAddonIDE
         private AddonProject? _project;
         private readonly string _settingsPath;
         private IDESettings _settings;
+
+        // Editor toggles (session-scoped)
+        private bool _wordWrap = false;
+        private bool _showInvisibles = false;
+
+        private System.Windows.Threading.DispatcherTimer? _gitStatusTimer;
 
         private CompletionService _completion;
 
@@ -106,6 +115,280 @@ namespace WoWAddonIDE
                 ? ThemeManager.GetOsTheme()
                 : _settings.ThemeMode;
             return mode == ThemeMode.Dark;
+        }
+
+        private void UpdateGitStatusStrip()
+        {
+            if (_project == null) { GitBranchText.Text = ""; return; }
+            try
+            {
+                var info = GitService.GetRepoInfo(_project.RootPath);
+                GitBranchText.Text =
+                    $"{info.Branch ?? "(no branch)"}  ·  +{info.Ahead}/-{info.Behind}  " +
+                    $"Δ {info.Added} / −{info.Deleted}  " +
+                    (info.Conflicts > 0 ? $"⚠ {info.Conflicts} conflicts" : "");
+            }
+            catch { GitBranchText.Text = ""; }
+        }
+
+
+        private void GitBlameActive_Click(object sender, RoutedEventArgs e)
+        {
+            if (_project == null) { MessageBox.Show(this, "Open a project first."); return; }
+            if (EditorTabs.SelectedItem is not TabItem tab || tab.Tag is not string path) { MessageBox.Show(this, "Open a file tab."); return; }
+            if (!File.Exists(path)) { MessageBox.Show(this, "File not found on disk."); return; }
+
+            var w = new WoWAddonIDE.Windows.BlameWindow { Owner = this };
+            w.LoadBlame(_project.RootPath, path);
+            w.ShowDialog();
+        }
+
+        private void GitHistoryActive_Click(object sender, RoutedEventArgs e)
+        {
+            if (_project == null) { MessageBox.Show(this, "Open a project first."); return; }
+            if (EditorTabs.SelectedItem is not TabItem tab || tab.Tag is not string path) { MessageBox.Show(this, "Open a file tab."); return; }
+            if (!File.Exists(path)) { MessageBox.Show(this, "File not found on disk."); return; }
+
+            var w = new WoWAddonIDE.Windows.HistoryWindow { Owner = this };
+            w.LoadHistory(_project.RootPath, path);
+            w.ShowDialog();
+        }
+
+        private void GitMergeHelper_Click(object sender, RoutedEventArgs e)
+        {
+            if (_project == null) { MessageBox.Show(this, "Open a project first."); return; }
+
+            var repoRoot = GitService.FindRepoRoot(_project.RootPath) ?? _project.RootPath;
+            var w = new WoWAddonIDE.Windows.MergeHelperWindow(repoRoot) { Owner = this };
+
+            w.LoadConflicts();   // parameterless
+            w.ShowDialog();
+
+            UpdateGitStatusStrip();
+        }
+
+        private ICSharpCode.AvalonEdit.TextEditor? ActiveEditor()
+        {
+            if (EditorTabs.SelectedItem is TabItem tab && tab.Content is ICSharpCode.AvalonEdit.TextEditor ed)
+                return ed;
+            return null;
+        }
+
+        private IEnumerable<ICSharpCode.AvalonEdit.TextEditor> AllEditors()
+        {
+            foreach (var obj in EditorTabs.Items)
+                if (obj is TabItem t && t.Content is ICSharpCode.AvalonEdit.TextEditor ed)
+                    yield return ed;
+        }
+
+        // ---- Editor toggles ----
+        private void Toolbar_ToggleWrap_Click(object sender, RoutedEventArgs e)
+        {
+            _wordWrap = !_wordWrap;
+            foreach (var ed in AllEditors())
+                ed.WordWrap = _wordWrap;
+            Status("Word wrap: " + (_wordWrap ? "ON" : "OFF"));
+        }
+
+        private void Toolbar_ToggleInvis_Click(object sender, RoutedEventArgs e)
+        {
+            _showInvisibles = !_showInvisibles;
+            foreach (var ed in AllEditors())
+            {
+                ed.Options.ShowSpaces = _showInvisibles;
+                ed.Options.ShowTabs = _showInvisibles;
+                ed.Options.ShowEndOfLine = _showInvisibles;
+            }
+            Status("Invisibles: " + (_showInvisibles ? "ON" : "OFF"));
+        }
+
+        private void Toolbar_ThemeCycle_Click(object sender, RoutedEventArgs e)
+        {
+            // Cycle System → Light → Dark → System
+            var next = _settings.ThemeMode switch
+            {
+                ThemeMode.System => ThemeMode.Light,
+                ThemeMode.Light => ThemeMode.Dark,
+                _ => ThemeMode.System
+            };
+            ThemeManager.ApplyTheme(next);
+            _settings.ThemeMode = next;
+            SaveSettings();
+
+            // Re-tint open editors
+            foreach (var ed in AllEditors())
+            {
+                ThemeManager.ApplyToEditor(ed);
+                if (ed.SyntaxHighlighting != null)
+                    RetintHighlighting(ed.SyntaxHighlighting, IsDarkThemeActive());
+            }
+            Status($"Theme: {next}");
+        }
+
+        // ---- Navigation helpers ----
+        private void Toolbar_GoToDef_Click(object sender, RoutedEventArgs e)
+        {
+            var ed = ActiveEditor();
+            if (ed == null) { Status("No editor"); return; }
+            GoToDefinition(ed);
+        }
+
+        // ---- Branch switcher ----
+        private void BranchCombo_DropDownOpened(object sender, EventArgs e)
+        {
+            if (_project == null) return;
+            try
+            {
+                var list = GitService.GetBranches(_project.RootPath).ToList();
+                BranchCombo.ItemsSource = list;
+                var current = GitService.GetRepoInfo(_project.RootPath).Branch;
+                if (current != null)
+                    BranchCombo.SelectedItem = list.FirstOrDefault(b => string.Equals(b, current, StringComparison.OrdinalIgnoreCase));
+            }
+            catch (Exception ex)
+            {
+                Log("Branches: " + ex.Message);
+            }
+        }
+
+        private void BranchCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_project == null) return;
+            if (BranchCombo.SelectedItem is string name && !string.IsNullOrWhiteSpace(name))
+            {
+                try
+                {
+                    GitService.CheckoutBranch(_project.RootPath, name);
+                    Log($"Git: checked out {name}.");
+                    UpdateGitStatusStrip();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(this, ex.Message, "Checkout Branch", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private void BranchRefresh_Click(object sender, RoutedEventArgs e)
+        {
+            // Just re-open the dropdown to refresh
+            BranchCombo_DropDownOpened(sender, EventArgs.Empty);
+            Status("Branches refreshed");
+        }
+
+        private void OpenMergeHelper_Click(object sender, RoutedEventArgs e)
+        {
+            if (!EnsureProject()) return;
+
+            var repoRoot = GitService.FindRepoRoot(_project!.RootPath) ?? _project.RootPath;
+            var win = new WoWAddonIDE.Windows.MergeHelperWindow(repoRoot) { Owner = this };
+
+            // Use the parameterless method on the window
+            win.LoadConflicts();
+            win.ShowDialog();
+
+            // Refresh your status after resolving/closing
+            UpdateGitStatusStrip();
+        }
+
+        private async void GitPublishRelease_Click(object sender, RoutedEventArgs e)
+        {
+            if (_project == null) { MessageBox.Show(this, "Open a project first."); return; }
+
+            var w = new WoWAddonIDE.Windows.ReleasePublisherWindow(_settings) { Owner = this };
+            if (w.ShowDialog() == true)
+            {
+                try
+                {
+                    var repoPath = GitService.FindRepoRoot(_project.RootPath) ?? _project.RootPath;
+                    var zipPath = w.AssetPath;     // path to the built ZIP
+                    var tag = w.TagName;       // e.g. v1.2.3
+                    var name = w.ReleaseName;   // release title
+                    var body = w.Body;          // release notes
+                    var prerelease = w.Prerelease;    // bool
+
+                    await GitService.PublishGitHubReleaseAsync(
+                        repoPath, _settings, zipPath, tag, name, body, prerelease);
+
+                    Log($"Release created: {w.TagName} (asset: {System.IO.Path.GetFileName(w.AssetPath)})");
+                    Status("Release published.");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(this, ex.Message, "Publish Release", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        // ---- API Docs: menu handlers ----
+
+        private void ApiDocsReload_Click(object sender, RoutedEventArgs e)
+        {
+            // Reload the embedded default Resources/wow_api.json
+            LoadApiDocs();
+            _completion.SetApiDocs(_apiDocs.Keys);
+            Status($"API docs reloaded: {_apiDocs.Count} entries.");
+            Log("API docs reloaded from embedded resource.");
+        }
+
+        private void ApiDocsImportFile_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new OpenFileDialog
+            {
+                Title = "Import WoW API Docs (JSON)",
+                Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*",
+                CheckFileExists = true
+            };
+            if (dlg.ShowDialog(this) != true) return;
+
+            try
+            {
+                var json = File.ReadAllText(dlg.FileName);
+                var items = JsonConvert.DeserializeObject<List<ApiEntry>>(json) ?? new List<ApiEntry>();
+                MergeApiDocs(items);
+                Log($"API docs merged from file: {dlg.FileName}");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, ex.Message, "Import API Docs", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async void ApiDocsImportUrl_Click(object sender, RoutedEventArgs e)
+        {
+            var url = Microsoft.VisualBasic.Interaction.InputBox(
+                "Enter a URL to a WoW API JSON file:", "Import API Docs (URL)", "https://example.com/wow_api.json");
+            if (string.IsNullOrWhiteSpace(url)) return;
+
+            try
+            {
+                using var http = new HttpClient();
+                var json = await http.GetStringAsync(url);
+                var items = JsonConvert.DeserializeObject<List<ApiEntry>>(json) ?? new List<ApiEntry>();
+                MergeApiDocs(items);
+                Log($"API docs merged from URL: {url}");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, ex.Message, "Import API Docs (URL)", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // ---- API Docs: helpers ----
+
+        // Merge new entries into the in-memory model and refresh completion
+        private void MergeApiDocs(IEnumerable<ApiEntry> entries)
+        {
+            int before = _apiDocs.Count;
+
+            foreach (var e in entries)
+            {
+                if (!string.IsNullOrWhiteSpace(e.name))
+                    _apiDocs[e.name] = e; // overwrite/merge by name
+            }
+
+            _completion.SetApiDocs(_apiDocs.Keys);
+            Status($"API docs merged: {before} → {_apiDocs.Count}");
         }
 
         // ---------------------------------------------------------------------

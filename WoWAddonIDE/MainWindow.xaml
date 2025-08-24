@@ -3,178 +3,228 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="WoW Addon IDE"
         Width="1280" Height="820"
-        Background="{DynamicResource Brush.Window}"
-        Foreground="{DynamicResource Brush.FG}">
-    <DockPanel Background="{DynamicResource Brush.Window}">
+        Background="{DynamicResource App.BackgroundBrush}">
+    <DockPanel Background="{DynamicResource App.BackgroundBrush}">
 
-        <!-- ====== Menu Bar ====== -->
-        <Menu DockPanel.Dock="Top"
-              Background="{DynamicResource Brush.Chrome}"
-              Foreground="{DynamicResource Brush.FG}">
+        <!-- ===== Menu Bar ===== -->
+        <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">
-                <MenuItem Header="_New Project…"      Click="NewProject_Click"/>
-                <MenuItem Header="_Open Project…"     Click="OpenProject_Click"/>
+                <MenuItem Header="_New"      Click="NewProject_Click"/>
+                <MenuItem Header="_Open"     Click="OpenProject_Click"/>
                 <Separator/>
-                <MenuItem Header="_Save"              Click="Save_Click"/>
-                <MenuItem Header="Save _All"          Click="SaveAll_Click"/>
+                <MenuItem Header="_Save"     Click="Save_Click"/>
+                <MenuItem Header="Save _All" Click="SaveAll_Click"/>
                 <Separator/>
-                <MenuItem Header="E_xit"              Click="Exit_Click"/>
+                <MenuItem Header="_Exit"     Click="Exit_Click"/>
             </MenuItem>
 
             <MenuItem Header="_Edit">
-                <!-- (We only wire Find in Files since that's what the code-behind implements) -->
-                <MenuItem Header="Find in _Files" InputGestureText="Ctrl+Shift+F" Click="FindInFiles_Click"/>
+                <MenuItem Header="_Find"          InputGestureText="Ctrl+F"         Click="Find_Click"/>
+                <MenuItem Header="Find in _Files" InputGestureText="Ctrl+Shift+F"   Click="FindInFiles_Click"/>
             </MenuItem>
 
             <MenuItem Header="_Project">
-                <MenuItem Header="_Build"                Click="Build_Click"/>
-                <MenuItem Header="Build to _Folder…"     Click="BuildToFolder_Click"/>
-                <MenuItem Header="Build _Zip…"           Click="BuildZip_Click"/>
+                <MenuItem Header="_Build" Click="Build_Click"/>
+                <MenuItem Header="Build to _Folder…" Click="BuildToFolder_Click"/>
+                <MenuItem Header="_Build Zip…" Click="BuildZip_Click"/>
                 <Separator/>
-                <MenuItem Header="_Live Reload (write flag)" Click="LiveReload_Click"/>
-                <MenuItem Header="_Generate TOC"         Click="GenerateToc_Click"/>
-                <MenuItem Header="TOC _Editor…"          Click="TocEditor_Click"/>
+                <MenuItem Header="TOC _Editor…" Click="TocEditor_Click"/>
+                <MenuItem Header="_Generate TOC" Click="GenerateToc_Click"/>
                 <Separator/>
-                <MenuItem Header="Open AddOns _Folder"   Click="OpenAddOnsFolder_Click"/>
-                <MenuItem Header="Open _Staging Folder"  Click="OpenStagingFolder_Click"/>
+                <MenuItem Header="Open AddOns _Folder" Click="OpenAddOnsFolder_Click"/>
+                <MenuItem Header="Open _Staging Folder" Click="OpenStagingFolder_Click"/>
+                <Separator/>
+                <MenuItem Header="_Live Reload" Click="LiveReload_Click"/>
             </MenuItem>
 
             <MenuItem Header="_Git">
-                <MenuItem Header="Git/GitHub _Settings…" Click="GitAuth_Click"/>
                 <MenuItem Header="_Sign in with GitHub…" Click="GitSignIn_Click"/>
                 <Separator/>
                 <MenuItem Header="_Initialize Repository" Click="GitInit_Click"/>
-                <MenuItem Header="_Clone…"                Click="GitClone_Click"/>
+                <MenuItem Header="_Clone…" Click="GitClone_Click"/>
                 <MenuItem Header="Set _Remote (origin)…" Click="GitSetRemote_Click"/>
                 <Separator/>
-                <MenuItem Header="_Status"               Click="GitStatus_Click"/>
-                <MenuItem Header="_Commit…"              Click="GitCommit_Click"/>
-                <MenuItem Header="P_ull"                 Click="GitPull_Click"/>
-                <MenuItem Header="Pu_sh"                 Click="GitPush_Click"/>
+                <MenuItem Header="_Status" Click="GitStatus_Click"/>
+                <MenuItem Header="_Commit…" Click="GitCommit_Click"/>
+                <MenuItem Header="P_ull" Click="GitPull_Click"/>
+                <MenuItem Header="Pu_sh" Click="GitPush_Click"/>
                 <MenuItem Header="_Sync (Pull then Push)" Click="GitSync_Click"/>
                 <Separator/>
-                <MenuItem Header="Create _Branch…"       Click="GitCreateBranch_Click"/>
-                <MenuItem Header="_Checkout Branch…"     Click="GitCheckoutBranch_Click"/>
+                <MenuItem Header="Create _Branch…" Click="GitCreateBranch_Click"/>
+                <MenuItem Header="_Checkout Branch…" Click="GitCheckoutBranch_Click"/>
                 <Separator/>
-                <MenuItem Header="Open on _GitHub"       Click="GitOpenOnGitHub_Click"/>
-                <MenuItem Header="Create GitHub _Repo…"  Click="GitCreateGitHubRepo_Click"/>
-                <MenuItem Header="Open _.git Folder"     Click="GitOpenDotGit_Click"/>
+                <MenuItem Header="_Blame (Active File)..." Click="GitBlameActive_Click"/>
+                <MenuItem Header="_History (Active File)..." Click="GitHistoryActive_Click"/>
+                <MenuItem Header="_Merge Helper…" Click="GitMergeHelper_Click"/>
+                <Separator/>
+                <MenuItem Header="Open on _GitHub" Click="GitOpenOnGitHub_Click"/>
+                <MenuItem Header="Create GitHub _Repo…" Click="GitCreateGitHubRepo_Click"/>
+                <MenuItem Header="_Publish Release…" Click="GitPublishRelease_Click"/>
+                <MenuItem Header="Open _.git Folder" Click="GitOpenDotGit_Click"/>
             </MenuItem>
 
             <MenuItem Header="_Tools">
+                <MenuItem Header="Git/GitHub _Settings…" Click="GitAuth_Click"/>
+                <Separator/>
+                <MenuItem Header="_API Docs">
+                    <MenuItem Header="Import from _File…" Click="ApiDocsImportFile_Click"/>
+                    <MenuItem Header="Import from _URL…"  Click="ApiDocsImportUrl_Click"/>
+                    <Separator/>
+                    <MenuItem Header="_Reload (from Resources/wow_api.json)" Click="ApiDocsReload_Click"/>
+                </MenuItem>
+                <Separator/>
                 <MenuItem Header="_Theme">
                     <MenuItem Header="_System" Click="ThemeSystem_Click"/>
                     <MenuItem Header="_Light"  Click="ThemeLight_Click"/>
                     <MenuItem Header="_Dark"   Click="ThemeDark_Click"/>
                 </MenuItem>
-                <Separator/>
+            </MenuItem>
+
+            <MenuItem Header="_Help">
                 <MenuItem Header="_About" Click="About_Click"/>
             </MenuItem>
         </Menu>
 
-        <!-- ====== Toolbar ====== -->
-        <ToolBarTray DockPanel.Dock="Top"
-                     Background="{DynamicResource Brush.Chrome}">
-            <ToolBar Background="{DynamicResource Brush.Chrome}"
-                     Foreground="{DynamicResource Brush.FG}">
-                <Button Content="New"      Click="NewProject_Click"/>
-                <Button Content="Open"     Click="OpenProject_Click"/>
+        <!-- ===== Toolbar ===== -->
+        <ToolBarTray DockPanel.Dock="Top">
+            <ToolBar>
+                <!-- File -->
+                <Button Content="New"      Click="New_Click"       ToolTip="New Project"/>
+                <Button Content="Open"     Click="Open_Click"      ToolTip="Open Project"/>
                 <Separator/>
-                <Button Content="Save"     Click="Save_Click"/>
-                <Button Content="Save All" Click="SaveAll_Click"/>
+                <Button Content="Save"     Click="Save_Click"      ToolTip="Save Active File (Ctrl+S)"/>
+                <Button Content="Save All" Click="SaveAll_Click"   ToolTip="Save All Files"/>
                 <Separator/>
-                <Button Content="Build"    Click="Build_Click"/>
-                <Button Content="Diff…"    Click="ShowDiff_Click"/>
+
+                <!-- Project / Build -->
+                <Button Content="Build"      Click="Build_Click"          ToolTip="Build to AddOns"/>
+                <Button Content="Build Zip"  Click="BuildZip_Click"       ToolTip="Build ZIP package"/>
+                <Button Content="Live Reload" Click="LiveReload_Click"    ToolTip="Trigger /reload UI via flag"/>
+                <Button Content="AddOns Folder" Click="OpenAddOnsFolder_Click" ToolTip="Open AddOns folder"/>
+                <Button Content="Staging" Click="OpenStagingFolder_Click" ToolTip="Open Staging folder"/>
+                <Separator/>
+
+                <!-- Edit / Navigation -->
+                <Button Content="Find"           Click="Find_Click"              ToolTip="Find in editor"/>
+                <Button Content="Find in Files"  Click="FindInFiles_Click"       ToolTip="Ctrl+Shift+F"/>
+                <Button Content="Go To Symbol"   Click="GoToSymbol_Click"        ToolTip="Quick symbol search"/>
+                <Button Content="Go To Def"      Click="Toolbar_GoToDef_Click"   ToolTip="F12"/>
+                <Button Content="Diff"           Click="ShowDiff_Click"          ToolTip="Diff file vs disk"/>
+                <Button Content="TOC Editor"     Click="TocEditor_Click"         ToolTip="Edit .toc entries"/>
+                <Separator/>
+
+                <!-- Editor toggles (new) -->
+                <Button Content="Wrap"  Click="Toolbar_ToggleWrap_Click" ToolTip="Toggle word wrap"/>
+                <Button Content="¶␠"    Click="Toolbar_ToggleInvis_Click" ToolTip="Toggle invisibles (tabs/spaces/EOL)"/>
+                <Button Content="Theme" Click="Toolbar_ThemeCycle_Click"  ToolTip="Theme: System → Light → Dark"/>
+                <Separator/>
+
+                <!-- Git quick actions -->
+                <Button Content="Status" Click="GitStatus_Click"   ToolTip="git status"/>
+                <Button Content="Commit" Click="GitCommit_Click"   ToolTip="Commit staged/All"/>
+                <Button Content="Pull"   Click="GitPull_Click"     ToolTip="git pull"/>
+                <Button Content="Push"   Click="GitPush_Click"     ToolTip="git push"/>
+                <Button Content="Sync"   Click="GitSync_Click"     ToolTip="Pull then Push"/>
+                <Separator/>
+
+                <!-- Branch switcher (new) -->
+                <TextBlock Text="Branch:" Margin="6,0,2,0" VerticalAlignment="Center"/>
+                <ComboBox x:Name="BranchCombo" Width="160"
+              IsEditable="False"
+              DropDownOpened="BranchCombo_DropDownOpened"
+              SelectionChanged="BranchCombo_SelectionChanged"
+              ToolTip="Switch branches"/>
+                <Button Content="↻" Width="30" Click="BranchRefresh_Click" ToolTip="Refresh branch list"/>
+                <Separator/>
+
+                <!-- File history / merge helper -->
+                <Button Content="Blame"  Click="GitBlameActive_Click"    ToolTip="Blame current file"/>
+                <Button Content="History" Click="GitHistoryActive_Click"  ToolTip="History for current file"/>
+                <Button Content="Merge"  Click="GitMergeHelper_Click"     ToolTip="Open merge helper UI"/>
+                <Separator/>
+
+                <!-- Release (uses your ReleasePublisherWindow) -->
+                <Button Content="Publish" Click="GitPublishRelease_Click" ToolTip="Create GitHub release"/>
+                <Separator/>
+
+                <!-- API docs (you already added these handlers earlier) -->
+                <Button Content="API: Import JSON" Click="ApiDocsImportFile_Click" ToolTip="Import WoW API JSON"/>
+                <Button Content="API: Reload"      Click="ApiDocsReload_Click"     ToolTip="Reload bundled wow_api.json"/>
             </ToolBar>
         </ToolBarTray>
 
-        <!-- ====== Main Layout ====== -->
-        <Grid Background="{DynamicResource Brush.Window}">
+
+        <!-- ===== Main content ===== -->
+        <Grid Background="{DynamicResource App.BackgroundBrush}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"/>
-                <RowDefinition Height="180"/>
+                <RowDefinition Height="160"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="300"/>
+                <ColumnDefinition Width="280"/>
                 <ColumnDefinition Width="8"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Left: Project + Outline -->
-            <Grid Grid.Row="0" Grid.Column="0" Background="{DynamicResource Brush.Window}">
+            <!-- Left column: Project + Outline -->
+            <Grid Grid.Row="0" Grid.Column="0">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="6"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <GroupBox Header="Project Explorer"
-                          Grid.Row="0"
-                          Background="{DynamicResource Brush.Panel}"
-                          Foreground="{DynamicResource Brush.FG}"
-                          BorderBrush="{DynamicResource Brush.Border}">
+                <GroupBox Header="Project Explorer" Grid.Row="0">
                     <TreeView x:Name="ProjectTree"
-                              Background="{DynamicResource Brush.Panel}"
-                              Foreground="{DynamicResource Brush.FG}"
-                              BorderThickness="0"/>
+                              SelectedItemChanged="ProjectTree_SelectedItemChanged"
+                              MouseDoubleClick="ProjectTree_MouseDoubleClick"/>
                 </GroupBox>
 
-                <GridSplitter Grid.Row="1" Height="6"
-                              HorizontalAlignment="Stretch"
-                              Background="{DynamicResource Brush.Border}"/>
+                <GridSplitter Grid.Row="1" Height="6" HorizontalAlignment="Stretch" />
 
-                <GroupBox Header="Outline (Lua)"
-                          Grid.Row="2"
-                          Background="{DynamicResource Brush.Panel}"
-                          Foreground="{DynamicResource Brush.FG}"
-                          BorderBrush="{DynamicResource Brush.Border}">
+                <GroupBox Header="Outline (Lua)" Grid.Row="2">
                     <ListBox x:Name="Outline"
-                             Background="{DynamicResource Brush.Panel}"
-                             Foreground="{DynamicResource Brush.FG}"
-                             BorderThickness="0"
                              MouseDoubleClick="Outline_DoubleClick"/>
                 </GroupBox>
             </Grid>
 
-            <GridSplitter Grid.Row="0" Grid.Column="1" Width="8"
-                          HorizontalAlignment="Stretch"
-                          Background="{DynamicResource Brush.Border}"/>
+            <GridSplitter Grid.Row="0" Grid.Column="1" Width="8" HorizontalAlignment="Stretch" />
 
             <!-- Editors -->
             <TabControl x:Name="EditorTabs"
                         Grid.Row="0" Grid.Column="2"
-                        Background="{DynamicResource Brush.Panel}"
-                        Foreground="{DynamicResource Brush.FG}"
-                        BorderBrush="{DynamicResource Brush.Border}"
-                        SelectionChanged="EditorTabs_SelectionChanged"/>
+                        SelectionChanged="EditorTabs_SelectionChanged"
+                        Background="{DynamicResource App.BackgroundBrush}"/>
 
             <!-- Output -->
-            <GroupBox Header="Output"
-                      Grid.Row="1" Grid.ColumnSpan="3" Margin="0,6,0,0"
-                      Background="{DynamicResource Brush.Panel}"
-                      Foreground="{DynamicResource Brush.FG}"
-                      BorderBrush="{DynamicResource Brush.Border}">
+            <GroupBox Header="Output" Grid.Row="1" Grid.ColumnSpan="3" Margin="0,6,0,0">
                 <TextBox x:Name="Output"
                          IsReadOnly="True"
                          TextWrapping="Wrap"
                          AcceptsReturn="True"
                          VerticalScrollBarVisibility="Auto"
-                         Background="{DynamicResource Brush.Panel}"
-                         Foreground="{DynamicResource Brush.FG}"
-                         BorderBrush="{DynamicResource Brush.Border}"
-                         SelectionBrush="{DynamicResource Brush.Accent}"/>
+                         Background="{DynamicResource App.BackgroundBrush}"
+                         Foreground="{DynamicResource App.ForegroundBrush}"/>
             </GroupBox>
 
             <!-- Status bar -->
-            <StatusBar Grid.Row="2" Grid.ColumnSpan="3"
-                       Background="{DynamicResource Brush.Chrome}"
-                       Foreground="{DynamicResource Brush.FG}">
+            <StatusBar Grid.Row="2" Grid.ColumnSpan="3">
                 <StatusBarItem>
-                    <TextBlock x:Name="StatusText"/>
+                    <TextBlock x:Name="StatusText" />
+                </StatusBarItem>
+
+                <StatusBarItem>
+                    <TextBlock x:Name="BranchText" />
+                </StatusBarItem>
+                <StatusBarItem>
+                    <TextBlock x:Name="VcsText" />
+                </StatusBarItem>
+                <StatusBarItem>
+                    <TextBlock x:Name="GitBranchText" />
                 </StatusBarItem>
                 <StatusBarItem HorizontalAlignment="Right">
-                    <TextBlock x:Name="PathText"/>
+                    <TextBlock x:Name="PathText" />
                 </StatusBarItem>
             </StatusBar>
         </Grid>

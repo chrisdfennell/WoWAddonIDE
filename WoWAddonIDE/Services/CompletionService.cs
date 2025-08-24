@@ -34,19 +34,33 @@ namespace WoWAddonIDE.Services
         };
 
         private List<WoWApiEntry> _api = new();
+
+        // NEW: fast set of API *names* you can import dynamically (no signatures/desc required)
+        private HashSet<string> _apiNames = new(StringComparer.OrdinalIgnoreCase);
+
         public IHighlightingDefinition? LuaHighlight { get; private set; }
 
         public CompletionService()
         {
             LuaHighlight = LoadLuaHighlight();
             _api = LoadWoWApi();
+            // Seed _apiNames from bundled data (so they’re included even before imports)
+            _apiNames.UnionWith(_api.Select(a => a.name));
+        }
+
+        // Allow MainWindow to inject API names parsed from user-imported JSON
+        public void SetApiDocs(IEnumerable<string> apiNames)
+        {
+            _apiNames = new HashSet<string>(apiNames ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase);
+            // Also keep any names from built-in docs so suggestions don’t regress
+            _apiNames.UnionWith(_api.Select(a => a.name));
         }
 
         private static IHighlightingDefinition? LoadLuaHighlight()
         {
             try
             {
-                System.IO.Stream? TryOpen()
+                Stream? TryOpen()
                 {
                     // 1) WPF resource relative
                     var s = Application.GetResourceStream(new Uri("Resources/Lua.xshd", UriKind.Relative))?.Stream;
@@ -62,7 +76,8 @@ namespace WoWAddonIDE.Services
 
                     // 4) Embedded resource (if someone set EmbeddedResource)
                     var asm = typeof(CompletionService).Assembly;
-                    var resName = asm.GetManifestResourceNames().FirstOrDefault(n => n.EndsWith("Lua.xshd", StringComparison.OrdinalIgnoreCase));
+                    var resName = asm.GetManifestResourceNames().FirstOrDefault(n =>
+                        n.EndsWith("Lua.xshd", StringComparison.OrdinalIgnoreCase));
                     if (resName != null) return asm.GetManifestResourceStream(resName);
 
                     return null;
@@ -71,7 +86,7 @@ namespace WoWAddonIDE.Services
                 using var stream = TryOpen();
                 if (stream == null) return null;
 
-                using var reader = new System.Xml.XmlTextReader(stream);
+                using var reader = new XmlTextReader(stream);
                 var def = ICSharpCode.AvalonEdit.Highlighting.Xshd.HighlightingLoader.Load(reader, HighlightingManager.Instance);
 
                 // Register so it’s also accessible by name/extension
@@ -98,18 +113,23 @@ namespace WoWAddonIDE.Services
         }
 
         /// <summary>
-        /// Show a CompletionWindow with Lua keywords, WoW APIs, and buffer words filtered by prefix.
+        /// Show a CompletionWindow with Lua keywords, WoW APIs, imported API names, and buffer words filtered by prefix.
         /// </summary>
         public void ShowCompletion(TextArea area, string currentWord)
         {
-            var doc = area.Document;
+            if (area?.Document == null) return;
 
             // buffer identifiers
-            var bufferWords = ExtractIdentifiers(doc)
+            var bufferWords = ExtractIdentifiers(area.Document)
                 .Where(w => w.Length >= 3)
                 .Take(500);
 
-            var candidates = _luaKeywords.Concat(_api.Select(a => a.name)).Concat(bufferWords)
+            var apiNamesFromEntries = _api.Select(a => a.name);
+
+            var candidates = _luaKeywords
+                .Concat(apiNamesFromEntries)
+                .Concat(_apiNames)        // <- imported names merged here
+                .Concat(bufferWords)
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .Where(w => w.StartsWith(currentWord, StringComparison.OrdinalIgnoreCase))
                 .OrderBy(w => w, StringComparer.OrdinalIgnoreCase)
@@ -143,11 +163,15 @@ namespace WoWAddonIDE.Services
         /// </summary>
         public void ShowParameterHints(TextArea area, string functionName)
         {
+            if (area == null) return;
+
             var api = _api.FirstOrDefault(a => a.name.Equals(functionName, StringComparison.OrdinalIgnoreCase));
             if (api == null) return;
 
-            var iw = new OverloadInsightWindow(area);
-            iw.Provider = new SingleOverloadProvider(api.signature, api.description);
+            var iw = new OverloadInsightWindow(area)
+            {
+                Provider = new SingleOverloadProvider(api.signature, api.description)
+            };
             iw.Show();
         }
 
@@ -173,7 +197,7 @@ namespace WoWAddonIDE.Services
             // word immediately before the '('
             int pos = caret - 2; // caret is after '('; step to char before it
             if (pos < 0) return "";
-            while (pos >= 0 && (char.IsWhiteSpace(doc.GetCharAt(pos)) || doc.GetCharAt(pos) == '('))
+            while (pos >= 0 && (char.IsWhiteSpace(doc.GetCharAt(pos)) || doc.GetCharAt(pos) == triggerChar))
                 pos--;
 
             int end = pos + 1;
