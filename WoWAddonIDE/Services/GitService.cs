@@ -1,19 +1,17 @@
-﻿using LibGit2Sharp;
+﻿// File: WoWAddonIDE/Services/GitService.cs
+using LibGit2Sharp;
 using Octokit;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using LG = LibGit2Sharp;        // <— single alias
-
-
+using LG = LibGit2Sharp;
 
 namespace WoWAddonIDE.Services
 {
     public static class GitService
     {
-        // ------------------------- TYPES -------------------------
-
+        // -------- types --------
         public sealed class RepoInfo
         {
             public string? Branch { get; init; }
@@ -37,17 +35,17 @@ namespace WoWAddonIDE.Services
         {
             public int StartLine { get; init; }
             public int LineSpan { get; init; }
+            public int LineCount { get; init; }
             public string CommitSha { get; init; } = "";
             public string Author { get; init; } = "";
             public DateTimeOffset When { get; init; }
             public string Summary { get; init; } = "";
-            public int LineCount => LineSpan;
         }
 
+        // -------- find repo --------
         public static string? FindRepoRoot(string startPath)
         {
-            if (string.IsNullOrWhiteSpace(startPath)) return null;
-            var dir = new DirectoryInfo(Path.GetFullPath(startPath));
+            var dir = new DirectoryInfo(startPath);
             while (dir != null)
             {
                 if (Directory.Exists(Path.Combine(dir.FullName, ".git")))
@@ -57,9 +55,7 @@ namespace WoWAddonIDE.Services
             return null;
         }
 
-
-        // ---------------------- CREDENTIALS ----------------------
-
+        // -------- credentials helpers --------
         private static LG.Credentials? MakeCreds(Models.IDESettings s)
         {
             if (!string.IsNullOrWhiteSpace(s.GitHubToken))
@@ -77,8 +73,7 @@ namespace WoWAddonIDE.Services
         {
             var fo = new LG.FetchOptions();
             var c = MakeCreds(s);
-            if (c != null)
-                fo.CredentialsProvider = (_url, _user, _types) => c;
+            if (c != null) fo.CredentialsProvider = (_url, _user, _types) => c;
             return fo;
         }
 
@@ -86,35 +81,48 @@ namespace WoWAddonIDE.Services
         {
             var po = new LG.PushOptions();
             var c = MakeCreds(s);
-            if (c != null)
-                po.CredentialsProvider = (_url, _user, _types) => c;
+            if (c != null) po.CredentialsProvider = (_url, _user, _types) => c;
             return po;
         }
 
-        // ---------------------- BASIC OPS ------------------------
-
+        // -------- basic ops --------
         public static void InitRepo(string path)
         {
             if (!LG.Repository.IsValid(path))
                 LG.Repository.Init(path);
         }
 
-        public static string Clone(string url, string dest, WoWAddonIDE.Models.IDESettings settings)
+        // Overload #1 (url, dest)
+        public static string Clone(string url, string dest)
         {
-            var opt = new LG.CloneOptions(); // LG = LibGit2Sharp
-
-            if (!string.IsNullOrWhiteSpace(settings.GitHubToken))
-            {
-                opt.FetchOptions.CredentialsProvider = (_url, _user, _types) =>
-                    new LG.UsernamePasswordCredentials
-                    {
-                        Username = settings.GitHubToken,
-                        Password = "x-oauth-basic"
-                    };
-            }
-
+            Directory.CreateDirectory(dest);
+            var opt = new LG.CloneOptions();
             return LG.Repository.Clone(url, dest, opt);
         }
+
+        // Overload #2 (url, dest, settings)
+        public static string Clone(string url, string dest, Models.IDESettings settings)
+        {
+            Directory.CreateDirectory(dest);
+            // Some LibGit2Sharp versions don't allow setting FetchOptions directly on CloneOptions.
+            // Do a plain clone; credentials will be used on subsequent fetch/push operations.
+            return LG.Repository.Clone(url, dest, new LG.CloneOptions());
+        }
+
+        // Overload #3 (url, dest, branch, recurse, settings)
+        public static string Clone(string url, string dest, string? branch, bool recurse, Models.IDESettings settings)
+        {
+            Directory.CreateDirectory(dest);
+            var opt = new LG.CloneOptions();
+            if (!string.IsNullOrWhiteSpace(branch))
+                opt.BranchName = branch;
+            // Submodule behaviors vary by version; omit explicit recurse flags for compatibility.
+            return LG.Repository.Clone(url, dest, opt);
+        }
+
+        // Overload #4 with parameters flipped as seen in some call sites
+        public static string Clone(string url, string dest, bool recurse, string? branch, Models.IDESettings settings)
+            => Clone(url, dest, branch, recurse, settings);
 
         public static void EnsureRemote(string repoPath, string name, string url)
         {
@@ -129,7 +137,7 @@ namespace WoWAddonIDE.Services
         public static IEnumerable<string> Status(string repoPath)
         {
             using var repo = new LG.Repository(repoPath);
-            var s = repo.RetrieveStatus();
+            var s = repo.RetrieveStatus(new LG.StatusOptions());
             foreach (var e in s)
                 yield return $"{e.FilePath}  [{e.State}]";
         }
@@ -137,9 +145,7 @@ namespace WoWAddonIDE.Services
         public static void CommitAll(string repoPath, Models.IDESettings settings, string message)
         {
             using var repo = new LG.Repository(repoPath);
-
-            Commands.Stage(repo, "*");
-
+            LG.Commands.Stage(repo, "*");
             var status = repo.RetrieveStatus(new LG.StatusOptions());
             if (!status.IsDirty) return;
 
@@ -150,7 +156,7 @@ namespace WoWAddonIDE.Services
         private static LG.Signature MakeSignature(Models.IDESettings s)
         {
             var name = string.IsNullOrWhiteSpace(s.GitUserName) ? "WoWAddonIDE" : s.GitUserName;
-            var mail = string.IsNullOrWhiteSpace(s.GitUserEmail) ? "wowaddonide@local" : s.GitUserEmail;
+            var mail = string.IsNullOrWhiteSpace(s.GitUserEmail) ? "noreply@localhost" : s.GitUserEmail;
             return new LG.Signature(name, mail, DateTimeOffset.Now);
         }
 
@@ -158,28 +164,20 @@ namespace WoWAddonIDE.Services
         {
             using var repo = new LG.Repository(repoPath);
             var sig = MakeSignature(settings);
-
-            var opts = new LG.PullOptions
+            var options = new LG.PullOptions
             {
-                FetchOptions = MakeFetchOptions(settings)
-                // Don’t set MergeOptions.FileConflictStrategy — older LibGit2Sharp may not have it.
+                FetchOptions = MakeFetchOptions(settings),
+                MergeOptions = new LG.MergeOptions()
             };
-
-            Commands.Pull(repo, sig, opts);
+            LG.Commands.Pull(repo, sig, options);
         }
 
-        public static void Push(string repoPath, Models.IDESettings settings, string remote = "origin", string? branch = null)
+        public static void Push(string repoPath, Models.IDESettings settings, string remoteName = "origin")
         {
             using var repo = new LG.Repository(repoPath);
-            var current = repo.Head;
-            var branchName = branch ?? current.FriendlyName;
-
-            // Ensure refs/heads/ prefix
-            var refSpec = branchName.StartsWith("refs/heads/", StringComparison.OrdinalIgnoreCase)
-                ? branchName
-                : $"refs/heads/{branchName}";
-
-            repo.Network.Push(repo.Network.Remotes[remote], refSpec, MakePushOptions(settings));
+            var head = repo.Head;
+            var refSpec = head?.CanonicalName ?? "refs/heads/main";
+            repo.Network.Push(repo.Network.Remotes[remoteName], refSpec, MakePushOptions(settings));
         }
 
         public static void Sync(string repoPath, Models.IDESettings settings)
@@ -188,28 +186,7 @@ namespace WoWAddonIDE.Services
             Push(repoPath, settings);
         }
 
-        public static List<ConflictTriplet> GetConflictTriplets(string repoPath)
-        {
-            using var repo = new LG.Repository(repoPath);
-            var list = new List<ConflictTriplet>();
-
-            foreach (var c in repo.Index.Conflicts)
-            {
-                var rel = c.Ours?.Path ?? c.Theirs?.Path ?? c.Ancestor?.Path ?? "";
-                if (string.IsNullOrEmpty(rel)) continue;
-
-                list.Add(new ConflictTriplet
-                {
-                    Path = rel,
-                    BaseText = ReadStageText(repo, rel, LG.StageLevel.Ancestor),
-                    OursText = ReadStageText(repo, rel, LG.StageLevel.Ours),
-                    TheirsText = ReadStageText(repo, rel, LG.StageLevel.Theirs)
-                });
-            }
-            return list;
-        }
-
-        public static IEnumerable<string> GetBranches(string repoPath)
+        public static List<string> GetBranches(string repoPath)
         {
             using var repo = new LG.Repository(repoPath);
             return repo.Branches.Select(b => b.FriendlyName).ToList();
@@ -219,15 +196,14 @@ namespace WoWAddonIDE.Services
         {
             using var repo = new LG.Repository(repoPath);
             var b = repo.CreateBranch(name);
-            if (checkout)
-                Commands.Checkout(repo, b);
+            if (checkout) LG.Commands.Checkout(repo, b);
         }
 
         public static void CheckoutBranch(string repoPath, string name)
         {
             using var repo = new LG.Repository(repoPath);
             var b = repo.Branches[name] ?? throw new InvalidOperationException("Branch not found.");
-            Commands.Checkout(repo, b);
+            LG.Commands.Checkout(repo, b);
         }
 
         public static string? GetOriginUrl(string repoPath)
@@ -239,34 +215,11 @@ namespace WoWAddonIDE.Services
         public static string? ToGitHubWebUrl(string remoteUrl)
         {
             if (string.IsNullOrWhiteSpace(remoteUrl)) return null;
-
-            try
-            {
-                string core = remoteUrl.Trim();
-
-                if (core.StartsWith("git@github.com:", StringComparison.OrdinalIgnoreCase))
-                {
-                    core = core.Substring("git@github.com:".Length);
-                    core = core.TrimEnd('/', '\\');
-                    if (core.EndsWith(".git", StringComparison.OrdinalIgnoreCase))
-                        core = core.Substring(0, core.Length - 4);
-                    return $"https://github.com/{core}";
-                }
-
-                if (core.StartsWith("https://github.com/", StringComparison.OrdinalIgnoreCase))
-                {
-                    core = core.TrimEnd('/', '\\');
-                    if (core.EndsWith(".git", StringComparison.OrdinalIgnoreCase))
-                        core = core.Substring(0, core.Length - 4);
-                    return core;
-                }
-            }
-            catch { /* ignore */ }
-
-            return null;
+            var u = remoteUrl.Trim();
+            if (!u.Contains("github.com", StringComparison.OrdinalIgnoreCase)) return null;
+            if (u.EndsWith(".git", StringComparison.OrdinalIgnoreCase)) u = u[..^4];
+            return u;
         }
-
-        // ----------------------- REPO INFO ------------------------
 
         public static RepoInfo GetRepoInfo(string repoPath)
         {
@@ -275,7 +228,7 @@ namespace WoWAddonIDE.Services
             var branch = head?.FriendlyName;
 
             int ahead = 0, behind = 0;
-            var tracked = head?.TrackedBranch; // not Upstream
+            var tracked = head?.TrackedBranch;
             if (tracked?.Tip != null && head?.Tip != null)
             {
                 var div = repo.ObjectDatabase.CalculateHistoryDivergence(head.Tip, tracked.Tip);
@@ -284,8 +237,10 @@ namespace WoWAddonIDE.Services
             }
 
             var status = repo.RetrieveStatus(new LG.StatusOptions());
-            int added = status.Count(s => s.State.HasFlag(LG.FileStatus.NewInWorkdir) || s.State.HasFlag(LG.FileStatus.NewInIndex));
-            int deleted = status.Count(s => s.State.HasFlag(LG.FileStatus.DeletedFromWorkdir) || s.State.HasFlag(LG.FileStatus.DeletedFromIndex));
+            int added = status.Count(s =>
+                s.State.HasFlag(LG.FileStatus.NewInWorkdir) || s.State.HasFlag(LG.FileStatus.NewInIndex));
+            int deleted = status.Count(s =>
+                s.State.HasFlag(LG.FileStatus.DeletedFromWorkdir) || s.State.HasFlag(LG.FileStatus.DeletedFromIndex));
             int conflicts = repo.Index.Conflicts.Count();
 
             return new RepoInfo
@@ -300,16 +255,17 @@ namespace WoWAddonIDE.Services
             };
         }
 
-        // ------------------ HISTORY / CONTENT ---------------------
-
+        // -------- history / blame --------
         public static IEnumerable<(string Sha, string Message, DateTimeOffset When, string Author)>
-            FileHistory(string repoPath, string relativePath)
+            FileHistory(string repoPath, string relativePath, int max = 200)
         {
             using var repo = new LG.Repository(repoPath);
-            foreach (var h in repo.Commits.QueryBy(relativePath))
+
+            // In some versions QueryBy(path) returns LogEntry with a .Commit
+            foreach (var le in repo.Commits.QueryBy(relativePath).Take(max))
             {
-                var cm = h.Commit;
-                yield return (cm.Sha, cm.MessageShort ?? cm.Message ?? "", cm.Author.When, cm.Author.Name);
+                var c = le.Commit;
+                yield return (c.Sha, c.MessageShort ?? c.Message ?? "", c.Author.When, c.Author.Name);
             }
         }
 
@@ -318,10 +274,8 @@ namespace WoWAddonIDE.Services
             using var repo = new LG.Repository(repoPath);
             var commit = repo.Lookup<LG.Commit>(commitSha)
                 ?? throw new InvalidOperationException("Commit not found");
-
-            var entry = commit.Tree[relativePath]
+            var entry = commit[relativePath]
                 ?? throw new InvalidOperationException("Path not found in commit");
-
             var blob = (LG.Blob)entry.Target;
             return blob.GetContentText();
         }
@@ -331,94 +285,98 @@ namespace WoWAddonIDE.Services
             using var repo = new LG.Repository(repoPath);
             var blame = repo.Blame(relativePath, new LG.BlameOptions());
             var result = new List<BlameEntry>();
-
-            foreach (var h in blame) // BlameHunkCollection is enumerable
+            foreach (var h in blame)
             {
-                var cm = h.FinalCommit; // use FinalCommit for builds lacking FinalCommitId
+                var cm = h.FinalCommit;
                 result.Add(new BlameEntry
                 {
                     StartLine = h.FinalStartLineNumber,
                     LineSpan = h.LineCount,
-                    CommitSha = cm?.Sha ?? "",
-                    Author = cm?.Author?.Name ?? "",
-                    When = cm?.Author.When ?? default,
-                    Summary = cm?.MessageShort ?? cm?.Message ?? ""
+                    LineCount = h.LineCount,
+                    CommitSha = cm.Sha,
+                    Author = cm.Author.Name,
+                    When = cm.Author.When,
+                    Summary = cm.MessageShort ?? cm.Message ?? ""
                 });
             }
             return result;
         }
 
+        // -------- conflicts --------
+        public static List<ConflictTriplet> GetConflictTriplets(string repoPath)
+        {
+            using var repo = new LG.Repository(repoPath);
+            var list = new List<ConflictTriplet>();
 
-        // ---------------------- CONFLICTS -------------------------
+            foreach (var c in repo.Index.Conflicts)
+            {
+                var relPath = c.Ours?.Path ?? c.Theirs?.Path ?? c.Ancestor?.Path;
+                if (relPath == null) continue;
 
-        public static void ResolveConflictWithText(string repoPath, string relativePath, string mergedText)
+                string? baseText = ReadStageText(repo, c.Ancestor);
+                string? oursText = ReadStageText(repo, c.Ours);
+                string? theirsText = ReadStageText(repo, c.Theirs);
+
+                list.Add(new ConflictTriplet
+                {
+                    Path = relPath,
+                    BaseText = baseText,
+                    OursText = oursText,
+                    TheirsText = theirsText
+                });
+            }
+            return list;
+        }
+
+        private static string? ReadStageText(LG.Repository repo, LG.IndexEntry? entry)
+        {
+            if (entry == null) return null;
+            var blob = repo.Lookup<LG.Blob>(entry.Id);
+            return blob?.GetContentText();
+        }
+
+        public static void ResolveConflictWithText(string repoPath, string relativePath, string? mergedText)
         {
             var full = Path.Combine(repoPath, relativePath.Replace('/', Path.DirectorySeparatorChar));
             Directory.CreateDirectory(Path.GetDirectoryName(full)!);
             File.WriteAllText(full, mergedText ?? string.Empty);
 
             using var repo = new LG.Repository(repoPath);
-            Commands.Stage(repo, relativePath);  // clears the conflict entry for that path
+            LG.Commands.Stage(repo, relativePath);
         }
 
-        private static string ReadStageText(LG.Repository repo, string relPath, LG.StageLevel stage)
-        {
-            var c = repo.Index.Conflicts
-                .FirstOrDefault(x =>
-                       string.Equals(x.Ours?.Path, relPath, StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(x.Theirs?.Path, relPath, StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(x.Ancestor?.Path, relPath, StringComparison.OrdinalIgnoreCase));
-
-            if (c == null) return string.Empty;
-
-            LG.ObjectId? id = stage switch
-            {
-                LG.StageLevel.Ours => c.Ours?.Id,
-                LG.StageLevel.Theirs => c.Theirs?.Id,
-                LG.StageLevel.Ancestor => c.Ancestor?.Id,
-                _ => null
-            };
-
-            if (id is null) return string.Empty;
-
-            var blob = repo.Lookup<LG.Blob>(id);
-            return blob?.GetContentText() ?? string.Empty;
-        }
-
-        // ------------------- GITHUB RELEASES ----------------------
-
-        // GitService.cs
+        // -------- releases --------
         public static async System.Threading.Tasks.Task<string> PublishGitHubReleaseAsync(
             string repoPath,
-            WoWAddonIDE.Models.IDESettings settings,
-            string assetPath,
             string tag,
             string name,
             string body,
-            bool prerelease)                   // 7th arg expected by your call site
+            bool prerelease,
+            string assetPath,
+            Models.IDESettings settings)
         {
-            if (string.IsNullOrWhiteSpace(settings.GitHubToken))
-                throw new InvalidOperationException("GitHub token is empty. Set it in Git/GitHub Settings.");
-
             using var repo = new LG.Repository(repoPath);
             var origin = repo.Network.Remotes["origin"]?.Url
                          ?? throw new InvalidOperationException("No 'origin' remote.");
 
-            // parse "https://github.com/{owner}/{repo}.git"
+            // parse https://github.com/{owner}/{repo}.git
             string? owner = null, repoName = null;
             var u = origin.TrimEnd('/');
             var ix = u.IndexOf("github.com/", StringComparison.OrdinalIgnoreCase);
             if (ix >= 0)
             {
-                var tail = u[(ix + "github.com/".Length)..].TrimEnd(".git".ToCharArray());
+                var tail = u[(ix + "github.com/".Length)..];
+                if (tail.EndsWith(".git", StringComparison.OrdinalIgnoreCase))
+                    tail = tail[..^4];
                 var parts = tail.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
                 if (parts.Length >= 2) { owner = parts[0]; repoName = parts[1]; }
             }
             if (owner == null || repoName == null)
                 throw new InvalidOperationException("Origin is not a GitHub https URL.");
 
-            var gh = new Octokit.GitHubClient(new ProductHeaderValue("WoWAddonIDE"))
-            { Credentials = new Octokit.Credentials(settings.GitHubToken) };
+            var gh = new GitHubClient(new ProductHeaderValue("WoWAddonIDE"));
+            if (!string.IsNullOrWhiteSpace(settings.GitHubToken))
+                gh.Credentials = new Octokit.Credentials(settings.GitHubToken);
 
             Release rel;
             try
@@ -433,9 +391,29 @@ namespace WoWAddonIDE.Services
             }
 
             await using var fs = File.OpenRead(assetPath);
-            var upload = new ReleaseAssetUpload(Path.GetFileName(assetPath), "application/zip", fs, null);
+            var upload = new ReleaseAssetUpload(Path.GetFileName(assetPath), "application/octet-stream", fs, null);
             await gh.Repository.Release.UploadAsset(rel, upload);
             return rel.HtmlUrl;
+        }
+
+        // Overload to match call site: PublishGitHubReleaseAsync(repoPath, _settings, zipPath, tag, name, body, prerelease)
+        public static async System.Threading.Tasks.Task<string> PublishGitHubReleaseAsync(
+            string repoPath,
+            Models.IDESettings settings,
+            string assetPath,
+            string tag,
+            string name,
+            string body,
+            bool prerelease)
+        {
+            return await PublishGitHubReleaseAsync(
+                repoPath,
+                tag,
+                name,
+                body,
+                prerelease,
+                assetPath,
+                settings);
         }
     }
 }

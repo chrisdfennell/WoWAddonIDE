@@ -34,6 +34,8 @@
             <MenuItem Header="_Git">
                 <MenuItem Header="_Sign in with GitHub…" Click="GitSignIn_Click"/>
                 <Separator/>
+                <MenuItem Header="Rep_os" Click="GitHubPickOrInit_Click"/>
+                <Separator/>
                 <MenuItem Header="_Initialize Repository" Click="GitInit_Click"/>
                 <MenuItem Header="_Clone…" Click="GitClone_Click"/>
                 <MenuItem Header="Set _Remote (origin)…" Click="GitSetRemote_Click"/>

@@ -1,7 +1,6 @@
-﻿using System;
-using System.Diagnostics;
+﻿// File: WoWAddonIDE/Windows/GitHubSignInWindow.xaml.cs
+using System;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
 using WoWAddonIDE.Services;
 
@@ -10,59 +9,62 @@ namespace WoWAddonIDE.Windows
     public partial class GitHubSignInWindow : Window
     {
         private readonly string _clientId;
+        private readonly string? _clientSecret;
         private readonly string _scope;
-        private GitHubDeviceCode? _dc;
+        private readonly int _port;
         private readonly CancellationTokenSource _cts = new();
 
+        /// <summary>The OAuth access token returned by GitHub when the dialog succeeds.</summary>
         public string? AccessToken { get; private set; }
 
-        public GitHubSignInWindow(string clientId, string scope = "repo read:user")
+        /// <summary>
+        /// Sign-in dialog using Authorization Code + PKCE (no manual code entry).
+        /// </summary>
+        public GitHubSignInWindow(string clientId, string? clientSecret = null, string scope = "repo read:user", int port = 48123)
         {
             InitializeComponent();
             _clientId = clientId;
+            _clientSecret = clientSecret;
             _scope = scope;
-            Loaded += async (_, __) => await BeginAsync();
+            _port = port;
+
+            // Hide the old device-flow box if it's in the XAML
+            try
+            {
+                if (FindName("UserCodeBox") is System.Windows.Controls.TextBox tb)
+                    tb.Visibility = Visibility.Collapsed;
+            }
+            catch { /* ignore */ }
+
             Closed += (_, __) => _cts.Cancel();
         }
 
-        private async Task BeginAsync()
+        private async void OpenGitHub_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                _dc = await GitHubAuthService.BeginDeviceFlowAsync(_clientId, _scope, _cts.Token);
-                UserCodeBox.Text = _dc.user_code;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(this, ex.Message, "GitHub Sign-in", MessageBoxButton.OK, MessageBoxImage.Error);
-                Close();
-            }
-        }
+                if (sender is FrameworkElement fe) fe.IsEnabled = false;
 
-        private void OpenGitHub_Click(object sender, RoutedEventArgs e)
-        {
-            if (_dc == null) return;
-            Process.Start(new ProcessStartInfo { FileName = _dc.verification_uri, UseShellExecute = true });
+                var token = await GitHubAuthService.SignInViaPkceAsync(
+                    _clientId, _clientSecret, _scope, _port, _cts.Token);
 
-            // Start polling
-            _ = PollAsync();
-        }
-
-        private async Task PollAsync()
-        {
-            if (_dc == null) return;
-            try
-            {
-                var token = await GitHubAuthService.WaitForAccessTokenAsync(
-                    _clientId, _dc.device_code, _dc.interval, _cts.Token);
                 AccessToken = token;
                 DialogResult = true;
                 Close();
             }
-            catch (OperationCanceledException) { /* user canceled */ }
+            catch (OperationCanceledException)
+            {
+                DialogResult = false;
+                Close();
+            }
             catch (Exception ex)
             {
-                MessageBox.Show(this, ex.Message, "GitHub Sign-in", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(this, ex.Message, "GitHub Sign-in",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                if (sender is FrameworkElement fe) fe.IsEnabled = true;
             }
         }
 

@@ -47,164 +47,143 @@
 
 ---
 
-## 📸 Screenshots
+## ✨ What’s new (OAuth & packaging)
 
-<p align="center">
-  <img src="https://github.com/chrisdfennell/WoWAddonIDE/blob/master/WoWAddonIDE/Docs/screenshot-main.png" alt="Main editor" width="900"/><br/>
-  <em>Main editor with Lua highlighting, outline, and completion.</em>
-</p>
-
-<p align="center">
-  <img src="https://github.com/chrisdfennell/WoWAddonIDE/blob/master/WoWAddonIDE/Docs/screenshot-main.png" alt="Help window" width="420"/>
-  &nbsp;&nbsp;
-  <img src="https://github.com/chrisdfennell/WoWAddonIDE/blob/master/WoWAddonIDE/Docs/screenshot-settings.png" alt="Settings window" width="420"/>
-</p>
+- **Sign in with GitHub** via browser using **Authorization Code + PKCE** (no client secret required at runtime).
+- **Pick → Clone → Open** a repo directly from your GitHub user/orgs, or **Initialize** the current project to GitHub.
+- **Ship builds without secrets**: all credentials are **User-scoped** in `Properties/Settings.settings` and are not embedded in the EXE.
 
 ---
 
-## ✨ Highlights
-
-- **Lua + XML syntax highlighting**
-  - Custom `Lua.xshd` and `WoWTOC.xshd` definitions (AvalonEdit).
-  - Theme-aware colors; tuned for readability.
-- **Autocomplete & parameter hints**
-  - Lua keywords, WoW API names (from `wow_api.json`), buffer identifiers, snippets.
-  - Signature help on `(` for known functions.
-- **Hover docs for WoW API**
-  - Tooltips sourced from `Resources/wow_api.json` (extensible/importable).
-- **Outline panel (Lua)**
-  - Jump to `function`, `local function`, etc.
-- **Find in files** (**Ctrl+Shift+F**) and **Go to definition** (**F12**).
-- **Project Explorer** + **TOC generator & editor**.
-- **Build options**
-  - **Build** → copy to your WoW **AddOns** folder (safe copy).
-  - **Build to Folder…**, **Build Zip…**.
-- **Live reload helper**
-  - Writes a `Reload.flag` you can watch to call `ReloadUI()`.
-- **Git & GitHub integration**
-  - LibGit2Sharp + Octokit workflows (init/clone/commit/push/branches/releases).
-
-> ✅ Designed to be safe by default: the **Build** command will not wipe your source folder or your AddOns folder by mistake.
-
----
-
-## 🚀 Getting Started
+## 🚀 Quick Start
 
 ### Prerequisites
 - Windows 10/11
-- Visual Studio 2022+ (**.NET Desktop** workload)
-- .NET 8 SDK
-- WoW retail installed (optional, for AddOns path detection)
+- Visual Studio 2022+ (with **.NET Desktop** workload) or `dotnet SDK` **8.0+**
+- Git
 
 ### Restore packages
-The project uses NuGet packages:
+Build once to restore NuGet:
 - `ICSharpCode.AvalonEdit`
 - `Ookii.Dialogs.Wpf`
-- `Newtonsoft.Json`
-- `DiffPlex`
 - `LibGit2Sharp`
 - `Octokit`
-
-Build the solution to restore packages automatically.
-
-### Resource files (important)
-Ensure these exist with **Build Action = Resource**:
-```
-/Resources/Lua.xshd
-/Resources/WoWTOC.xshd
-/Resources/wow_api.json
-```
-If highlighting fails, check the Output log—loading errors are reported.
+- `DiffPlex`
+- `Newtonsoft.Json`
 
 ### First run
-1. **Tools → Settings** → set your WoW **AddOns** folder (auto-detected when possible).
-2. **File → New** or **Open** a folder containing your addon's `.toc`.
+1. **Tools → Settings** → set your WoW **AddOns** folder.
+2. **Git → Sign in with GitHub** (browser opens; passkeys/2FA supported).
+3. **Git → GitHub…** to clone/open/init repos.
 
 ---
 
-## 🧭 Workflow
+## 🔐 GitHub OAuth without a Secret
 
-1. Create/Open a project folder (where the `.toc` lives).
-2. Edit `.lua` / `.xml` files in tabs.
-3. Use **Outline** to jump around functions; **Ctrl+Shift+F** to search.
-4. **Build** to copy safely into AddOns, or **Build Zip…** to package.
-5. Use **Git** menu to commit/push or create a GitHub repo.
+This app uses **PKCE + loopback** so you can ship with **only a Client ID**.
+
+### 1) Create an OAuth App (GitHub)
+- Go to <https://github.com/settings/developers> → **New OAuth App**
+- **Homepage URL:** `http://127.0.0.1`
+- **Authorization callback URL:** `http://127.0.0.1:53682/callback`  
+  *(You can change the port in settings; see below.)*
+- Copy the **Client ID**. **Client Secret is optional** when using PKCE.
+
+### 2) Configure `Properties/Settings.settings` (User-scoped)
+| Key                   | Type   | Scope | Default               | Notes                                   |
+|-----------------------|--------|-------|-----------------------|-----------------------------------------|
+| `GitHubClientId`      | string | User  | _(empty)_             | Required for OAuth                      |
+| `GitHubClientSecret`  | string | User  | _(empty)_             | **Optional** with PKCE                  |
+| `GitHubOAuthPort`     | int    | User  | `53682`               | Loopback port for redirect              |
+| `GitHubScopes`        | string | User  | `repo read:user`      | Adjust to taste                         |
+
+User-scoped settings are stored in `%LOCALAPPDATA%\\...user.config` and **are not** embedded in the build.
+
+### 3) Supplying values (choose any)
+- **Settings UI** inside the app (recommended)
+- **Environment variables** (handy for CI / dev machines):
+  - `WOWIDE_GITHUB_CLIENT_ID`
+  - `WOWIDE_GITHUB_CLIENT_SECRET`
+- **Optional file:** `%APPDATA%\\WoWAddonIDE\\secrets.json` (gitignored)
+  ```json
+  {
+    "clientId": "YOUR_CLIENT_ID",
+    "clientSecret": ""
+  }
+  ```
+
+Add this to your `.gitignore`:
+```
+# app/runtime secrets
+**/secrets.json
+```
+
+> If you choose to use a Client Secret (not required with PKCE), **do not** commit it. Keep it in env vars or `secrets.json`.
 
 ---
 
-## 🎨 Theming
+## 🏗️ Build & Publish
 
-- `ThemeManager.ApplyTheme(System|Light|Dark)` – global theme
-- `ThemeManager.ApplyToEditor(editor)` – AvalonEdit brushes (background, selection, caret, current line, line numbers)
-- XSHD retinting for syntax highlighting
+### Visual Studio
+- Open `WoWAddonIDE.sln`
+- Set **Release**
+- Build / Publish (ClickOnce, MSIX, or folder)
 
----
+### CLI (folder publish)
+```powershell
+dotnet publish WoWAddonIDE/WoWAddonIDE.csproj -c Release -r win-x64 --self-contained false
+```
 
-## ⌨️ Shortcuts
-
-- **Ctrl+/** — Toggle comment
-- **Ctrl+D** — Duplicate line
-- **F12** — Go to definition
-- **Ctrl+Shift+F** — Find in files
-- **Ctrl+S** — Save / **Ctrl+Shift+S** — Save All
+The app reads settings at runtime; no secrets are baked into the binaries.
 
 ---
 
-## 🧰 Troubleshooting
+## 🧭 Using the Git/GitHub features
 
-- **Lua highlight null** → ensure `Resources/Lua.xshd` exists, has Build Action = Resource, and valid XML.
-- **TOC highlight error** → same checks for `WoWTOC.xshd`.
-- **GitHub device flow disabled** → either enable device flow on your OAuth App or use a classic PAT with `repo` scope.
-- **Build safety** → source/target identity check prevents destructive copies.
+- **Git → Sign in with GitHub**  
+  Browser pops; approve the app. The token is stored in **User settings**.
+- **Git → GitHub…**  
+  - **Clone** a repo from your user/orgs into a chosen folder (the app waits for your `.toc`)
+  - **Open** an existing local project
+  - **Initialize** the current project on GitHub (creates repo, sets `origin`, initial commit + push)
+- **Status / Commit / Pull / Push / Sync** and **Branches** supported from the Git menu.
+- **History / Blame / Merge Helper** in dedicated windows.
 
 ---
 
-## 🗂 Project Structure
+## 🗂️ Project Structure
 
 ```
 WoWAddonIDE/
  ├─ Models/
  ├─ Services/
- │   ├─ ThemeManager.cs
+ │   ├─ GitService.cs
+ │   ├─ GitHubAuthService.cs
  │   ├─ CompletionService.cs
  │   ├─ SymbolService.cs
- │   ├─ GitService.cs
- │   └─ LuaLint.cs
+ │   └─ ThemeManager.cs
  ├─ Windows/
  ├─ Resources/
  │   ├─ Lua.xshd
  │   ├─ WoWTOC.xshd
  │   └─ wow_api.json
- ├─ Themes/ (optional)
  ├─ MainWindow.xaml / .cs
  └─ README.md
 ```
 
 ---
 
-## 🤝 Contributing
+## ❓ Troubleshooting
 
-PRs welcome! Ideas:
-- Improved Lua grammar & TOC rules
-- Smarter symbol index
-- Live reload companion addon
-- Theme variants & accessibility
-- Tests for TOC parser/validator
-
----
-
-## 📄 License
-
-Licensed under the **MIT License** — see [LICENSE](LICENSE).
-
-Copyright © 2025 Christopher Fennell.
+- **“Watching for .toc under …\\.git”**  
+  Newer builds normalize clone/open paths to the **working directory**, not `.git`.
+- **“Resource not accessible by PAT”**  
+  Prefer OAuth; or use a classic PAT with `repo` scope. If your org enforces SAML, authorize the token for that org.
+- **Syntax highlighting missing**  
+  Ensure `Resources/*.xshd` and `wow_api.json` exist with Build Action = **Resource**.
 
 ---
 
-## 🙏 Acknowledgements
+## 🤝 Contributing & License
 
-- [AvalonEdit](https://github.com/icsharpcode/AvalonEdit)
-- [LibGit2Sharp](https://github.com/libgit2/libgit2sharp)
-- [Octokit.NET](https://github.com/octokit/octokit.net)
-- [Ookii.Dialogs.Wpf](https://github.com/ookii-dialogs/ookii-dialogs-wpf)
-- [DiffPlex](https://github.com/mmanela/diffplex)
+PRs welcome! MIT license—see [LICENSE](LICENSE).

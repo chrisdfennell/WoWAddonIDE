@@ -1,6 +1,11 @@
-﻿using System;
+﻿// File: WoWAddonIDE/Services/GitHubAuthService.cs
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
@@ -8,107 +13,190 @@ using System.Threading.Tasks;
 
 namespace WoWAddonIDE.Services
 {
-    public record GitHubDeviceCode(
-        string device_code,
-        string user_code,
-        string verification_uri,
-        int expires_in,
-        int interval);
-
     public static class GitHubAuthService
     {
-        static readonly Uri DeviceCodeEndpoint = new("https://github.com/login/device/code");
-        static readonly Uri TokenEndpoint = new("https://github.com/login/oauth/access_token");
+        private const string AuthorizeEndpoint = "https://github.com/login/oauth/authorize";
+        private const string TokenEndpoint = "https://github.com/login/oauth/access_token";
 
-        public static async Task<GitHubDeviceCode> BeginDeviceFlowAsync(string clientId, string scope, CancellationToken ct)
+        // --- helpers ---------------------------------------------------------
+
+        // Base64Url encoding (no padding)
+        private static string Base64Url(byte[] data)
         {
-            if (string.IsNullOrWhiteSpace(clientId))
-                throw new InvalidOperationException("GitHub OAuth Client ID is missing. Set it in Git/GitHub Settings.");
-
-            using var http = new HttpClient();
-            http.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-            // GitHub expects form-URL-encoded
-            var body = new FormUrlEncodedContent(new Dictionary<string, string>
-            {
-                ["client_id"] = clientId,
-                ["scope"] = scope
-            });
-
-            var resp = await http.PostAsync(DeviceCodeEndpoint, body, ct);
-            var text = await resp.Content.ReadAsStringAsync(ct);
-
-            if (!resp.IsSuccessStatusCode)
-            {
-                // Surface GitHub’s specific error nicely
-                if (text.Contains("device_flow_disabled", StringComparison.OrdinalIgnoreCase))
-                    throw new InvalidOperationException(
-                        "GitHub says the Device Authorization Flow is disabled for this OAuth App.\n\n" +
-                        "Go to GitHub → Settings → Developer settings → OAuth Apps → your app → Edit → " +
-                        "enable Device Flow, then try again.");
-
-                throw new InvalidOperationException($"GitHub device code error {(int)resp.StatusCode}: {text}");
-            }
-
-            using var doc = JsonDocument.Parse(text);
-            var root = doc.RootElement;
-
-            return new GitHubDeviceCode(
-                root.GetProperty("device_code").GetString()!,
-                root.GetProperty("user_code").GetString()!,
-                root.GetProperty("verification_uri").GetString()!,
-                root.GetProperty("expires_in").GetInt32(),
-                root.GetProperty("interval").GetInt32()
-            );
+            return Convert.ToBase64String(data)
+                .Replace('+', '-')
+                .Replace('/', '_')
+                .TrimEnd('=');
         }
 
-        public static async Task<string> WaitForAccessTokenAsync(string clientId, string deviceCode, int intervalSeconds, CancellationToken ct)
+        private static (string Verifier, string Challenge) MakePkcePair()
         {
-            using var http = new HttpClient();
-            http.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            var bytes = RandomNumberGenerator.GetBytes(64); // 64 bytes -> ~86 chars
+            var verifier = Base64Url(bytes);
+            using var sha = SHA256.Create();
+            var challenge = Base64Url(sha.ComputeHash(Encoding.ASCII.GetBytes(verifier)));
+            return (verifier, challenge);
+        }
 
-            var form = $"client_id={Uri.EscapeDataString(clientId)}&" +
-                       $"device_code={Uri.EscapeDataString(deviceCode)}&" +
-                       $"grant_type=urn:ietf:params:oauth:grant-type:device_code";
+        private static string NewState() => Base64Url(RandomNumberGenerator.GetBytes(32));
 
-            while (true)
+        // --- main entry: browser sign-in with PKCE ---------------------------
+
+        /// <summary>
+        /// Authorization Code + PKCE. Opens the browser and listens on http://127.0.0.1:{port}/callback.
+        /// Configure your GitHub OAuth App “Authorization callback URL” to that exact URL.
+        /// </summary>
+        public static async Task<string> SignInViaPkceAsync(
+            string clientId,
+            string? clientSecret,               // optional; include for OAuth Apps
+            string scope = "repo read:user",
+            int port = 48123,
+            CancellationToken ct = default)
+        {
+            if (string.IsNullOrWhiteSpace(clientId))
+                throw new InvalidOperationException("GitHub OAuth Client ID is empty.");
+
+            var (verifier, challenge) = MakePkcePair();
+            var state = NewState();
+            var redirect = $"http://127.0.0.1:{port}/callback";
+
+            var authUrl =
+                $"{AuthorizeEndpoint}" +
+                $"?client_id={Uri.EscapeDataString(clientId)}" +
+                $"&redirect_uri={Uri.EscapeDataString(redirect)}" +
+                $"&scope={Uri.EscapeDataString(scope)}" +
+                $"&state={Uri.EscapeDataString(state)}" +
+                $"&code_challenge={Uri.EscapeDataString(challenge)}" +
+                $"&code_challenge_method=S256";
+
+            using var listener = new HttpListener();
+            listener.Prefixes.Add($"http://127.0.0.1:{port}/callback/");
+            try { listener.Start(); }
+            catch (HttpListenerException ex)
             {
-                ct.ThrowIfCancellationRequested();
+                throw new InvalidOperationException(
+                    $"Couldn't start loopback listener on http://127.0.0.1:{port}/callback/.\n" +
+                    $"Try a different port or add a URL ACL.\n\n{ex.Message}", ex);
+            }
 
-                var resp = await http.PostAsync(TokenEndpoint,
-                    new StringContent(form, Encoding.UTF8, "application/x-www-form-urlencoded"), ct);
-                resp.EnsureSuccessStatusCode();
-                var json = await resp.Content.ReadAsStringAsync(ct);
-                using var doc = JsonDocument.Parse(json);
-                var root = doc.RootElement;
+            // Open the browser
+            Process.Start(new ProcessStartInfo { FileName = authUrl, UseShellExecute = true });
 
-                if (root.TryGetProperty("access_token", out var tokenProp))
-                    return tokenProp.GetString()!;
+            // Default page so the 'finally' can always reply
+            string htmlResponse =
+                "<html><body style='font-family:Segoe UI, sans-serif'>" +
+                "<h2>You can close this tab</h2><p>Return to WoWAddonIDE.</p></body></html>";
 
-                if (root.TryGetProperty("error", out var err))
+            HttpListenerContext? ctx = null;
+
+            try
+            {
+                // Cancellation-friendly wait without relying on Task.WaitAsync
+                var ctxTask = listener.GetContextAsync();
+                var done = await Task.WhenAny(ctxTask, Task.Delay(Timeout.Infinite, ct));
+                if (done != ctxTask) throw new OperationCanceledException(ct);
+                ctx = await ctxTask;
+
+                var query = ctx.Request.QueryString;
+                var code = query["code"];
+                var gotState = query["state"];
+
+                if (string.IsNullOrWhiteSpace(code))
+                    throw new InvalidOperationException("GitHub did not return an authorization code.");
+                if (!string.Equals(gotState, state, StringComparison.Ordinal))
+                    throw new InvalidOperationException("OAuth state mismatch.");
+
+                // Exchange code for token (include secret for OAuth Apps)
+                var token = await ExchangeCodeForTokenAsync(clientId, clientSecret, code, verifier, redirect, ct);
+
+                htmlResponse =
+                    "<html><body style='font-family:Segoe UI, sans-serif'>" +
+                    "<h2>GitHub sign-in complete</h2><p>You can close this tab and return to WoWAddonIDE.</p></body></html>";
+
+                return token;
+            }
+            catch (OperationCanceledException)
+            {
+                htmlResponse =
+                    "<html><body style='font-family:Segoe UI, sans-serif'>" +
+                    "<h2>Cancelled</h2><p>You can close this tab.</p></body></html>";
+                throw;
+            }
+            catch (Exception ex)
+            {
+                htmlResponse =
+                    "<html><body style='font-family:Segoe UI, sans-serif'>" +
+                    "<h2>Sign-in failed</h2><p>" + WebUtility.HtmlEncode(ex.Message) + "</p></body></html>";
+                throw;
+            }
+            finally
+            {
+                try
                 {
-                    var error = err.GetString();
-                    switch (error)
+                    if (listener.IsListening && ctx != null)
                     {
-                        case "authorization_pending":
-                            await Task.Delay(TimeSpan.FromSeconds(intervalSeconds), ct);
-                            continue;
-                        case "slow_down":
-                            intervalSeconds += 5;
-                            await Task.Delay(TimeSpan.FromSeconds(intervalSeconds), ct);
-                            continue;
-                        case "expired_token":
-                            throw new InvalidOperationException("Device code expired. Start sign-in again.");
-                        case "access_denied":
-                            throw new OperationCanceledException("User denied access.");
-                        default:
-                            throw new InvalidOperationException("OAuth error: " + error);
+                        var buf = Encoding.UTF8.GetBytes(htmlResponse);
+                        ctx.Response.ContentType = "text/html; charset=utf-8";
+                        ctx.Response.ContentLength64 = buf.Length;
+                        await ctx.Response.OutputStream.WriteAsync(buf, 0, buf.Length, ct);
+                        ctx.Response.OutputStream.Close();
                     }
                 }
-
-                // Safety backoff
-                await Task.Delay(TimeSpan.FromSeconds(intervalSeconds), ct);
+                catch { /* ignore */ }
+                try { listener.Stop(); } catch { }
             }
+        }
+
+        // --- token exchange --------------------------------------------------
+
+        private static async Task<string> ExchangeCodeForTokenAsync(
+            string clientId,
+            string? clientSecret,   // may be null (GitHub device flow / GitHub App would differ)
+            string code,
+            string codeVerifier,
+            string redirectUri,
+            CancellationToken ct)
+        {
+            using var http = new HttpClient();
+            using var req = new HttpRequestMessage(HttpMethod.Post, TokenEndpoint);
+            req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            req.Headers.UserAgent.ParseAdd("WoWAddonIDE/1.0");
+
+            var form = new List<KeyValuePair<string, string>>
+            {
+                new("client_id", clientId),
+                new("code", code),
+                new("redirect_uri", redirectUri),
+                new("grant_type", "authorization_code"),
+                new("code_verifier", codeVerifier),
+            };
+            if (!string.IsNullOrWhiteSpace(clientSecret))
+                form.Add(new("client_secret", clientSecret)); // OAuth Apps generally expect this
+
+            req.Content = new FormUrlEncodedContent(form);
+
+            using var resp = await http.SendAsync(req, ct);
+            var json = await resp.Content.ReadAsStringAsync(ct);
+
+            if (!resp.IsSuccessStatusCode)
+                throw new InvalidOperationException($"Token endpoint HTTP {(int)resp.StatusCode}: {json}");
+
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+
+            if (root.TryGetProperty("error", out var err))
+            {
+                var desc = root.TryGetProperty("error_description", out var d) ? d.GetString() : null;
+                throw new InvalidOperationException($"GitHub token error: {err.GetString()} - {desc}");
+            }
+
+            if (root.TryGetProperty("access_token", out var tokProp))
+            {
+                var token = tokProp.GetString();
+                if (!string.IsNullOrWhiteSpace(token)) return token!;
+            }
+
+            throw new InvalidOperationException("GitHub did not return an access_token.");
         }
     }
 }

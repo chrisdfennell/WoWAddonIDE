@@ -1,0 +1,46 @@
+﻿<Window x:Class="WoWAddonIDE.Windows.GitHubRepoPickerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="GitHub Repositories" Height="520" Width="860"
+        WindowStartupLocation="CenterOwner">
+    <DockPanel Margin="12">
+        <!-- Top bar -->
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+            <TextBlock Text="Search:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+            <TextBox x:Name="SearchBox" Width="260" Margin="0,0,8,0"
+                     VerticalAlignment="Center" TextChanged="SearchBox_TextChanged"/>
+            <Button Content="Refresh" Width="100" Margin="0,0,8,0" Click="Refresh_Click"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="CloneBtn" Content="Clone…" Width="120" Margin="0,0,8,0" Click="Clone_Click"/>
+                <Button x:Name="OpenLocalBtn" Content="Open local…" Width="120" Margin="0,0,8,0" Click="OpenLocal_Click"/>
+                <Button x:Name="InitBtn" Content="Initialize current project on GitHub…" Width="260" Click="Init_Click"/>
+            </StackPanel>
+        </StackPanel>
+
+        <!-- Repos grid -->
+        <DataGrid x:Name="Grid"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  IsReadOnly="True"
+                  SelectionMode="Single"
+                  MouseDoubleClick="Grid_MouseDoubleClick">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Owner" Binding="{Binding Owner}" Width="120"/>
+                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="200"/>
+                <!-- Replace your Private column with this -->
+                <DataGridTemplateColumn Header="Private" Width="70">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <CheckBox IsChecked="{Binding Private, Mode=OneWay}"
+                      IsEnabled="False"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Center"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="Updated" Binding="{Binding UpdatedDisplay}" Width="160"/>
+                <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </DockPanel>
+</Window>

@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualBasic;
+﻿// File: WoWAddonIDE/MainWindow.Project.cs
+using Microsoft.VisualBasic;
 using Ookii.Dialogs.Wpf;
 using System;
 using System.Collections.Generic;
@@ -16,6 +17,12 @@ namespace WoWAddonIDE
 {
     public partial class MainWindow : Window
     {
+        // Dedup guard for the project tree
+        private readonly HashSet<string> _treeSeen = new(StringComparer.OrdinalIgnoreCase);
+
+        // ─────────────────────────────────────────────────────────────────────────────
+        // Project: create / open
+        // ─────────────────────────────────────────────────────────────────────────────
         private void NewProject_Click(object sender, RoutedEventArgs e)
         {
             var folderDlg = new VistaFolderBrowserDialog
@@ -52,7 +59,7 @@ print(ADDON_NAME .. ' loaded!')
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, ex.Message, "New Project Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(this, ex.Message, "New Project", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -69,27 +76,36 @@ print(ADDON_NAME .. ' loaded!')
                 _project = AddonProject.LoadFromDirectory(folderDlg.SelectedPath);
                 if (_project == null)
                 {
-                    MessageBox.Show(this, "No .toc found in that directory.", "Open Project", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show(this, "No .toc found in that directory.", "Open Project",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
+
                 RefreshProjectTree();
                 Status($"Opened project: {_project.Name}");
                 PathText.Text = $"Project: {_project.RootPath}";
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, ex.Message, "Open Project Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(this, ex.Message, "Open Project", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
+        // ─────────────────────────────────────────────────────────────────────────────
+        // Add files
+        // ─────────────────────────────────────────────────────────────────────────────
         private void AddLua_Click(object sender, RoutedEventArgs e)
         {
             if (!EnsureProject()) return;
+
             var name = Interaction.InputBox("New Lua filename (without path):", "Add Lua File", "NewFile.lua");
             if (string.IsNullOrWhiteSpace(name)) return;
+
             var full = Path.Combine(_project!.RootPath, name);
             if (!full.EndsWith(".lua", StringComparison.OrdinalIgnoreCase)) full += ".lua";
+
             File.WriteAllText(full, "-- New Lua file\n");
+
             _project = AddonProject.LoadFromDirectory(_project.RootPath);
             RefreshProjectTree();
             OpenFileInTab(full);
@@ -99,20 +115,27 @@ print(ADDON_NAME .. ' loaded!')
         private void AddXml_Click(object sender, RoutedEventArgs e)
         {
             if (!EnsureProject()) return;
-            var name = Interaction.InputBox("New XML filename (without path):", "Add XML File", "Frame.xml");
+
+            var name = Interaction.InputBox("New XML filename (without path):", "Add XML File", "Frame");
             if (string.IsNullOrWhiteSpace(name)) return;
+
             var full = Path.Combine(_project!.RootPath, name);
             if (!full.EndsWith(".xml", StringComparison.OrdinalIgnoreCase)) full += ".xml";
+
             File.WriteAllText(full,
 @"<Ui xmlns=""http://www.blizzard.com/wow/ui/"" xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"">
     <!-- Add your frames here -->
 </Ui>");
+
             _project = AddonProject.LoadFromDirectory(_project.RootPath);
             RefreshProjectTree();
             OpenFileInTab(full);
             TryAddToToc(full);
         }
 
+        // ─────────────────────────────────────────────────────────────────────────────
+        // Build / package
+        // ─────────────────────────────────────────────────────────────────────────────
         private void Build_Click(object sender, RoutedEventArgs e)
         {
             if (!EnsureProject()) return;
@@ -122,7 +145,8 @@ print(ADDON_NAME .. ' loaded!')
 
             if (string.IsNullOrWhiteSpace(_settings.AddOnsPath) || !Directory.Exists(_settings.AddOnsPath))
             {
-                MessageBox.Show(this, "AddOns path is not set or invalid. Use Tools > Settings.", "Build", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(this, "AddOns path is not set or invalid. Use Tools → Settings.", "Build",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -138,7 +162,7 @@ print(ADDON_NAME .. ' loaded!')
                     MessageBox.Show(this,
                         "Your project folder is already inside AddOns.\n" +
                         "To avoid data loss, Build is disabled.\n\n" +
-                        "You can enable it in Tools > Settings (not recommended).",
+                        "You can enable it in Tools → Settings (not recommended).",
                         "Build Skipped", MessageBoxButton.OK, MessageBoxImage.Information);
                     Log("Build skipped: project resides inside AddOns.");
                     return;
@@ -146,8 +170,8 @@ print(ADDON_NAME .. ' loaded!')
 
                 if (string.Equals(src, target, StringComparison.OrdinalIgnoreCase))
                 {
-                    MessageBox.Show(this, "Source and target are the same folder. Aborting.", "Build Error",
-                        MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show(this, "Source and target are the same folder. Aborting.",
+                        "Build", MessageBoxButton.OK, MessageBoxImage.Error);
                     return;
                 }
 
@@ -160,7 +184,7 @@ print(ADDON_NAME .. ' loaded!')
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, ex.Message, "Build Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(this, ex.Message, "Build", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -174,15 +198,17 @@ print(ADDON_NAME .. ' loaded!')
 
             var src = Path.GetFullPath(_project!.RootPath);
             var target = Path.Combine(dlg.SelectedPath, _project!.Name);
+
             if (string.Equals(src, Path.GetFullPath(target), StringComparison.OrdinalIgnoreCase))
             {
-                MessageBox.Show(this, "Source and target are the same folder. Pick a different destination.", "Build to Folder",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(this, "Source and target are the same folder. Pick a different destination.",
+                    "Build to Folder", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             if (Directory.Exists(target)) Directory.Delete(target, true);
             Directory.CreateDirectory(target);
+
             CopyDirectorySafe(src, target);
 
             Status("Build to folder completed.");
@@ -221,11 +247,17 @@ print(ADDON_NAME .. ' loaded!')
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, ex.Message, "Build Zip Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(this, ex.Message, "Build Zip", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        private void ProjectTree_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e) { /* optional */ }
+        // ─────────────────────────────────────────────────────────────────────────────
+        // Project tree (UI)
+        // ─────────────────────────────────────────────────────────────────────────────
+        private void ProjectTree_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            // optional: selection-dependent UI
+        }
 
         private void ProjectTree_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
@@ -233,84 +265,6 @@ print(ADDON_NAME .. ' loaded!')
             {
                 OpenFileInTab(path);
             }
-        }
-
-        private void RefreshProjectTree()
-        {
-            ProjectTree.Items.Clear();
-            if (_project == null) return;
-
-            var rootItem = new TreeViewItem
-            {
-                Header = _project.Name,
-                Tag = _project.RootPath,
-                IsExpanded = true
-            };
-
-            string? primaryToc = File.Exists(_project.TocPath)
-                ? Path.GetFullPath(_project.TocPath)
-                : null;
-
-            if (primaryToc != null)
-            {
-                rootItem.Items.Add(new TreeViewItem
-                {
-                    Header = Path.GetFileName(primaryToc),
-                    Tag = primaryToc
-                });
-            }
-
-            void AddDir(TreeViewItem parent, string dir)
-            {
-                IEnumerable<string> subdirs;
-                try { subdirs = Directory.GetDirectories(dir); }
-                catch { return; }
-
-                foreach (var sub in subdirs.OrderBy(d => d, StringComparer.OrdinalIgnoreCase))
-                {
-                    var name = Path.GetFileName(sub);
-
-                    if (name.Equals(".git", StringComparison.OrdinalIgnoreCase) ||
-                        name.Equals(".vs", StringComparison.OrdinalIgnoreCase))
-                        continue;
-
-                    try
-                    {
-                        var di = new DirectoryInfo(sub);
-                        if ((di.Attributes & (FileAttributes.Hidden | FileAttributes.System)) != 0)
-                            continue;
-                    }
-                    catch { /* ignore */ }
-
-                    var node = new TreeViewItem
-                    {
-                        Header = name,
-                        Tag = sub,
-                        IsExpanded = false
-                    };
-                    AddDir(node, sub);
-                    parent.Items.Add(node);
-                }
-
-                IEnumerable<string> files;
-                try { files = Directory.GetFiles(dir); }
-                catch { return; }
-
-                foreach (var file in files.OrderBy(f => f, StringComparer.OrdinalIgnoreCase))
-                {
-                    var ext = Path.GetExtension(file).ToLowerInvariant();
-                    if (ext is ".tga" or ".png" or ".jpg") continue;
-
-                    parent.Items.Add(new TreeViewItem
-                    {
-                        Header = Path.GetFileName(file),
-                        Tag = file
-                    });
-                }
-            }
-
-            AddDir(rootItem, _project.RootPath);
-            ProjectTree.Items.Add(rootItem);
         }
 
         private string? SelectedTreePath()
@@ -336,7 +290,7 @@ print(ADDON_NAME .. ' loaded!')
         private void ProjectTree_CopyPath_Click(object s, RoutedEventArgs e)
         {
             var p = SelectedTreePath(); if (p == null) return;
-            try { Clipboard.SetText(p); } catch { }
+            try { Clipboard.SetText(p); } catch { /* ignore clipboard exceptions */ }
         }
 
         private void ProjectTree_CopyRelPath_Click(object s, RoutedEventArgs e)
@@ -347,21 +301,82 @@ print(ADDON_NAME .. ' loaded!')
                 var rel = (_project != null) ? Path.GetRelativePath(_project.RootPath, p) : p;
                 Clipboard.SetText(rel);
             }
-            catch { }
+            catch { /* ignore */ }
         }
 
+        // Build the tree for the current _project
+        private void RefreshProjectTree()
+        {
+            ProjectTree.Items.Clear();
+            _treeSeen.Clear();
+
+            if (_project == null || string.IsNullOrWhiteSpace(_project.RootPath))
+                return;
+
+            var rootPath = _project.RootPath;
+            var rootNode = new TreeViewItem
+            {
+                Header = Path.GetFileName(rootPath),
+                Tag = rootPath,
+                IsExpanded = true
+            };
+
+            ProjectTree.Items.Add(rootNode);
+            AddDirectory(rootNode, rootPath);
+        }
+
+        // Adds the folder content under 'parent'
+        private void AddDirectory(TreeViewItem parent, string dir)
+        {
+            // 1) Add the .toc once (if present)
+            var tocPath = Directory.EnumerateFiles(dir, "*.toc", SearchOption.TopDirectoryOnly).FirstOrDefault();
+            if (!string.IsNullOrEmpty(tocPath))
+                TryAddFileNode(parent, tocPath);
+
+            // 2) Add subfolders
+            foreach (var sub in Directory.EnumerateDirectories(dir).OrderBy(Path.GetFileName, StringComparer.OrdinalIgnoreCase))
+            {
+                var subNode = new TreeViewItem { Header = Path.GetFileName(sub), Tag = sub };
+                parent.Items.Add(subNode);
+                AddDirectory(subNode, sub);
+            }
+
+            // 3) Add remaining files (skip the .toc we already pinned)
+            foreach (var file in Directory.EnumerateFiles(dir, "*", SearchOption.TopDirectoryOnly)
+                                          .Where(f => !string.Equals(f, tocPath, StringComparison.OrdinalIgnoreCase))
+                                          .OrderBy(Path.GetFileName, StringComparer.OrdinalIgnoreCase))
+            {
+                TryAddFileNode(parent, file);
+            }
+        }
+
+        private void TryAddFileNode(TreeViewItem parent, string path)
+        {
+            if (!_treeSeen.Add(path)) return; // dedupe guard
+            parent.Items.Add(new TreeViewItem
+            {
+                Header = Path.GetFileName(path),
+                Tag = path
+            });
+        }
+
+        // ─────────────────────────────────────────────────────────────────────────────
+        // Copy helpers for builds
+        // ─────────────────────────────────────────────────────────────────────────────
         private void CopyDirectorySafe(string src, string dest, string? excludes = null)
         {
             var excludeSet = BuildExcludeSet(excludes);
+
             foreach (var file in Directory.GetFiles(src, "*", SearchOption.AllDirectories))
             {
+                // skip excluded extensions
                 var ext = Path.GetExtension(file);
                 if (excludeSet.Contains(ext)) continue;
 
                 var rel = Path.GetRelativePath(src, file);
                 var outPath = Path.Combine(dest, rel);
                 Directory.CreateDirectory(Path.GetDirectoryName(outPath)!);
-                File.Copy(file, outPath, true);
+                File.Copy(file, outPath, overwrite: true);
             }
         }
 
@@ -381,11 +396,14 @@ print(ADDON_NAME .. ' loaded!')
             return set;
         }
 
+        // ─────────────────────────────────────────────────────────────────────────────
+        // Misc
+        // ─────────────────────────────────────────────────────────────────────────────
         private void OpenAddonsFolder_Click(object sender, RoutedEventArgs e)
         {
             if (string.IsNullOrWhiteSpace(_settings.AddOnsPath) || !Directory.Exists(_settings.AddOnsPath))
             {
-                MessageBox.Show(this, "AddOns path is not set or invalid. Go to Tools > Settings.", "Open AddOns Folder",
+                MessageBox.Show(this, "AddOns path is not set or invalid. Go to Tools → Settings.", "Open AddOns Folder",
                     MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
@@ -395,12 +413,14 @@ print(ADDON_NAME .. ' loaded!')
         private void LiveReload_Click(object sender, RoutedEventArgs e)
         {
             if (_project == null) return;
+
             if (string.IsNullOrWhiteSpace(_settings.AddOnsPath) || !Directory.Exists(_settings.AddOnsPath))
             {
-                MessageBox.Show(this, "AddOns path is not set. Tools > Settings.", "Live Reload",
+                MessageBox.Show(this, "AddOns path is not set. Tools → Settings.", "Live Reload",
                     MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
+
             try
             {
                 var addonDir = Path.Combine(_settings.AddOnsPath, _project.Name);
@@ -412,7 +432,7 @@ print(ADDON_NAME .. ' loaded!')
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, ex.Message, "Live Reload Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(this, ex.Message, "Live Reload", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

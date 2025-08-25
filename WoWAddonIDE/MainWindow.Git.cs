@@ -1,7 +1,9 @@
-﻿using Microsoft.VisualBasic;
+﻿// File: WoWAddonIDE/MainWindow.Git.cs
+using Microsoft.VisualBasic;
 using Ookii.Dialogs.Wpf;
 using System;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using System.IO;
 using System.Linq;
 using System.Windows;
@@ -12,6 +14,11 @@ namespace WoWAddonIDE
 {
     public partial class MainWindow : Window
     {
+        // Optional hardcoded fallbacks in case Settings are blank.
+        // You can safely leave these empty and only use Settings.
+        private const string DefaultGitHubClientId = ""; // e.g. "Iv1...."
+        private const string DefaultGitHubClientSecret = ""; // e.g. "abcd1234..."  (User-scope settings preferred)
+
         private void UpdateGitStatusStrip()
         {
             if (_project == null) { GitBranchText.Text = ""; return; }
@@ -353,21 +360,33 @@ namespace WoWAddonIDE
 
         private async void GitSignIn_Click(object sender, RoutedEventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(_settings.GitHubOAuthClientId))
-            {
-                MessageBox.Show(this,
-                    "GitHub OAuth Client ID is empty. Go to Git → Git/GitHub Settings… and paste the Client ID from your OAuth App.",
-                    "GitHub Sign-in", MessageBoxButton.OK, MessageBoxImage.Information);
-                return;
-            }
+            var clientId = string.IsNullOrWhiteSpace(Properties.Settings.Default.GitHubOAuthClientId)
+                ? "" : Properties.Settings.Default.GitHubOAuthClientId;
 
-            var w = new Windows.GitHubSignInWindow(_settings.GitHubOAuthClientId) { Owner = this };
+            var clientSecret = string.IsNullOrWhiteSpace(Properties.Settings.Default.GitHubOAuthClientSecret)
+                ? "" : Properties.Settings.Default.GitHubOAuthClientSecret;
+
+            var w = new Windows.GitHubSignInWindow(clientId, clientSecret) { Owner = this };
             if (w.ShowDialog() == true && !string.IsNullOrWhiteSpace(w.AccessToken))
             {
                 _settings.GitHubToken = w.AccessToken!;
                 SaveSettings();
                 Log("Signed in to GitHub. OAuth token stored.");
+
+                // NEW: Immediately let the user pick/clone/init a project
+                await OpenGitHubRepoPickerAsync(afterSignIn: true);
             }
+        }
+
+        private async void GitHubPickOrInit_Click(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(_settings.GitHubToken))
+            {
+                MessageBox.Show(this, "Sign in to GitHub first.", "GitHub",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            await OpenGitHubRepoPickerAsync();
         }
 
         private void GitOpenDotGit_Click(object sender, RoutedEventArgs e)
@@ -377,5 +396,204 @@ namespace WoWAddonIDE
             if (!Directory.Exists(path)) { MessageBox.Show(this, "No .git folder here."); return; }
             Process.Start("explorer.exe", path);
         }
+
+        // Normalizes any repo path that might accidentally point into ".git"
+        private static string NormalizeRepoWorkdir(string? path)
+        {
+            if (string.IsNullOrWhiteSpace(path)) return path ?? string.Empty;
+
+            // Trim trailing separators
+            var p = path.TrimEnd('\\', '/');
+
+            // If the last segment is ".git", go up one directory
+            if (string.Equals(System.IO.Path.GetFileName(p), ".git", StringComparison.OrdinalIgnoreCase))
+                return System.IO.Directory.GetParent(p)?.FullName ?? p;
+
+            // If the path contains "\.git\..." anywhere, strip everything from that segment
+            var norm = p.Replace('/', '\\');
+            const string token = "\\.git\\";
+            var i = norm.IndexOf(token, StringComparison.OrdinalIgnoreCase);
+            if (i >= 0)
+                return norm.Substring(0, i).TrimEnd('\\');
+
+            return p;
+        }
+
+
+        private async System.Threading.Tasks.Task OpenGitHubRepoPickerAsync(bool afterSignIn = false)
+        {
+            string? currentProjectPath = _project?.RootPath;
+            var picker = new Windows.GitHubRepoPickerWindow(_settings, currentProjectPath) { Owner = this };
+
+            if (picker.ShowDialog() == true)
+            {
+                string? toOpen = picker.ResultClonedPath ?? picker.ResultOpenedLocalPath;
+
+                if (!string.IsNullOrWhiteSpace(toOpen))
+                {
+                    // ✅ Normalize out any ".git" segment that might have slipped in
+                    var normalized = NormalizeRepoWorkdir(toOpen);
+
+                    if (!System.IO.Directory.Exists(normalized))
+                    {
+                        MessageBox.Show(this, "The selected folder no longer exists.", "Open Project",
+                            MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+
+                    Log($"Watching for .toc under: {normalized}");
+                    var addonRoot = await WaitForAddonRootAsync(normalized);
+                    Log($"Watcher finished. Found: {addonRoot ?? "(none)"}");
+
+                    // If still nothing (AV lag or nested layout), let the user pick a .toc
+                    if (addonRoot == null)
+                        addonRoot = AskUserForAddonRoot(this, normalized);
+
+                    if (addonRoot == null)
+                    {
+                        MessageBox.Show(this, "That folder doesn’t look like a WoW addon project (no .toc found).",
+                            "Open Project", MessageBoxButton.OK, MessageBoxImage.Information);
+                        return;
+                    }
+
+                    var proj = Models.AddonProject.LoadFromDirectory(addonRoot);
+                    if (proj == null)
+                    {
+                        MessageBox.Show(this, "Couldn’t load the project from that folder.",
+                            "Open Project", MessageBoxButton.OK, MessageBoxImage.Information);
+                        return;
+                    }
+
+                    _project = proj;
+                    RefreshProjectTree();
+
+                    var toc = System.IO.Directory.GetFiles(addonRoot, "*.toc", SearchOption.TopDirectoryOnly).FirstOrDefault();
+                    if (toc != null) OpenFileInTab(toc);
+
+                    RebuildSymbolIndex();
+                    PathText.Text = $"Project: {_project.RootPath}";
+                    Status(afterSignIn ? "Signed in and opened project." : "Project opened.");
+                    UpdateGitStatusStrip();
+                    return;
+                }
+
+                // Case: current project was initialized on GitHub
+                if (!string.IsNullOrWhiteSpace(picker.ResultInitializedRemoteUrl))
+                {
+                    Status("Project initialized on GitHub and pushed.");
+                    Log($"GitHub: {_settings.GitRemoteUrl}");
+                    UpdateGitStatusStrip();
+                }
+            }
+        }
+
+        private static string? TryFindAddonRootOnce(string root)
+        {
+            try
+            {
+                // quick top-level check
+                var top = Directory.GetFiles(root, "*.toc", SearchOption.TopDirectoryOnly).FirstOrDefault();
+                if (top != null) return root;
+            }
+            catch { /* ignore */ }
+
+            // robust DFS that tolerates errors and skips .git
+            string repoName = Path.GetFileName(root.TrimEnd('\\', '/'));
+            string? bestDir = null; int bestDepth = int.MaxValue;
+
+            var stack = new Stack<string>();
+            stack.Push(root);
+
+            while (stack.Count > 0)
+            {
+                var dir = stack.Pop();
+
+                try
+                {
+                    // files in this dir
+                    foreach (var toc in Directory.EnumerateFiles(dir, "*.toc", SearchOption.TopDirectoryOnly))
+                    {
+                        var dirName = Path.GetFileName(dir);
+                        var tocName = Path.GetFileNameWithoutExtension(toc);
+
+                        if (string.Equals(dirName, tocName, StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(dirName, repoName, StringComparison.OrdinalIgnoreCase))
+                            return dir; // best match
+
+                        int depth = dir.Count(c => c == '\\' || c == '/');
+                        if (depth < bestDepth) { bestDepth = depth; bestDir = dir; }
+                    }
+
+                    // subdirs
+                    foreach (var sub in Directory.EnumerateDirectories(dir, "*", SearchOption.TopDirectoryOnly))
+                    {
+                        var name = Path.GetFileName(sub);
+                        if (string.Equals(name, ".git", StringComparison.OrdinalIgnoreCase)) continue;
+                        stack.Push(sub);
+                    }
+                }
+                catch
+                {
+                    // ignore this branch and continue
+                }
+            }
+
+            return bestDir;
+        }
+
+        private static async Task<string?> WaitForAddonRootAsync(string path, int maxWaitMs = 60000)
+        {
+            var found = TryFindAddonRootOnce(path);
+            // Log($"Watching for .toc under: {path}"); // Removed static call to instance method
+            if (found != null) return found;
+
+            var tcs = new TaskCompletionSource<string?>(TaskCreationOptions.RunContinuationsAsynchronously);
+            using var watcher = new FileSystemWatcher(path, "*.toc")
+            {
+                IncludeSubdirectories = true,
+                NotifyFilter = NotifyFilters.FileName | NotifyFilters.CreationTime | NotifyFilters.LastWrite,
+                EnableRaisingEvents = true
+            };
+
+            void check() { tcs.TrySetResult(TryFindAddonRootOnce(path)); }
+
+            FileSystemEventHandler onAny = (_, __) => check();
+            RenamedEventHandler onRen = (_, __) => check();
+            watcher.Created += onAny;
+            watcher.Changed += onAny;
+            watcher.Renamed += onRen;
+
+            var sw = Stopwatch.StartNew();
+            while (sw.ElapsedMilliseconds < maxWaitMs)
+            {
+                await Task.Delay(250);
+                var r = TryFindAddonRootOnce(path);
+                if (r != null) return r;
+                if (tcs.Task.IsCompleted && tcs.Task.Result != null) return tcs.Task.Result;
+            }
+
+            return TryFindAddonRootOnce(path);
+        }
+
+        /// If still no .toc after waiting, let the user pick one explicitly.
+        private static string? AskUserForAddonRoot(Window owner, string startDir)
+        {
+            try
+            {
+                var ofd = new VistaOpenFileDialog
+                {
+                    Title = "Select the addon's .toc file",
+                    Filter = "WoW Addon TOC (*.toc)|*.toc|All files (*.*)|*.*",
+                    Multiselect = false,
+                    InitialDirectory = Directory.Exists(startDir) ? startDir : Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+                };
+                if (ofd.ShowDialog(owner) == true && File.Exists(ofd.FileName))
+                    return Path.GetDirectoryName(ofd.FileName);
+            }
+            catch { /* ignore */ }
+            return null;
+        }
+
+
     }
 }
