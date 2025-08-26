@@ -3,10 +3,13 @@
   <Profiles />
   <Settings>
     <Setting Name="GitHubOAuthClientId" Type="System.String" Scope="User">
-      <Value Profile="(Default)">Ov23litSTEsFpWjevhwY</Value>
+      <Value Profile="(Default)" />
     </Setting>
     <Setting Name="GitHubOAuthClientSecret" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="GitHubOAuthRedirect" Type="System.String" Scope="User">
+      <Value Profile="(Default)">http://localhost:53117/callback/</Value>
     </Setting>
   </Settings>
 </SettingsFile>

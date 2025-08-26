@@ -360,20 +360,21 @@ namespace WoWAddonIDE
 
         private async void GitSignIn_Click(object sender, RoutedEventArgs e)
         {
-            var clientId = string.IsNullOrWhiteSpace(Properties.Settings.Default.GitHubOAuthClientId)
-                ? "" : Properties.Settings.Default.GitHubOAuthClientId;
+            // All values trimmed; secret may be blank for PKCE.
+            var clientId = (Properties.Settings.Default.GitHubOAuthClientId ?? "").Trim();
+            string? clientSecret = string.IsNullOrWhiteSpace(Properties.Settings.Default.GitHubOAuthClientSecret)
+                ? null
+                : Properties.Settings.Default.GitHubOAuthClientSecret.Trim();
 
-            var clientSecret = string.IsNullOrWhiteSpace(Properties.Settings.Default.GitHubOAuthClientSecret)
-                ? "" : Properties.Settings.Default.GitHubOAuthClientSecret;
+            // NEW: make redirect configurable so it can exactly match what's on GitHub
+            var redirect = (Properties.Settings.Default.GitHubOAuthRedirect ?? "http://localhost:53117/callback/").Trim();
 
-            var w = new Windows.GitHubSignInWindow(clientId, clientSecret) { Owner = this };
+            var w = new Windows.GitHubSignInWindow(clientId, clientSecret, redirect) { Owner = this };
             if (w.ShowDialog() == true && !string.IsNullOrWhiteSpace(w.AccessToken))
             {
                 _settings.GitHubToken = w.AccessToken!;
                 SaveSettings();
                 Log("Signed in to GitHub. OAuth token stored.");
-
-                // NEW: Immediately let the user pick/clone/init a project
                 await OpenGitHubRepoPickerAsync(afterSignIn: true);
             }
         }
