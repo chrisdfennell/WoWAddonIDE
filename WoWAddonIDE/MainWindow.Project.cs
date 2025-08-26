@@ -20,6 +20,10 @@ namespace WoWAddonIDE
         // Dedup guard for the project tree
         private readonly HashSet<string> _treeSeen = new(StringComparer.OrdinalIgnoreCase);
 
+        // Folders we never show in the Project Explorer
+        private static readonly HashSet<string> _hiddenFolders =
+            new(StringComparer.OrdinalIgnoreCase) { ".git", ".vs" };
+
         // ─────────────────────────────────────────────────────────────────────────────
         // Project: create / open
         // ─────────────────────────────────────────────────────────────────────────────
@@ -325,23 +329,47 @@ print(ADDON_NAME .. ' loaded!')
             AddDirectory(rootNode, rootPath);
         }
 
+
+
+        private static bool ShouldHideDir(string pathOrName)
+        {
+            var name = System.IO.Path.GetFileName(pathOrName.TrimEnd('\\', '/'));
+            if (_hiddenFolders.Contains(name)) return true;
+
+            // Also hide Windows "Hidden" or "System" directories
+            try
+            {
+                var di = new System.IO.DirectoryInfo(pathOrName);
+                var attrs = di.Attributes;
+                if ((attrs & System.IO.FileAttributes.Hidden) != 0) return true;
+                if ((attrs & System.IO.FileAttributes.System) != 0) return true;
+            }
+            catch { /* ignore */ }
+
+            return false;
+        }
+
+
         // Adds the folder content under 'parent'
         private void AddDirectory(TreeViewItem parent, string dir)
         {
-            // 1) Add the .toc once (if present)
-            var tocPath = Directory.EnumerateFiles(dir, "*.toc", SearchOption.TopDirectoryOnly).FirstOrDefault();
+            // 1) Add the .toc (once)
+            var tocPath = Directory.EnumerateFiles(dir, "*.toc", SearchOption.TopDirectoryOnly)
+                                   .FirstOrDefault();
             if (!string.IsNullOrEmpty(tocPath))
                 TryAddFileNode(parent, tocPath);
 
-            // 2) Add subfolders
-            foreach (var sub in Directory.EnumerateDirectories(dir).OrderBy(Path.GetFileName, StringComparer.OrdinalIgnoreCase))
+            // 2) Add subfolders (skip hidden + .git/.vs)
+            foreach (var sub in Directory.EnumerateDirectories(dir)
+                                         .Where(d => !ShouldHideDir(d))
+                                         .OrderBy(Path.GetFileName, StringComparer.OrdinalIgnoreCase))
             {
                 var subNode = new TreeViewItem { Header = Path.GetFileName(sub), Tag = sub };
                 parent.Items.Add(subNode);
                 AddDirectory(subNode, sub);
             }
 
-            // 3) Add remaining files (skip the .toc we already pinned)
+            // 3) Add remaining files (skip the .toc we already added)
             foreach (var file in Directory.EnumerateFiles(dir, "*", SearchOption.TopDirectoryOnly)
                                           .Where(f => !string.Equals(f, tocPath, StringComparison.OrdinalIgnoreCase))
                                           .OrderBy(Path.GetFileName, StringComparer.OrdinalIgnoreCase))
