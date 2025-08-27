@@ -1,0 +1,62 @@
+﻿<Window x:Class="WoWAddonIDE.Windows.FindReplaceWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Find / Replace"
+        Width="560" Height="210"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Topmost="True"
+        Background="{DynamicResource App.BackgroundBrush}"
+        Foreground="{DynamicResource App.ForegroundBrush}">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="8"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="8"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Row 0: Find / Replace inputs -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="90"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="90"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Text="Find:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+            <TextBox x:Name="FindBox" Grid.Column="1" Margin="0,0,10,0"/>
+
+            <TextBlock Text="Replace:" Grid.Column="2" VerticalAlignment="Center" Margin="0,0,6,0"/>
+            <TextBox x:Name="ReplaceBox" Grid.Column="3"/>
+        </Grid>
+
+        <!-- Row 2: Options -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
+            <CheckBox x:Name="ChkMatchCase" Content="Match case"/>
+            <CheckBox x:Name="ChkWholeWord" Content="Whole word"/>
+            <CheckBox x:Name="ChkRegex"     Content="Regex"/>
+            <CheckBox x:Name="ChkSelection" Content="In selection"/>
+            <CheckBox x:Name="ChkWrap"      Content="Wrap" IsChecked="True"/>
+        </StackPanel>
+
+        <!-- Row 4: Buttons -->
+        <Grid Grid.Row="4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Button x:Name="BtnFindPrev"  Grid.Column="0" Content="Find Prev (Shift+F3)" Margin="0,0,6,0" Click="BtnFindPrev_Click"/>
+            <Button x:Name="BtnFindNext"  Grid.Column="1" Content="Find Next (F3)"       Margin="0,0,6,0" Click="BtnFindNext_Click" IsDefault="True"/>
+            <Button x:Name="BtnReplace"   Grid.Column="2" Content="Replace (Ctrl+H)"     Margin="0,0,6,0" Click="BtnReplace_Click"/>
+            <Button x:Name="BtnReplaceAll" Grid.Column="3" Content="Replace All"          Margin="0,0,6,0" Click="BtnReplaceAll_Click"/>
+            <Button x:Name="BtnClose"     Grid.Column="4" Content="Close (Esc)"          Click="BtnClose_Click"/>
+        </Grid>
+    </Grid>
+</Window>
