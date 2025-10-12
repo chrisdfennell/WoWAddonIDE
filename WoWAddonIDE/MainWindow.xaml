@@ -4,148 +4,501 @@
         Title="WoW Addon IDE"
         Width="1280" Height="820"
         Background="{DynamicResource App.BackgroundBrush}">
+
+    <!-- ========== Reusable toolbar styles (emoji + label) ========== -->
+    <Window.Resources>
+        <!-- Closable TabItem header -->
+        <Style x:Key="ClosableTabItem" TargetType="TabItem">
+            <Setter Property="HeaderTemplate">
+                <Setter.Value>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal" Margin="0" VerticalAlignment="Center">
+                            <!-- Header text -->
+                            <TextBlock Text="{Binding RelativeSource={RelativeSource AncestorType=TabItem}, Path=Header}"
+                                       VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <!-- Close button -->
+                            <Button Click="CloseTab_Click"
+                                    ToolTip="Close (Ctrl+W)"
+                                    Padding="4,0" Width="18" Height="18"
+                                    Cursor="Hand"
+                                    Tag="{Binding RelativeSource={RelativeSource AncestorType=TabItem}}">
+                                <TextBlock Text="✖" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                            </Button>
+                        </StackPanel>
+                    </DataTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Emoji + label toolbar button -->
+        <Style x:Key="EmojiToolbarButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Padding" Value="6,4"/>
+            <Setter Property="Margin" Value="0,0,4,0"/>
+            <Setter Property="Foreground" Value="{DynamicResource App.ForegroundBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource App.BackgroundBrush}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd"
+                                CornerRadius="6"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{DynamicResource App.BorderBrush}"
+                                BorderThickness="1"
+                                Padding="{TemplateBinding Padding}">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <!-- Emoji from Tag -->
+                                <TextBlock Text="{TemplateBinding Tag}"
+                                           FontSize="16"
+                                           Margin="0,0,6,0"
+                                           VerticalAlignment="Center"
+                                           FontFamily="Segoe UI Emoji"/>
+                                <!-- Label -->
+                                <ContentPresenter VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource App.BackgroundHoverBrush}"/>
+                                <Setter Property="Cursor" Value="Hand"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource App.BackgroundPressedBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.55"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Tiny square button (for ↻ next to Branch) -->
+        <Style x:Key="TinyIconButton" TargetType="Button" BasedOn="{StaticResource EmojiToolbarButton}">
+            <Setter Property="Padding" Value="4,2"/>
+            <Setter Property="Width"   Value="30"/>
+            <Setter Property="Content" Value=""/>
+        </Style>
+
+        <!-- Softer separators -->
+        <Style TargetType="{x:Type Separator}">
+            <Setter Property="Margin" Value="6,0,6,0"/>
+        </Style>
+    </Window.Resources>
+
     <DockPanel Background="{DynamicResource App.BackgroundBrush}">
 
-        <!-- ===== Menu Bar ===== -->
+        <!-- ===== Menu Bar (single) ===== -->
         <Menu DockPanel.Dock="Top">
+            <!-- FILE -->
             <MenuItem Header="_File">
-                <MenuItem Header="_New"      Click="NewProject_Click"/>
-                <MenuItem Header="_Open"     Click="OpenProject_Click"/>
-                <Separator/>
-                <MenuItem Header="_Save"     Click="Save_Click"/>
-                <MenuItem Header="Save _All" Click="SaveAll_Click"/>
-                <Separator/>
-                <MenuItem Header="_Exit"     Click="Exit_Click"/>
-            </MenuItem>
-
-            <MenuItem Header="_Edit">
-                <MenuItem Header="_Find"          InputGestureText="Ctrl+F"         Click="Find_Click"/>
-                <MenuItem Header="Find in _Files" InputGestureText="Ctrl+Shift+F"   Click="FindInFiles_Click"/>
-            </MenuItem>
-
-            <MenuItem Header="_Project">
-                <MenuItem Header="_Build" Click="Build_Click"/>
-                <MenuItem Header="_Build Zip…" Click="BuildZip_Click"/>
-                <MenuItem Header="Build _Multi-Zip…" Click="BuildMultiZip_Click"/>
-                <Separator/>
-                <MenuItem Header="Open AddOns _Folder" Click="OpenAddonsFolder_Click"/>
-            </MenuItem>
-
-            <MenuItem Header="_Git">
-                <MenuItem Header="_Sign in with GitHub…" Click="GitSignIn_Click"/>
-                <Separator/>
-                <MenuItem Header="Rep_os" Click="GitHubPickOrInit_Click"/>
-                <Separator/>
-                <MenuItem Header="_Initialize Repository" Click="GitInit_Click"/>
-                <MenuItem Header="_Clone…" Click="GitClone_Click"/>
-                <MenuItem Header="Set _Remote (origin)…" Click="GitSetRemote_Click"/>
-                <Separator/>
-                <MenuItem Header="_Status" Click="GitStatus_Click"/>
-                <MenuItem Header="_Commit…" Click="GitCommit_Click"/>
-                <MenuItem Header="P_ull" Click="GitPull_Click"/>
-                <MenuItem Header="Pu_sh" Click="GitPush_Click"/>
-                <MenuItem Header="_Sync (Pull then Push)" Click="GitSync_Click"/>
-                <Separator/>
-                <MenuItem Header="Create _Branch…" Click="GitCreateBranch_Click"/>
-                <MenuItem Header="_Checkout Branch…" Click="GitCheckoutBranch_Click"/>
-                <Separator/>
-                <MenuItem Header="_Blame (Active File)..." Click="GitBlameActive_Click"/>
-                <MenuItem Header="_History (Active File)..." Click="GitHistoryActive_Click"/>
-                <MenuItem Header="_Merge Helper…" Click="GitMergeHelper_Click"/>
-                <Separator/>
-                <MenuItem Header="Open on _GitHub" Click="GitOpenOnGitHub_Click"/>
-                <MenuItem Header="Create GitHub _Repo…" Click="GitCreateGitHubRepo_Click"/>
-                <MenuItem Header="_Publish Release…" Click="GitPublishRelease_Click"/>
-                <MenuItem Header="Open _.git Folder" Click="GitOpenDotGit_Click"/>
-            </MenuItem>
-
-            <MenuItem Header="_Tools">
-                <MenuItem Header="Git/GitHub _Settings…" Click="GitAuth_Click"/>
-                <Separator/>
-                <MenuItem Header="_Settings…" Click="Settings_Click"/>
-                <MenuItem Header="_Theme" Visibility="Collapsed">
-                    <MenuItem Header="_System" Click="ThemeSystem_Click"/>
-                    <MenuItem Header="_Light"  Click="ThemeLight_Click"/>
-                    <MenuItem Header="_Dark"   Click="ThemeDark_Click"/>
+                <MenuItem Header="_New"  Click="NewProject_Click"     InputGestureText="Ctrl+N">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🆕" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="New _File…" Click="NewFile_Menu_Click" InputGestureText="Ctrl+Alt+N">
+                    <MenuItem.Icon>
+                        <TextBlock Text="📝" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="_Open" Click="OpenProject_Click"    InputGestureText="Ctrl+O">
+                    <MenuItem.Icon>
+                        <TextBlock Text="📂" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
                 </MenuItem>
                 <Separator/>
-                <MenuItem Header="SavedVariables _Inspector…" Click="OpenSavedVariables_Click"/>
-                <MenuItem Header="_Command Palette…" InputGestureText="Ctrl+Shift+P" Click="OpenCommandPalette_Click"/>
+                <MenuItem Header="_Save"      Click="Save_Click"      InputGestureText="Ctrl+S">
+                    <MenuItem.Icon>
+                        <TextBlock Text="💾" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Save _All"  Click="SaveAll_Click"   InputGestureText="Ctrl+Alt+S">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🗃️" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Save _As…"  Click="SaveAs_Click"    InputGestureText="Ctrl+Shift+S">
+                    <MenuItem.Icon>
+                        <TextBlock Text="📝" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="_Close Tab" Click="CloseActiveTab_Click" InputGestureText="Ctrl+W">
+                    <MenuItem.Icon>
+                        <TextBlock Text="❌" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Close _All" Click="CloseAllTabs_Click"    InputGestureText="Ctrl+Shift+W">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🧹" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Re_open Closed Tab" Click="ReopenClosedTab_Click" InputGestureText="Ctrl+Shift+T">
+                    <MenuItem.Icon>
+                        <TextBlock Text="↩️" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <Separator/>
+                <MenuItem x:Name="RecentProjectsMenu" Header="_Recent Projects" SubmenuOpened="RecentProjectsMenu_SubmenuOpened">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🕘" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="_Exit" Click="Exit_Click" InputGestureText="Alt+F4">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🚪" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
             </MenuItem>
 
-            <MenuItem Header="_Help">
-                <MenuItem Header="_Help (F1)" Click="Help_Click" InputGestureText="F1"/>
+            <!-- EDIT -->
+            <MenuItem Header="_Edit">
+                <MenuItem Header="_Find…"     InputGestureText="Ctrl+F"        Click="Find_Click">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🔎" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="_Replace…"  InputGestureText="Ctrl+H"        Click="Replace_Click">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🔄" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Go to _Line…" InputGestureText="Ctrl+G"      Click="GoToLine_Click">
+                    <MenuItem.Icon>
+                        <TextBlock Text="📍" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
                 <Separator/>
-                <MenuItem Header="_About…" Click="About_Click"/>
+                <MenuItem Header="F_ormat Document" InputGestureText="Ctrl+Shift+I" Click="FormatDocument_Click">
+                    <MenuItem.Icon>
+                        <TextBlock Text="✨" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="T_oggle Comment"  InputGestureText="Ctrl+/"    Click="ToggleComment_Click">
+                    <MenuItem.Icon>
+                        <TextBlock Text="💬" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="_Duplicate Line"   InputGestureText="Ctrl+D"    Click="DuplicateLine_Click">
+                    <MenuItem.Icon>
+                        <TextBlock Text="📋" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="De_lete Line"      InputGestureText="Ctrl+Shift+K" Click="DeleteLine_Click">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🗑️" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="Find in _Files"    InputGestureText="Ctrl+Shift+F" Click="FindInFiles_Click">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🗂️" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+            </MenuItem>
+
+            <!-- PROJECT -->
+            <MenuItem Header="_Project">
+                <MenuItem Header="_Build"        Click="Build_Click"        InputGestureText="Ctrl+Shift+B">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🛠️" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="_Build Zip…"    Click="BuildZip_Click"     InputGestureText="Ctrl+Alt+Z">
+                    <MenuItem.Icon>
+                        <TextBlock Text="📦" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Build _Multi-Zip…" Click="BuildMultiZip_Click" InputGestureText="Ctrl+Shift+Alt+Z">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🧰" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="Open AddOns _Folder" Click="OpenAddonsFolder_Click" InputGestureText="Ctrl+Alt+O">
+                    <MenuItem.Icon>
+                        <TextBlock Text="📁" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+            </MenuItem>
+
+            <!-- GIT -->
+            <MenuItem Header="_Git">
+                <MenuItem Header="_Sign in with GitHub…" Click="GitSignIn_Click" InputGestureText="Ctrl+Alt+L">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🔐" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="Rep_os" Click="GitHubPickOrInit_Click" InputGestureText="Ctrl+Shift+O">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🗃️" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="_Initialize Repository" Click="GitInit_Click" InputGestureText="Ctrl+Alt+I">
+                    <MenuItem.Icon>
+                        <TextBlock Text="✨" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="_Clone…" Click="GitClone_Click" InputGestureText="Ctrl+Alt+K">
+                    <MenuItem.Icon>
+                        <TextBlock Text="📥" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Set _Remote (origin)…" Click="GitSetRemote_Click" InputGestureText="Ctrl+Alt+R">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🌐" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="_Status" Click="GitStatus_Click" InputGestureText="Ctrl+Shift+G">
+                    <MenuItem.Icon>
+                        <TextBlock Text="📋" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="_Commit…" Click="GitCommit_Click" InputGestureText="Ctrl+Alt+C">
+                    <MenuItem.Icon>
+                        <TextBlock Text="📝" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="P_ull" Click="GitPull_Click" InputGestureText="Ctrl+Alt+L">
+                    <MenuItem.Icon>
+                        <TextBlock Text="⬇️" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Pu_sh" Click="GitPush_Click" InputGestureText="Ctrl+Alt+P">
+                    <MenuItem.Icon>
+                        <TextBlock Text="⬆️" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="_Sync (Pull then Push)" Click="GitSync_Click" InputGestureText="Ctrl+Alt+Y">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🔁" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="Create _Branch…" Click="GitCreateBranch_Click" InputGestureText="Ctrl+Alt+N">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🌿" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="_Checkout Branch…" Click="GitCheckoutBranch_Click" InputGestureText="Ctrl+Alt+O">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🔀" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="_Blame (Active File)..." Click="GitBlameActive_Click" InputGestureText="Ctrl+Alt+B">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🕵️" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="_History (Active File)..." Click="GitHistoryActive_Click" InputGestureText="Ctrl+Alt+H">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🕘" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="_Merge Helper…" Click="GitMergeHelper_Click" InputGestureText="Ctrl+Alt+M">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🤝" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="Open on _GitHub" Click="GitOpenOnGitHub_Click" InputGestureText="Ctrl+Alt+G">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🌐" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Create GitHub _Repo…" Click="GitCreateGitHubRepo_Click" InputGestureText="Ctrl+Alt+R">
+                    <MenuItem.Icon>
+                        <TextBlock Text="📦" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="_Publish Release…" Click="GitPublishRelease_Click" InputGestureText="Ctrl+Alt+U">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🚀" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Open _.git Folder" Click="GitOpenDotGit_Click" InputGestureText="Ctrl+Alt+D">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🗂️" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+            </MenuItem>
+
+            <!-- TOOLS -->
+            <MenuItem Header="_Tools">
+                <MenuItem Header="Git/GitHub _Settings…" Click="GitAuth_Click" InputGestureText="Ctrl+Alt+,">
+                    <MenuItem.Icon>
+                        <TextBlock Text="⚙️" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="_Settings…" Click="Settings_Click" InputGestureText="Ctrl+,">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🛠️" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+
+                <!-- Editor Preferences (extended) -->
+                <Separator/>
+                <MenuItem Header="_Editor Preferences" SubmenuOpened="EditorPrefs_SubmenuOpened">
+                    <MenuItem x:Name="MiTrimOnSave" Header="Trim trailing whitespace on save" IsCheckable="True" Click="MiTrimOnSave_Click">
+                        <MenuItem.Icon>
+                            <TextBlock Text="✂️" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem x:Name="MiEnsureNewlineOnSave" Header="Ensure newline at end of file" IsCheckable="True" Click="MiEnsureNewlineOnSave_Click">
+                        <MenuItem.Icon>
+                            <TextBlock Text="⏎" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <Separator/>
+                    <MenuItem x:Name="MiFormatOnSave" Header="Format document on save" IsCheckable="True" Click="MiFormatOnSave_Click">
+                        <MenuItem.Icon>
+                            <TextBlock Text="✨" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Set Lua formatter…" Click="EditorPrefs_SetFormatter_Click">
+                        <MenuItem.Icon>
+                            <TextBlock Text="🧭" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Set formatter args…" Click="EditorPrefs_SetFormatterArgs_Click">
+                        <MenuItem.Icon>
+                            <TextBlock Text="⚙️" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                </MenuItem>
+
+                <MenuItem Header="_Theme" Visibility="Collapsed">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🌓" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                    <MenuItem Header="_System" Click="ThemeSystem_Click">
+                        <MenuItem.Icon>
+                            <TextBlock Text="💻" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="_Light" Click="ThemeLight_Click">
+                        <MenuItem.Icon>
+                            <TextBlock Text="🌞" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="_Dark" Click="ThemeDark_Click">
+                        <MenuItem.Icon>
+                            <TextBlock Text="🌙" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="SavedVariables _Inspector…" Click="OpenSavedVariables_Click" InputGestureText="Ctrl+Alt+I">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🧪" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="_Command Palette…" InputGestureText="Ctrl+Shift+P" Click="OpenCommandPalette_Click">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🎛️" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+            </MenuItem>
+
+            <!-- HELP -->
+            <MenuItem Header="_Help">
+                <MenuItem Header="_Help (F1)" InputGestureText="F1" Click="Help_Click">
+                    <MenuItem.Icon>
+                        <TextBlock Text="❓" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="_About…" Click="About_Click">
+                    <MenuItem.Icon>
+                        <TextBlock Text="ℹ️" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
             </MenuItem>
         </Menu>
 
-        <!-- ===== Toolbar ===== -->
-        <ToolBarTray DockPanel.Dock="Top">
-            <ToolBar>
+        <!-- ===== Multi-row Toolbar (3 rows) ===== -->
+        <ToolBarTray DockPanel.Dock="Top" IsLocked="False">
+            <!-- Row 1: File + Project/Build -->
+            <ToolBar ToolBarTray.IsLocked="False" ToolBar.Band="0" ToolBar.BandIndex="0">
                 <!-- File -->
-                <Button Content="New"      Click="New_Click"       ToolTip="New Project"/>
-                <Button Content="Open"     Click="Open_Click"      ToolTip="Open Project"/>
+                <Button Style="{StaticResource EmojiToolbarButton}" Tag="🆕"  Content="New"       Click="New_Click"            ToolTip="New Project"/>
+                <Button Style="{StaticResource EmojiToolbarButton}" Tag="📝"  Content="New File"  Click="NewFile_Menu_Click"   ToolTip="New File (Ctrl+Alt+N)"/>
+                <Button Style="{StaticResource EmojiToolbarButton}" Tag="📂"  Content="Open"      Click="Open_Click"           ToolTip="Open Project"/>
                 <Separator/>
-                <Button Content="Save"     Click="Save_Click"      ToolTip="Save Active File (Ctrl+S)"/>
-                <Button Content="Save All" Click="SaveAll_Click"   ToolTip="Save All Files"/>
+                <Button Style="{StaticResource EmojiToolbarButton}" Tag="💾"  Content="Save"      Click="Save_Click"           ToolTip="Save Active File (Ctrl+S)"/>
+                <Button Style="{StaticResource EmojiToolbarButton}" Tag="🗃️" Content="Save All"  Click="SaveAll_Click"        ToolTip="Save All Files"/>
                 <Separator/>
 
                 <!-- Project / Build -->
-                <Button Content="Build"       Click="Build_Click"            ToolTip="Build to AddOns"/>
-                <Button Content="Build Zip"   Click="BuildZip_Click"         ToolTip="Build ZIP package"/>
-                <Button Content="Live Reload" Click="LiveReload_Click"       ToolTip="Trigger /reload UI via flag"/>
-                <Button Content="AddOns Folder" Click="OpenAddOnsFolder_Click" ToolTip="Open AddOns folder"/>
-                <Button Content="Staging"     Click="OpenStagingFolder_Click" ToolTip="Open Staging folder"/>
+                <Button Style="{StaticResource EmojiToolbarButton}" Tag="🛠️" Content="Build"       Click="Build_Click"            ToolTip="Build to AddOns"/>
+                <Button Style="{StaticResource EmojiToolbarButton}" Tag="📦" Content="Build Zip"   Click="BuildZip_Click"         ToolTip="Build ZIP package"/>
+                <Button Style="{StaticResource EmojiToolbarButton}" Tag="🔄" Content="Live Reload" Click="LiveReload_Click"       ToolTip="Trigger /reload UI via flag"/>
                 <Separator/>
+                <Button Style="{StaticResource EmojiToolbarButton}" Tag="📁" Content="AddOns Folder"   Click="OpenAddOnsFolder_Click"   ToolTip="Open AddOns folder"/>
+                <Button Style="{StaticResource EmojiToolbarButton}" Tag="🗂️" Content="Staging"         Click="OpenStagingFolder_Click"  ToolTip="Open Staging folder"/>
+            </ToolBar>
 
+            <!-- Row 2: Edit / Navigation + Editor toggles -->
+            <ToolBar ToolBarTray.IsLocked="False" ToolBar.Band="1" ToolBar.BandIndex="0">
                 <!-- Edit / Navigation -->
-                <Button Content="Find"           Click="Find_Click"            ToolTip="Find in editor"/>
-                <Button Content="Find in Files"  Click="FindInFiles_Click"     ToolTip="Ctrl+Shift+F"/>
-                <Button Content="Go To Symbol"   Click="GoToSymbol_Click"      ToolTip="Quick symbol search"/>
-                <Button Content="Go To Def"      Click="Toolbar_GoToDef_Click" ToolTip="F12"/>
-                <Button Content="Diff"           Click="ShowDiff_Click"        ToolTip="Diff file vs disk"/>
-                <Button Content="TOC Editor"     Click="TocEditor_Click"       ToolTip="Edit .toc entries"/>
+                <Button Style="{StaticResource EmojiToolbarButton}" Tag="🔎"   Content="Find"           Click="Find_Click"            ToolTip="Find in editor"/>
+                <Button Style="{StaticResource EmojiToolbarButton}" Tag="🗂️🔎" Content="Find in Files"  Click="FindInFiles_Click"     ToolTip="Ctrl+Shift+F"/>
+                <Button Style="{StaticResource EmojiToolbarButton}" Tag="🔣"   Content="Go To Symbol"   Click="GoToSymbol_Click"      ToolTip="Quick symbol search"/>
+                <Button Style="{StaticResource EmojiToolbarButton}" Tag="➡️"   Content="Go To Def"      Click="Toolbar_GoToDef_Click" ToolTip="F12"/>
+                <Button Style="{StaticResource EmojiToolbarButton}" Tag="🧩"   Content="Diff"           Click="ShowDiff_Click"        ToolTip="Diff file vs disk"/>
+                <Button Style="{StaticResource EmojiToolbarButton}" Tag="📑"   Content="TOC Editor"     Click="TocEditor_Click"       ToolTip="Edit .toc entries"/>
                 <Separator/>
 
                 <!-- Editor toggles -->
-                <Button Content="Wrap"  Click="Toolbar_ToggleWrap_Click"  ToolTip="Toggle word wrap"/>
-                <Button Content="¶␠"    Click="Toolbar_ToggleInvis_Click" ToolTip="Toggle invisibles (tabs/spaces/EOL)"/>
-                <Button Content="Theme" Click="Toolbar_ThemeCycle_Click" ToolTip="Theme: System → Light → Dark" Visibility="Collapsed"/>
-                <Separator/>
+                <Button Style="{StaticResource EmojiToolbarButton}" Tag="↩️"   Content="Wrap"    Click="Toolbar_ToggleWrap_Click"  ToolTip="Toggle word wrap"/>
+                <Button Style="{StaticResource EmojiToolbarButton}" Tag="¶␠"  Content="Invis"   Click="Toolbar_ToggleInvis_Click" ToolTip="Toggle invisibles (tabs/spaces/EOL)"/>
+                <Button Style="{StaticResource EmojiToolbarButton}" Tag="🌓"   Content="Theme"   Click="Toolbar_ThemeCycle_Click"  ToolTip="Theme: System → Light → Dark" Visibility="Collapsed"/>
+            </ToolBar>
 
+            <!-- Row 3: Git + Branch + History/Merge + Release + API -->
+            <ToolBar ToolBarTray.IsLocked="False" ToolBar.Band="2" ToolBar.BandIndex="0">
                 <!-- Git quick actions -->
-                <Button Content="Status" Click="GitStatus_Click"   ToolTip="git status"/>
-                <Button Content="Commit" Click="GitCommit_Click"   ToolTip="Commit changes"/>
-                <Button Content="Pull"   Click="GitPull_Click"     ToolTip="git pull"/>
-                <Button Content="Push"   Click="GitPush_Click"     ToolTip="git push"/>
-                <Button Content="Sync"   Click="GitSync_Click"     ToolTip="Pull then Push"/>
+                <Button Style="{StaticResource EmojiToolbarButton}" Tag="📋" Content="Status" Click="GitStatus_Click"   ToolTip="git status"/>
+                <Button Style="{StaticResource EmojiToolbarButton}" Tag="📝" Content="Commit" Click="GitCommit_Click"   ToolTip="Commit changes"/>
+                <Button Style="{StaticResource EmojiToolbarButton}" Tag="⬇️" Content="Pull"   Click="GitPull_Click"     ToolTip="git pull"/>
+                <Button Style="{StaticResource EmojiToolbarButton}" Tag="⬆️" Content="Push"   Click="GitPush_Click"     ToolTip="git push"/>
+                <Button Style="{StaticResource EmojiToolbarButton}" Tag="🔁" Content="Sync"   Click="GitSync_Click"     ToolTip="Pull then Push"/>
                 <Separator/>
 
                 <!-- Branch switcher -->
                 <TextBlock Text="Branch:" Margin="6,0,2,0" VerticalAlignment="Center"/>
                 <ComboBox x:Name="BranchCombo"
-                          Width="160"
+                          Width="180"
                           IsEditable="False"
                           DropDownOpened="BranchCombo_DropDownOpened"
                           SelectionChanged="BranchCombo_SelectionChanged"
                           ToolTip="Switch branches"/>
-                <Button Content="↻" Width="30" Click="BranchRefresh_Click" ToolTip="Refresh branch list"/>
+                <Button Style="{StaticResource TinyIconButton}" Tag="↻"
+                        Click="BranchRefresh_Click"
+                        ToolTip="Refresh branch list"/>
                 <Separator/>
 
                 <!-- File history / merge helper -->
-                <Button Content="Blame"   Click="GitBlameActive_Click"   ToolTip="Blame current file"/>
-                <Button Content="History" Click="GitHistoryActive_Click" ToolTip="History for current file"/>
-                <Button Content="Merge"   Click="GitMergeHelper_Click"   ToolTip="Open merge helper UI"/>
+                <Button Style="{StaticResource EmojiToolbarButton}" Tag="🕵️" Content="Blame"   Click="GitBlameActive_Click"   ToolTip="Blame current file"/>
+                <Button Style="{StaticResource EmojiToolbarButton}" Tag="🕘" Content="History" Click="GitHistoryActive_Click" ToolTip="History for current file"/>
+                <Button Style="{StaticResource EmojiToolbarButton}" Tag="🔀" Content="Merge"   Click="GitMergeHelper_Click"   ToolTip="Open merge helper UI"/>
                 <Separator/>
 
                 <!-- Release -->
-                <Button Content="Publish" Click="GitPublishRelease_Click" ToolTip="Create GitHub release"/>
+                <Button Style="{StaticResource EmojiToolbarButton}" Tag="🚀" Content="Publish" Click="GitPublishRelease_Click" ToolTip="Create GitHub release"/>
                 <Separator/>
 
                 <!-- API docs quick actions -->
-                <Button Content="API: Import JSON" Click="ApiDocsImportFile_Click" ToolTip="Import WoW API JSON"/>
-                <Button Content="API: Reload"      Click="ApiDocsReload_Click"     ToolTip="Reload bundled wow_api.json"/>
+                <Button Style="{StaticResource EmojiToolbarButton}" Tag="📥" Content="API: Import JSON" Click="ApiDocsImportFile_Click" ToolTip="Import WoW API JSON"/>
+                <Button Style="{StaticResource EmojiToolbarButton}" Tag="🔃" Content="API: Reload"      Click="ApiDocsReload_Click"     ToolTip="Reload bundled wow_api.json"/>
             </ToolBar>
         </ToolBarTray>
 
@@ -166,28 +519,50 @@
             <Grid Grid.Row="0" Grid.Column="0">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
-                    <!-- Project -->
                     <RowDefinition Height="6"/>
-                    <!-- Splitter -->
                     <RowDefinition Height="*"/>
-                    <!-- Outline -->
                     <RowDefinition Height="6"/>
-                    <!-- Splitter -->
                     <RowDefinition Height="Auto"/>
-                    <!-- Colors -->
                 </Grid.RowDefinitions>
 
                 <GroupBox Header="Project Explorer" Grid.Row="0" Margin="0,0,0,6">
                     <TreeView x:Name="ProjectTree"
-          SelectedItemChanged="ProjectTree_SelectedItemChanged"
-          MouseDoubleClick="ProjectTree_MouseDoubleClick">
+                              SelectedItemChanged="ProjectTree_SelectedItemChanged"
+                              MouseDoubleClick="ProjectTree_MouseDoubleClick">
                         <TreeView.ContextMenu>
                             <ContextMenu>
-                                <MenuItem Header="Open" Click="ProjectTree_Open_Click"/>
+                                <MenuItem Header="Open" Click="ProjectTree_Open_Click">
+                                    <MenuItem.Icon>
+                                        <TextBlock Text="📄" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                                    </MenuItem.Icon>
+                                </MenuItem>
                                 <Separator/>
-                                <MenuItem Header="Open Containing Folder" Click="ProjectTree_Reveal_Click"/>
-                                <MenuItem Header="Copy Full Path" Click="ProjectTree_CopyPath_Click"/>
-                                <MenuItem Header="Copy Relative Path" Click="ProjectTree_CopyRelPath_Click"/>
+                                <MenuItem Header="New _File…" Click="NewFile_Context_Click">
+                                    <MenuItem.Icon>
+                                        <TextBlock Text="📝" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="New F_older…" Click="NewFolder_Context_Click">
+                                    <MenuItem.Icon>
+                                        <TextBlock Text="📂" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <Separator/>
+                                <MenuItem Header="Open Containing Folder" Click="ProjectTree_Reveal_Click">
+                                    <MenuItem.Icon>
+                                        <TextBlock Text="📁" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="Copy Full Path" Click="ProjectTree_CopyPath_Click">
+                                    <MenuItem.Icon>
+                                        <TextBlock Text="🔗" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="Copy Relative Path" Click="ProjectTree_CopyRelPath_Click">
+                                    <MenuItem.Icon>
+                                        <TextBlock Text="🧭" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                                    </MenuItem.Icon>
+                                </MenuItem>
                             </ContextMenu>
                         </TreeView.ContextMenu>
                     </TreeView>
@@ -196,13 +571,12 @@
                 <GridSplitter Grid.Row="1" Height="6" HorizontalAlignment="Stretch" />
 
                 <GroupBox Header="Outline (Lua)" Grid.Row="2" Margin="0,0,0,6">
-                    <ListBox x:Name="Outline"
-                             MouseDoubleClick="Outline_DoubleClick"/>
+                    <ListBox x:Name="Outline" MouseDoubleClick="Outline_DoubleClick"/>
                 </GroupBox>
 
                 <GridSplitter Grid.Row="3" Height="6" HorizontalAlignment="Stretch" />
 
-                <!-- NEW: Colors section for swatches -->
+                <!-- Colors section for swatches -->
                 <GroupBox Header="Colors" Grid.Row="4">
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                         <WrapPanel x:Name="SwatchWrap" Margin="4"/>
@@ -214,6 +588,13 @@
 
             <!-- Editors -->
             <TabControl x:Name="EditorTabs"
+                        ItemContainerStyle="{StaticResource ClosableTabItem}"
+                        AllowDrop="True"
+                        PreviewMouseLeftButtonDown="EditorTabs_PreviewMouseLeftButtonDown"
+                        PreviewMouseMove="EditorTabs_PreviewMouseMove"
+                        DragOver="EditorTabs_DragOver"
+                        Drop="EditorTabs_Drop"
+                        MouseDown="EditorTabs_MouseDown"
                         Grid.Row="0" Grid.Column="2"
                         SelectionChanged="EditorTabs_SelectionChanged"
                         Background="{DynamicResource App.BackgroundBrush}"/>
@@ -242,6 +623,21 @@
                 </StatusBarItem>
                 <StatusBarItem>
                     <TextBlock x:Name="GitBranchText" />
+                </StatusBarItem>
+                <StatusBarItem>
+                    <TextBlock x:Name="CaretPosText" />
+                </StatusBarItem>
+                <StatusBarItem>
+                    <TextBlock x:Name="SelText" />
+                </StatusBarItem>
+                <StatusBarItem>
+                    <TextBlock x:Name="LangText" />
+                </StatusBarItem>
+                <StatusBarItem>
+                    <TextBlock x:Name="EncodingText" />
+                </StatusBarItem>
+                <StatusBarItem>
+                    <TextBlock x:Name="EolText" />
                 </StatusBarItem>
                 <StatusBarItem HorizontalAlignment="Right">
                     <TextBlock x:Name="PathText" />

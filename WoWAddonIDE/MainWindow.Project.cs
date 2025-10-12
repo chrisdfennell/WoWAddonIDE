@@ -1,4 +1,5 @@
 ﻿// File: WoWAddonIDE/MainWindow.Project.cs
+using ICSharpCode.AvalonEdit;
 using Microsoft.VisualBasic;
 using Ookii.Dialogs.Wpf;
 using System;
@@ -60,6 +61,9 @@ print(ADDON_NAME .. ' loaded!')
                 Status($"Created project: {addonName}");
                 PathText.Text = $"Project: {_project.RootPath}";
                 Log($"New project created at {projRoot}");
+
+                // MRU: record the new project
+                TouchRecentProject(_project.RootPath);
             }
             catch (Exception ex)
             {
@@ -67,9 +71,46 @@ print(ADDON_NAME .. ' loaded!')
             }
         }
 
+        // Reusable: load a project given its root folder (the folder that contains the .toc)
+        private void LoadProjectAtPath(string rootPath)
+        {
+            if (string.IsNullOrWhiteSpace(rootPath) || !Directory.Exists(rootPath))
+                throw new DirectoryNotFoundException($"Folder not found: {rootPath}");
+
+            var proj = AddonProject.LoadFromDirectory(rootPath);
+            if (proj == null)
+                throw new InvalidOperationException("No .toc found in the selected directory.");
+
+            _project = proj;
+
+            RefreshProjectTree();
+
+            Status($"Opened project: {_project.Name}");
+            PathText.Text = $"Project: {_project.RootPath}";
+
+            // Optional: auto-open the main .toc or first file for a nicer UX
+            try
+            {
+                var toc = Directory.EnumerateFiles(_project.RootPath, "*.toc", SearchOption.TopDirectoryOnly)
+                                   .FirstOrDefault();
+                if (toc != null)
+                {
+                    OpenFileInTab(toc);
+                }
+                else
+                {
+                    var first = Directory.EnumerateFiles(_project.RootPath, "*", SearchOption.AllDirectories)
+                                         .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
+                                         .FirstOrDefault();
+                    if (first != null) OpenFileInTab(first);
+                }
+            }
+            catch { /* non-fatal */ }
+        }
+
         private void OpenProject_Click(object sender, RoutedEventArgs e)
         {
-            var folderDlg = new VistaFolderBrowserDialog
+            var folderDlg = new Ookii.Dialogs.Wpf.VistaFolderBrowserDialog
             {
                 Description = "Select your addon project folder (where the .toc is)."
             };
@@ -77,17 +118,10 @@ print(ADDON_NAME .. ' loaded!')
 
             try
             {
-                _project = AddonProject.LoadFromDirectory(folderDlg.SelectedPath);
-                if (_project == null)
-                {
-                    MessageBox.Show(this, "No .toc found in that directory.", "Open Project",
-                        MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
+                LoadProjectAtPath(folderDlg.SelectedPath);
 
-                RefreshProjectTree();
-                Status($"Opened project: {_project.Name}");
-                PathText.Text = $"Project: {_project.RootPath}";
+                // MRU: record the opened project
+                TouchRecentProject(_project!.RootPath);
             }
             catch (Exception ex)
             {
@@ -349,7 +383,6 @@ print(ADDON_NAME .. ' loaded!')
             return false;
         }
 
-
         // Adds the folder content under 'parent'
         private void AddDirectory(TreeViewItem parent, string dir)
         {
@@ -462,6 +495,97 @@ print(ADDON_NAME .. ' loaded!')
             {
                 MessageBox.Show(this, ex.Message, "Live Reload", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private void UpdateEditorStatus(TextEditor? ed = null)
+        {
+            ed ??= ActiveEditor();
+
+            if (ed == null)
+            {
+                CaretPosText.Text = "";
+                SelText.Text = "";
+                LangText.Text = "";
+                EncodingText.Text = "";
+                EolText.Text = "";
+                return;
+            }
+
+            // Caret line/column
+            var offset = ed.CaretOffset;
+            var line = ed.Document.GetLineByOffset(offset);
+            int col = offset - line.Offset + 1;      // 1-based
+            int ln = line.LineNumber;               // 1-based
+            CaretPosText.Text = $"Ln {ln}, Col {col}";
+
+            // Selection length
+            int selLen = ed.SelectionLength;
+            SelText.Text = selLen > 0 ? $"Sel {selLen}" : "Sel 0";
+
+            // Language (from file extension)
+            string? path = (EditorTabs.SelectedItem as TabItem)?.Tag as string;
+            LangText.Text = GetLanguageLabelFromPath(path);
+
+            // Encoding (quick BOM sniff; default UTF-8)
+            EncodingText.Text = DetectEncodingLabel(path);
+
+            // EOL type
+            EolText.Text = $"EOL {GetEolLabel(ed.Text)}";
+        }
+
+        private static string GetLanguageLabelFromPath(string? path)
+        {
+            if (string.IsNullOrWhiteSpace(path)) return "Text";
+            var ext = System.IO.Path.GetExtension(path).ToLowerInvariant();
+            return ext switch
+            {
+                ".lua" => "Lua",
+                ".xml" => "XML",
+                ".toc" => "TOC",
+                _ => ext.Length > 1 ? ext.TrimStart('.').ToUpperInvariant() : "Text"
+            };
+        }
+
+        private static string DetectEncodingLabel(string? path)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+                    return "UTF-8";
+
+                // Minimal BOM sniff
+                var bom = new byte[4];
+                using (var fs = File.OpenRead(path))
+                {
+                    fs.Read(bom, 0, 4);
+                }
+
+                if (bom.Length >= 3 && bom[0] == 0xEF && bom[1] == 0xBB && bom[2] == 0xBF) return "UTF-8 BOM";
+                if (bom[0] == 0xFF && bom[1] == 0xFE) return "UTF-16 LE";
+                if (bom[0] == 0xFE && bom[1] == 0xFF) return "UTF-16 BE";
+                if (bom[0] == 0xFF && bom[1] == 0xFE && bom[2] == 0x00 && bom[3] == 0x00) return "UTF-32 LE";
+                if (bom[0] == 0x00 && bom[1] == 0x00 && bom[2] == 0xFE && bom[3] == 0xFF) return "UTF-32 BE";
+
+                return "UTF-8"; // default
+            }
+            catch
+            {
+                return "UTF-8";
+            }
+        }
+
+        private static string GetEolLabel(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return "LF"; // default if empty buffer
+                                                         // Simple detection by first newline occurrence
+            for (int i = 0; i < text.Length; i++)
+            {
+                if (text[i] == '\r')
+                    return (i + 1 < text.Length && text[i + 1] == '\n') ? "CRLF" : "CR";
+                if (text[i] == '\n')
+                    return "LF";
+            }
+            return "LF";
         }
     }
 }

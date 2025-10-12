@@ -66,5 +66,24 @@ namespace WoWAddonIDE.Models
 
         // -------- Future-proof misc bag --------
         public Dictionary<string, string> Extras { get; set; } = new();
+
+        // -------- Auto-save --------
+        public bool AutoSaveEnabled { get; set; } = true;
+        public int AutoSaveIntervalSecs { get; set; } = 30;
+        public bool AutoSaveOnFocusLost { get; set; } = true;
+
+        // -------- File watching / external changes --------
+        public bool FileWatchEnabled { get; set; } = true;
+        public bool AutoReloadIfUnmodified { get; set; } = true;
+
+        // -------- Trailing Whitespace Removal on Save --------
+        public bool TrimTrailingWhitespaceOnSave { get; set; } = true;
+        public bool EnsureFinalNewlineOnSave { get; set; } = true;
+
+        // -------- Lua Formatting (external tool) --------
+        public string? LuaFormatterPath { get; set; } = null;     // path to your formatter exe (e.g., lua-fmt.exe)
+        public string LuaFormatterArgs { get; set; } = "--stdin --stdout"; // args; supports placeholders (see below)
+        public bool FormatOnSave { get; set; } = false;    // opt-in
+
     }
 }

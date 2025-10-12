@@ -25,7 +25,7 @@ namespace WoWAddonIDE.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        [global::System.Configuration.DefaultSettingValueAttribute("Ov23litSTEsFpWjevhwY")]
         public string GitHubOAuthClientId {
             get {
                 return ((string)(this["GitHubOAuthClientId"]));
@@ -37,7 +37,7 @@ namespace WoWAddonIDE.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        [global::System.Configuration.DefaultSettingValueAttribute("7e032df3e9cdfd116b216c6ccf6731e2bf860da7")]
         public string GitHubOAuthClientSecret {
             get {
                 return ((string)(this["GitHubOAuthClientSecret"]));

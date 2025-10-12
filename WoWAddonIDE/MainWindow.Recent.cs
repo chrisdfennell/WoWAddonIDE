@@ -26,6 +26,7 @@ namespace WoWAddonIDE
             Recent_PruneStale();
             Recent_BuildMenu();
             Autosave_Init();
+            Formatter_MigrateArgsIfNeeded();
         }
 
         // Call whenever a project is successfully opened/created
