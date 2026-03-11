@@ -729,6 +729,22 @@
                         <TextBlock Text="🎛️" FontFamily="Segoe UI Emoji" FontSize="14"/>
                     </MenuItem.Icon>
                 </MenuItem>
+                <Separator/>
+                <MenuItem Header="WoW _API Browser…" Click="OpenApiBrowser_Click">
+                    <MenuItem.Icon>
+                        <TextBlock Text="📖" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="_Frame XML Designer…" Click="OpenFrameDesigner_Click">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🖼️" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="_Lua REPL" Click="OpenLuaRepl_Click">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🐍" FontFamily="Segoe UI Emoji" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
             </MenuItem>
 
             <!-- HELP -->
@@ -947,6 +963,33 @@
                                      Foreground="{DynamicResource App.ForegroundBrush}"/>
                         </DockPanel>
                         <TextBox x:Name="TerminalOutput"
+                                 IsReadOnly="True"
+                                 TextWrapping="Wrap"
+                                 AcceptsReturn="True"
+                                 VerticalScrollBarVisibility="Auto"
+                                 FontFamily="Consolas"
+                                 FontSize="12"
+                                 Background="{DynamicResource App.BackgroundBrush}"
+                                 Foreground="{DynamicResource App.ForegroundBrush}"/>
+                    </DockPanel>
+                </TabItem>
+                <TabItem Header="Lua REPL">
+                    <DockPanel Background="{DynamicResource App.BackgroundBrush}">
+                        <DockPanel DockPanel.Dock="Bottom" Margin="0,4,0,0">
+                            <Button Content="Run" DockPanel.Dock="Right" Click="Repl_Run_Click"
+                                    Padding="8,2" Margin="4,0,0,0"/>
+                            <Button Content="Reset" DockPanel.Dock="Right" Click="Repl_Reset_Click"
+                                    Padding="8,2" Margin="4,0,0,0"/>
+                            <Button Content="Clear" DockPanel.Dock="Right" Click="Repl_Clear_Click"
+                                    Padding="8,2" Margin="4,0,0,0"/>
+                            <Button Content="Load..." DockPanel.Dock="Right" Click="Repl_LoadFile_Click"
+                                    Padding="8,2" Margin="4,0,0,0"/>
+                            <TextBox x:Name="ReplInput" KeyDown="ReplInput_KeyDown"
+                                     FontFamily="Consolas" FontSize="12"
+                                     Background="{DynamicResource App.BackgroundBrush}"
+                                     Foreground="{DynamicResource App.ForegroundBrush}"/>
+                        </DockPanel>
+                        <TextBox x:Name="ReplOutput"
                                  IsReadOnly="True"
                                  TextWrapping="Wrap"
                                  AcceptsReturn="True"

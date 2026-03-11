@@ -38,6 +38,12 @@ namespace WoWAddonIDE.Services
 
         public IHighlightingDefinition? LuaHighlight { get; private set; }
 
+        /// <summary>All loaded API entries (for documentation browser, diagnostics, etc.).</summary>
+        public IReadOnlyList<WoWApiEntry> ApiEntries => _api;
+
+        /// <summary>All known API names (includes imported names without full entries).</summary>
+        public IReadOnlyCollection<string> ApiNames => _apiNames;
+
         public CompletionService()
         {
             LuaHighlight = LoadLuaHighlight();

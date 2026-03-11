@@ -23,6 +23,9 @@ namespace WoWAddonIDE.Services
 
         private readonly List<Diag> _diags = new();
 
+        /// <summary>Optional API entries for scope analysis (unused vars, undefined globals, arg counts).</summary>
+        public IReadOnlyList<WoWApiEntry>? ApiEntries { get; set; }
+
         public void Reanalyze(string text)
         {
             _diags.Clear();
@@ -74,6 +77,47 @@ namespace WoWAddonIDE.Services
                     Sev = Severity.Error,
                     Message = "Unbalanced parentheses"
                 });
+            }
+
+            // Scope analysis: unused locals, undefined globals, wrong arg counts
+            try
+            {
+                var scopeDiags = LuaScopeAnalyzer.Analyze(
+                    "", text,
+                    additionalKnownGlobals: null,
+                    apiEntries: ApiEntries,
+                    checkUnused: true,
+                    checkUndefined: true,
+                    checkArgCount: true);
+
+                foreach (var sd in scopeDiags)
+                {
+                    if (sd.Line <= 0 || sd.Line > lines.Length) continue;
+
+                    // Find offset for the line
+                    int lineOffset = 0;
+                    for (int li = 0; li < sd.Line - 1 && li < lines.Length; li++)
+                        lineOffset += lines[li].Length + 1;
+
+                    var sev = sd.Severity switch
+                    {
+                        "error" => Severity.Error,
+                        "warning" => Severity.Warning,
+                        _ => Severity.Info
+                    };
+
+                    _diags.Add(new Diag
+                    {
+                        Start = lineOffset,
+                        Length = Math.Min(lines[sd.Line - 1].TrimEnd('\r').Length, 200),
+                        Sev = sev,
+                        Message = sd.Message
+                    });
+                }
+            }
+            catch
+            {
+                // scope analysis is best-effort
             }
         }
 

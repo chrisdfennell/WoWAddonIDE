@@ -131,6 +131,12 @@ namespace WoWAddonIDE.Services
 
         private static void StaticAnalysis(string file, string code, List<LintDiagnostic> diags)
         {
+            StaticAnalysis(file, code, diags, null);
+        }
+
+        private static void StaticAnalysis(string file, string code, List<LintDiagnostic> diags,
+            IReadOnlyList<WoWApiEntry>? apiEntries)
+        {
             var lines = code.Split('\n');
             bool inBlockComment = false;
             int braceBalance = 0;
@@ -212,6 +218,20 @@ namespace WoWAddonIDE.Services
                     Severity = "error",
                     Message = $"Unbalanced braces (balance: {braceBalance:+#;-#;0})"
                 });
+            }
+
+            // Scope analysis: unused locals, undefined globals, arg count checks
+            try
+            {
+                var scopeDiags = LuaScopeAnalyzer.Analyze(
+                    file, code,
+                    KnownWowGlobals,
+                    apiEntries);
+                diags.AddRange(scopeDiags);
+            }
+            catch
+            {
+                // scope analysis is best-effort, don't crash lint
             }
         }
 

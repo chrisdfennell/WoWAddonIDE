@@ -1,9 +1,60 @@
 ﻿using System.Windows;
+using ICSharpCode.AvalonEdit;
 
 namespace WoWAddonIDE
 {
     public partial class MainWindow
     {
+        // Menu: Tools → WoW API Browser…
+        private void OpenApiBrowser_Click(object sender, RoutedEventArgs e)
+        {
+            var win = new WoWAddonIDE.Windows.ApiDocsBrowserWindow(
+                _completion.ApiEntries,
+                insertCallback: text =>
+                {
+                    if (TryGetActiveEditor(out var ed, out _))
+                        ed.Document.Insert(ed.CaretOffset, text);
+                });
+            win.Owner = this;
+            win.Show();
+        }
+
+        // Menu: Tools → Frame XML Designer…
+        private void OpenFrameDesigner_Click(object sender, RoutedEventArgs e)
+        {
+            var win = new WoWAddonIDE.Windows.FrameDesignerWindow(
+                insertCallback: xml =>
+                {
+                    if (TryGetActiveEditor(out var ed, out _))
+                        ed.Document.Insert(ed.CaretOffset, xml);
+                });
+            win.Owner = this;
+            win.Show();
+        }
+
+        // Menu: Tools → Lua REPL (switch to REPL tab in bottom panel)
+        private void OpenLuaRepl_Click(object sender, RoutedEventArgs e)
+        {
+            // Find and select the Lua REPL tab in the bottom TabControl
+            var bottomTabControl = ReplOutput?.Parent;
+            while (bottomTabControl != null && bottomTabControl is not System.Windows.Controls.TabControl)
+            {
+                bottomTabControl = (bottomTabControl as FrameworkElement)?.Parent;
+            }
+
+            if (bottomTabControl is System.Windows.Controls.TabControl tc)
+            {
+                foreach (System.Windows.Controls.TabItem tab in tc.Items)
+                {
+                    if (tab.Header?.ToString() == "Lua REPL")
+                    {
+                        tc.SelectedItem = tab;
+                        ReplInput?.Focus();
+                        break;
+                    }
+                }
+            }
+        }
         // Menu/Toolbar: Tools → Command Palette…
         public void OpenCommandPalette_Click(object? sender, RoutedEventArgs e)
         {

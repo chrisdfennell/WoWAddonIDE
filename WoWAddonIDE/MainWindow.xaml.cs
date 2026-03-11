@@ -65,6 +65,9 @@ namespace WoWAddonIDE
             // Initialize completion/highlighting (loads wow_api.json for completion)
             _completion = new CompletionService();
 
+            // Initialize Lua REPL
+            Repl_Init();
+
             // Register Lua & TOC highlighting
             EnsureLuaHighlightRegistered();
             EnsureTocHighlightRegistered();

@@ -136,6 +136,7 @@ namespace WoWAddonIDE
             if (path.EndsWith(".lua", StringComparison.OrdinalIgnoreCase))
             {
                 var diag = new LuaDiagnosticsTransformer();
+                diag.ApiEntries = _completion.ApiEntries;
                 editor.TextArea.TextView.LineTransformers.Add(diag);
                 editor.TextChanged += (s, e) => diag.Reanalyze(editor.Text);
                 diag.Reanalyze(editor.Text);
