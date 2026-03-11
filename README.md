@@ -1,4 +1,7 @@
 <p align="center">
+  <a href="https://github.com/chrisdfennell/WoWAddonIDE/actions/workflows/release.yml">
+    <img src="https://github.com/chrisdfennell/WoWAddonIDE/actions/workflows/release.yml/badge.svg" alt="Build & Release" />
+  </a>
   <a href="https://github.com/chrisdfennell/WoWAddonIDE/releases/latest">
     <img src="https://img.shields.io/github/v/release/chrisdfennell/WoWAddonIDE?display_name=tag&sort=semver" alt="Latest Release" />
   </a>
@@ -42,169 +45,202 @@
   <img src="https://img.shields.io/badge/PRs-welcome-brightgreen" alt="PRs welcome" />
 </p>
 
-<h1 align="center">WoW Addon IDE (WPF)</h1>
-<p align="center">A lightweight IDE for building <b>World of Warcraft</b> addons on Windows.</p>
+<h1 align="center">WoW Addon IDE</h1>
+<p align="center">A lightweight, single-exe IDE for building <b>World of Warcraft</b> addons on Windows.</p>
 
 ---
 
-## 📸 Screenshots
+## Screenshots
 
 <p align="center">
-  <img src="https://github.com/chrisdfennell/WoWAddonIDE/blob/master/WoWAddonIDE/Docs/screenshot-main.png" alt="Main editor" width="900"/><br/>
+  <img src="https://github.com/chrisdfennell/WoWAddonIDE/blob/main/WoWAddonIDE/Docs/screenshot-main.png" alt="Main editor" width="900"/><br/>
   <em>Main editor with Lua highlighting, outline, and completion.</em>
 </p>
 
 <p align="center">
-  <img src="https://github.com/chrisdfennell/WoWAddonIDE/blob/master/WoWAddonIDE/Docs/screenshot-main.png" alt="Help window" width="420"/>
+  <img src="https://github.com/chrisdfennell/WoWAddonIDE/blob/main/WoWAddonIDE/Docs/screenshot-help.png" alt="Help window" width="420"/>
   &nbsp;&nbsp;
-  <img src="https://github.com/chrisdfennell/WoWAddonIDE/blob/master/WoWAddonIDE/Docs/screenshot-settings.png" alt="Settings window" width="420"/>
+  <img src="https://github.com/chrisdfennell/WoWAddonIDE/blob/main/WoWAddonIDE/Docs/screenshot-settings.png" alt="Settings window" width="420"/>
 </p>
 
 ---
 
-## ✨ Highlights
+## Download
 
-- **Lua + XML syntax highlighting**
-  - Custom `Lua.xshd` and `WoWTOC.xshd` definitions (AvalonEdit).
-  - Theme-aware colors; tuned for readability.
-- **Autocomplete & parameter hints**
-  - Lua keywords, WoW API names (from `wow_api.json`), buffer identifiers, snippets.
-  - Signature help on `(` for known functions.
-- **Hover docs for WoW API**
-  - Tooltips sourced from `Resources/wow_api.json` (extensible/importable).
-- **Outline panel (Lua)**
-  - Jump to `function`, `local function`, etc.
-- **Find in files** (**Ctrl+Shift+F**) and **Go to definition** (**F12**).
-- **Project Explorer** + **TOC generator & editor**.
-- **Build options**
-  - **Build** → copy to your WoW **AddOns** folder (safe copy).
-  - **Build to Folder…**, **Build Zip…**.
-- **Live reload helper**
-  - Writes a `Reload.flag` you can watch to call `ReloadUI()`.
-- **Git & GitHub integration**
-  - LibGit2Sharp + Octokit workflows (init/clone/commit/push/branches/releases).
-
-> ✅ Designed to be safe by default: the **Build** command will not wipe your source folder or your AddOns folder by mistake.
+Grab the latest **single-exe** from the [Releases](https://github.com/chrisdfennell/WoWAddonIDE/releases/latest) page. No installer required — just download `WoWAddonIDE.exe` and run it.
 
 ---
 
-## 🚀 Getting Started
+## Highlights
 
-### Prerequisites
+- **Lua + XML + TOC syntax highlighting** — Custom AvalonEdit definitions with theme-aware colors
+- **Autocomplete & parameter hints** — Lua keywords, WoW API names, buffer identifiers, and snippets
+- **Hover docs for WoW API** — Tooltips sourced from `wow_api.json` (extensible/importable)
+- **Outline panel** — Jump to functions, methods (`:` syntax), local tables, and section comments
+- **Find in files** (Ctrl+Shift+F) and **Go to definition** (F12)
+- **Symbol search** — Project-wide symbol index with incremental updates
+- **Project Explorer** + **TOC generator & editor**
+- **Build options** — Copy to AddOns folder, build to folder, build zip
+- **Live reload helper** — Writes a `Reload.flag` for `ReloadUI()` detection
+- **Git & GitHub integration** — Init, clone, commit, push, branches, blame, merge, releases (LibGit2Sharp + Octokit)
+- **Diff viewer** — Side-by-side comparison of buffer vs. disk
+- **File watcher** — Auto-reload tabs when files change on disk
+- **Auto-save** — Configurable timer-based auto-save
+- **Recent projects** — MRU list with stale-entry pruning
+- **Command palette** — Quick access to IDE commands
+- **Color picker** — WoW color code helper with inline previews
+- **Minimap** — Code overview sidebar
+- **Theming** — System, Light, and Dark themes with full editor retinting
+- **Lua linter** — Static analysis for syntax errors, deprecated WoW APIs, trailing whitespace, and unbalanced delimiters
+- **Structured logging** — Severity-based logging with file rotation and UI output sink
+
+---
+
+## Getting Started
+
+### Quick start (single exe)
+1. Download `WoWAddonIDE.exe` from [Releases](https://github.com/chrisdfennell/WoWAddonIDE/releases/latest)
+2. Run it — no install needed
+3. **Tools > Settings** — set your WoW AddOns folder
+4. **File > New** or **Open** a folder containing your addon's `.toc`
+
+### Build from source
+
+**Prerequisites:**
 - Windows 10/11
-- Visual Studio 2022+ (**.NET Desktop** workload)
 - .NET 8 SDK
-- WoW retail installed (optional, for AddOns path detection)
+- Visual Studio 2022+ (optional, .NET Desktop workload)
 
-### Restore packages
-The project uses NuGet packages:
-- `ICSharpCode.AvalonEdit`
-- `Ookii.Dialogs.Wpf`
-- `Newtonsoft.Json`
-- `DiffPlex`
-- `LibGit2Sharp`
-- `Octokit`
-
-Build the solution to restore packages automatically.
-
-### Resource files (important)
-Ensure these exist with **Build Action = Resource**:
+```bash
+git clone https://github.com/chrisdfennell/WoWAddonIDE.git
+cd WoWAddonIDE
+dotnet build WoWAddonIDE.sln
+dotnet run --project WoWAddonIDE/WoWAddonIDE.csproj
 ```
-/Resources/Lua.xshd
-/Resources/WoWTOC.xshd
-/Resources/wow_api.json
+
+**Publish as single exe:**
+```bash
+dotnet publish WoWAddonIDE/WoWAddonIDE.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
 ```
-If highlighting fails, check the Output log—loading errors are reported.
-
-### First run
-1. **Tools → Settings** → set your WoW **AddOns** folder (auto-detected when possible).
-2. **File → New** or **Open** a folder containing your addon's `.toc`.
 
 ---
 
-## 🧭 Workflow
+## Workflow
 
-1. Create/Open a project folder (where the `.toc` lives).
-2. Edit `.lua` / `.xml` files in tabs.
-3. Use **Outline** to jump around functions; **Ctrl+Shift+F** to search.
-4. **Build** to copy safely into AddOns, or **Build Zip…** to package.
-5. Use **Git** menu to commit/push or create a GitHub repo.
-
----
-
-## 🎨 Theming
-
-- `ThemeManager.ApplyTheme(System|Light|Dark)` – global theme
-- `ThemeManager.ApplyToEditor(editor)` – AvalonEdit brushes (background, selection, caret, current line, line numbers)
-- XSHD retinting for syntax highlighting
+1. Create/Open a project folder (where the `.toc` lives)
+2. Edit `.lua` / `.xml` files in tabs
+3. Use **Outline** to jump around functions; **Ctrl+Shift+F** to search
+4. **Build** to copy safely into AddOns, or **Build Zip** to package
+5. Use **Git** menu to commit/push or create a GitHub release
 
 ---
 
-## ⌨️ Shortcuts
+## Keyboard Shortcuts
 
-- **Ctrl+/** — Toggle comment
-- **Ctrl+D** — Duplicate line
-- **F12** — Go to definition
-- **Ctrl+Shift+F** — Find in files
-- **Ctrl+S** — Save / **Ctrl+Shift+S** — Save All
-
----
-
-## 🧰 Troubleshooting
-
-- **Lua highlight null** → ensure `Resources/Lua.xshd` exists, has Build Action = Resource, and valid XML.
-- **TOC highlight error** → same checks for `WoWTOC.xshd`.
-- **GitHub device flow disabled** → either enable device flow on your OAuth App or use a classic PAT with `repo` scope.
-- **Build safety** → source/target identity check prevents destructive copies.
+| Shortcut | Action |
+|---|---|
+| Ctrl+S | Save |
+| Ctrl+Shift+S | Save All |
+| Ctrl+W | Close tab |
+| Ctrl+Shift+T | Reopen closed tab |
+| Ctrl+/ | Toggle comment |
+| Ctrl+D | Duplicate line |
+| F12 | Go to definition |
+| Ctrl+Shift+F | Find in files |
+| Ctrl+P | Command palette |
 
 ---
 
-## 🗂 Project Structure
+## CI/CD
+
+Every tagged push (`v*`) triggers a GitHub Actions workflow that:
+1. Restores dependencies
+2. Runs all unit tests
+3. Publishes a self-contained single-exe
+4. Creates a GitHub Release with the exe attached
+
+```bash
+git tag v1.4.0
+git push origin v1.4.0
+```
+
+---
+
+## Project Structure
 
 ```
 WoWAddonIDE/
- ├─ Models/
- ├─ Services/
- │   ├─ ThemeManager.cs
- │   ├─ CompletionService.cs
- │   ├─ SymbolService.cs
- │   ├─ GitService.cs
- │   └─ LuaLint.cs
- ├─ Windows/
- ├─ Resources/
- │   ├─ Lua.xshd
- │   ├─ WoWTOC.xshd
- │   └─ wow_api.json
- ├─ Themes/ (optional)
- ├─ MainWindow.xaml / .cs
- └─ README.md
+ ├── Models/              # Data models (IDESettings, AddonProject)
+ ├── ViewModels/           # MVVM foundation (ViewModelBase, DelegateCommand)
+ ├── Services/             # Core services
+ │   ├── LogService.cs         # Structured logging with rotation
+ │   ├── ThemeManager.cs       # Theme management
+ │   ├── CompletionService.cs  # Autocomplete engine
+ │   ├── SymbolService.cs      # Project-wide symbol index
+ │   ├── OutlineService.cs     # Lua outline/structure parser
+ │   ├── GitService.cs         # Git operations (LibGit2Sharp)
+ │   ├── LuaLint.cs            # Static analysis & diagnostics
+ │   ├── FindInFiles.cs        # Project-wide text search
+ │   ├── TocParser.cs          # TOC file generation & parsing
+ │   └── SecureStorage.cs      # DPAPI credential storage
+ ├── Windows/              # Dialog windows
+ ├── Resources/            # Syntax definitions & API data
+ │   ├── Lua.xshd
+ │   ├── wowtoc.xshd
+ │   └── wow_api.json
+ ├── Themes/               # WPF theme resource dictionaries
+ ├── Constants.cs          # Centralized magic strings & paths
+ ├── MainWindow.xaml       # Main UI
+ └── MainWindow.*.cs       # Partial classes (Editor, Git, Tabs, etc.)
+
+WoWAddonIDE.Tests/         # xUnit test suite (55 tests)
+.github/workflows/        # CI/CD pipeline
 ```
 
 ---
 
-## 🤝 Contributing
+## Testing
+
+```bash
+dotnet test WoWAddonIDE.Tests/WoWAddonIDE.Tests.csproj
+```
+
+55 tests covering: OutlineService, SymbolService, TocParser, LuaLint, FindInFiles, LogService, and Constants.
+
+---
+
+## Troubleshooting
+
+- **Lua highlight missing** — Ensure `Resources/Lua.xshd` exists with Build Action = Resource
+- **TOC highlight error** — Same check for `wowtoc.xshd`
+- **GitHub auth issues** — Enable device flow on your OAuth App or use a classic PAT with `repo` scope
+- **Build safety** — Source/target identity check prevents destructive copies
+
+---
+
+## Contributing
 
 PRs welcome! Ideas:
 - Improved Lua grammar & TOC rules
-- Smarter symbol index
 - Live reload companion addon
 - Theme variants & accessibility
-- Tests for TOC parser/validator
+- Additional linter rules for WoW-specific patterns
 
 ---
 
-## 📄 License
+## License
 
 Licensed under the **MIT License** — see [LICENSE](LICENSE).
 
-Copyright © 2025 Christopher Fennell.
+Copyright 2025-2026 Christopher Fennell.
 
 ---
 
-## 🙏 Acknowledgements
+## Acknowledgements
 
-- [AvalonEdit](https://github.com/icsharpcode/AvalonEdit)
-- [LibGit2Sharp](https://github.com/libgit2/libgit2sharp)
-- [Octokit.NET](https://github.com/octokit/octokit.net)
-- [Ookii.Dialogs.Wpf](https://github.com/ookii-dialogs/ookii-dialogs-wpf)
-- [DiffPlex](https://github.com/mmanela/diffplex)
+- [AvalonEdit](https://github.com/icsharpcode/AvalonEdit) — Text editor component
+- [LibGit2Sharp](https://github.com/libgit2/libgit2sharp) — Git integration
+- [Octokit.NET](https://github.com/octokit/octokit.net) — GitHub API
+- [MoonSharp](https://github.com/moonsharp-devs/moonsharp) — Lua interpreter
+- [Ookii.Dialogs.Wpf](https://github.com/ookii-dialogs/ookii-dialogs-wpf) — Native dialogs
+- [DiffPlex](https://github.com/mmanela/diffplex) — Diff engine
