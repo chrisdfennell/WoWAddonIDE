@@ -1,0 +1,92 @@
+﻿<Window x:Class="WoWAddonIDE.Windows.MergeHelperWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:avalonedit="http://icsharpcode.net/sharpdevelop/avalonedit"
+        Title="Merge Conflicts" Width="1200" Height="780"
+        Background="{DynamicResource Brush.Window}">
+    <DockPanel>
+
+        <!-- Header / path -->
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="8">
+            <TextBlock Text="File:" FontWeight="Bold" Margin="0,0,8,0"/>
+            <TextBlock x:Name="PathLabel" />
+            <Separator Width="16"/>
+            <Button Content="Prev" Click="Prev_Click" Margin="0,0,6,0"/>
+            <Button Content="Next" Click="Next_Click" Margin="0,0,6,0"/>
+            <Button Content="Refresh" Click="Refresh_Click" />
+        </StackPanel>
+
+        <!-- Left: list of conflicts -->
+        <Grid DockPanel.Dock="Left" Width="280" Margin="8,0,8,8">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Text="Conflicts" FontWeight="Bold" Margin="0,0,0,4"/>
+            <ListBox x:Name="ConflictsList" Grid.Row="1"
+                     SelectionChanged="ConflictsList_SelectionChanged"/>
+        </Grid>
+
+        <Grid Margin="0,0,8,8">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="2*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- BASE -->
+            <TextBlock Grid.Row="0" Text="Base (common ancestor)" FontWeight="Bold" Margin="0,0,0,4"/>
+            <avalonedit:TextEditor x:Name="BaseEditor" Grid.Row="1" Height="160"
+                                   IsReadOnly="True" ShowLineNumbers="True"
+                                   FontFamily="Consolas" />
+
+            <!-- OURS + THEIRS side by side -->
+            <Grid Grid.Row="2" Margin="0,8,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="8"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="Ours" FontWeight="Bold" Margin="0,0,0,4"/>
+                    <avalonedit:TextEditor x:Name="OursEditor" Height="160"
+                                           IsReadOnly="True" ShowLineNumbers="True"
+                                           FontFamily="Consolas" />
+                </StackPanel>
+
+                <GridSplitter Grid.Column="1" Width="8" HorizontalAlignment="Stretch"/>
+
+                <StackPanel Grid.Column="2">
+                    <TextBlock Text="Theirs" FontWeight="Bold" Margin="0,0,0,4"/>
+                    <avalonedit:TextEditor x:Name="TheirsEditor" Height="160"
+                                           IsReadOnly="True" ShowLineNumbers="True"
+                                           FontFamily="Consolas" />
+                </StackPanel>
+            </Grid>
+
+            <!-- Accept row -->
+            <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,8,0,8">
+                <Button Content="Accept Base →"  Click="AcceptBase_Click"  Margin="0,0,6,0"/>
+                <Button Content="Accept Ours →"  Click="AcceptOurs_Click"  Margin="0,0,6,0"/>
+                <Button Content="Accept Theirs →" Click="AcceptTheirs_Click"/>
+            </StackPanel>
+
+            <!-- MERGED editor -->
+            <TextBlock Grid.Row="4" Text="Merged Result (editable)" FontWeight="Bold" Margin="0,0,0,4"/>
+            <avalonedit:TextEditor x:Name="MergeEditor" Grid.Row="4" Margin="0,20,0,0"
+                                   ShowLineNumbers="True" FontFamily="Consolas" />
+
+            <!-- Save/close -->
+            <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+                <Button Content="Save &amp; Resolve" Click="SaveResolve_Click" />
+                <Button Content="Close" Click="Close_Click"/>
+            </StackPanel>
+        </Grid>
+
+    </DockPanel>
+</Window>

@@ -1,0 +1,47 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore WoWAddonIDE.sln
+
+      - name: Run tests
+        run: dotnet test WoWAddonIDE.Tests/WoWAddonIDE.Tests.csproj --configuration Release --no-restore --verbosity minimal
+
+      - name: Publish single-exe
+        run: dotnet publish WoWAddonIDE/WoWAddonIDE.csproj --configuration Release --output ./publish --self-contained true -r win-x64 -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: WoWAddonIDE
+          path: ./publish/WoWAddonIDE.exe
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ./publish/WoWAddonIDE.exe
+          generate_release_notes: true
+          draft: false
+          prerelease: false

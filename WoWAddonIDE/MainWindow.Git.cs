@@ -1,0 +1,628 @@
+﻿// File: WoWAddonIDE/MainWindow.Git.cs
+using Microsoft.VisualBasic;
+using Ookii.Dialogs.Wpf;
+using System;
+using System.Diagnostics;
+using System.Threading.Tasks;
+using System.IO;
+using System.Linq;
+using System.Windows;
+using System.Windows.Controls;
+using WoWAddonIDE.Services;
+
+namespace WoWAddonIDE
+{
+    public partial class MainWindow : Window
+    {
+        // Optional hardcoded fallbacks in case Settings are blank.
+        // You can safely leave these empty and only use Settings.
+        private const string DefaultGitHubClientId = ""; // e.g. "Iv1...."
+        private const string DefaultGitHubClientSecret = ""; // e.g. "abcd1234..."  (User-scope settings preferred)
+
+        private void UpdateGitStatusStrip()
+        {
+            if (_project == null) { GitBranchText.Text = ""; return; }
+            try
+            {
+                var info = GitService.GetRepoInfo(_project.RootPath);
+                GitBranchText.Text =
+                    $"{info.Branch ?? "(no branch)"}  ·  +{info.Ahead}/-{info.Behind}  " +
+                    $"Δ {info.Added} / −{info.Deleted}  " +
+                    (info.Conflicts > 0 ? $"⚠ {info.Conflicts} conflicts" : "");
+            }
+            catch (Exception ex) { LogService.Warn("UpdateGitStatusStrip: failed to read git repo info", ex); GitBranchText.Text = ""; }
+        }
+
+        private void GitBlameActive_Click(object sender, RoutedEventArgs e)
+        {
+            if (_project == null) { MessageBox.Show(this, "Open a project first."); return; }
+            if (EditorTabs.SelectedItem is not TabItem tab || tab.Tag is not string path) { MessageBox.Show(this, "Open a file tab."); return; }
+            if (!File.Exists(path)) { MessageBox.Show(this, "File not found on disk."); return; }
+
+            var w = new Windows.BlameWindow { Owner = this };
+            w.LoadBlame(_project.RootPath, path);
+            w.ShowDialog();
+        }
+
+        private void GitHistoryActive_Click(object sender, RoutedEventArgs e)
+        {
+            if (_project == null) { MessageBox.Show(this, "Open a project first."); return; }
+            if (EditorTabs.SelectedItem is not TabItem tab || tab.Tag is not string path) { MessageBox.Show(this, "Open a file tab."); return; }
+            if (!File.Exists(path)) { MessageBox.Show(this, "File not found on disk."); return; }
+
+            var w = new Windows.HistoryWindow { Owner = this };
+            w.LoadHistory(_project.RootPath, path);
+            w.ShowDialog();
+        }
+
+        private void GitMergeHelper_Click(object sender, RoutedEventArgs e)
+        {
+            if (_project == null) { MessageBox.Show(this, "Open a project first."); return; }
+
+            var repoRoot = GitService.FindRepoRoot(_project.RootPath) ?? _project.RootPath;
+            var w = new Windows.MergeHelperWindow(repoRoot) { Owner = this };
+
+            w.LoadConflicts();
+            w.ShowDialog();
+
+            UpdateGitStatusStrip();
+        }
+
+        private void BranchCombo_DropDownOpened(object sender, EventArgs e)
+        {
+            if (_project == null) return;
+            try
+            {
+                var list = GitService.GetBranches(_project.RootPath).ToList();
+                BranchCombo.ItemsSource = list;
+                var current = GitService.GetRepoInfo(_project.RootPath).Branch;
+                if (current != null)
+                    BranchCombo.SelectedItem = list.FirstOrDefault(b => string.Equals(b, current, StringComparison.OrdinalIgnoreCase));
+            }
+            catch (Exception ex)
+            {
+                Log("Branches: " + ex.Message);
+            }
+        }
+
+        private void BranchCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_project == null) return;
+            if (BranchCombo.SelectedItem is string name && !string.IsNullOrWhiteSpace(name))
+            {
+                try
+                {
+                    GitService.CheckoutBranch(_project.RootPath, name);
+                    Log($"Git: checked out {name}.");
+                    UpdateGitStatusStrip();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(this, ex.Message, "Checkout Branch", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private void BranchRefresh_Click(object sender, RoutedEventArgs e)
+        {
+            BranchCombo_DropDownOpened(sender, EventArgs.Empty);
+            Status("Branches refreshed");
+        }
+
+        private void OpenMergeHelper_Click(object sender, RoutedEventArgs e)
+        {
+            if (!EnsureProject()) return;
+
+            var repoRoot = GitService.FindRepoRoot(_project!.RootPath) ?? _project.RootPath;
+            var win = new Windows.MergeHelperWindow(repoRoot) { Owner = this };
+
+            win.LoadConflicts();
+            win.ShowDialog();
+
+            UpdateGitStatusStrip();
+        }
+
+        private async void GitPublishRelease_Click(object sender, RoutedEventArgs e)
+        {
+            if (_project == null) { MessageBox.Show(this, "Open a project first."); return; }
+
+            var w = new Windows.ReleasePublisherWindow(_settings) { Owner = this };
+            if (w.ShowDialog() == true)
+            {
+                try
+                {
+                    var repoPath = GitService.FindRepoRoot(_project.RootPath) ?? _project.RootPath;
+                    var zipPath = w.AssetPath;
+                    var tag = w.TagName;
+                    var name = w.ReleaseName;
+                    var body = w.Body;
+                    var prerelease = w.Prerelease;
+
+                    await GitService.PublishGitHubReleaseAsync(
+                        repoPath, _settings, zipPath, tag, name, body, prerelease);
+
+                    Log($"Release created: {w.TagName} (asset: {Path.GetFileName(w.AssetPath)})");
+                    Status("Release published.");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(this, ex.Message, "Publish Release", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private void GitAuth_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new Windows.GitAuthWindow(_settings) { Owner = this };
+            if (dlg.ShowDialog() == true)
+            {
+                _settings = dlg.Settings;
+                SaveSettings();
+                Log("Git/GitHub settings saved.");
+            }
+        }
+
+        private void GitInit_Click(object sender, RoutedEventArgs e)
+        {
+            if (!EnsureProject()) return;
+            try { GitService.InitRepo(_project!.RootPath); Log("Git: repository initialized."); }
+            catch (Exception ex) { MessageBox.Show(this, ex.Message, "Git Init", MessageBoxButton.OK, MessageBoxImage.Error); }
+        }
+
+        private void GitClone_Click(object sender, RoutedEventArgs e)
+        {
+            var url = Interaction.InputBox("Clone URL (HTTPS):", "Git Clone", _settings.GitRemoteUrl);
+            if (string.IsNullOrWhiteSpace(url)) return;
+
+            var dlg = new VistaFolderBrowserDialog { Description = "Select target folder to clone into" };
+            if (dlg.ShowDialog(this) != true) return;
+
+            try
+            {
+                var dest = Path.Combine(dlg.SelectedPath, Path.GetFileNameWithoutExtension(url.Replace(".git", "")));
+                var path = GitService.Clone(url, dest, _settings);
+                Log($"Git: cloned into {path}");
+
+                var toc = Directory.GetFiles(path, "*.toc", SearchOption.TopDirectoryOnly).FirstOrDefault();
+                if (toc != null)
+                {
+                    _project = Models.AddonProject.LoadFromDirectory(path);
+                    if (_project == null) { Status("No .toc found in cloned repo."); return; }
+                    RefreshProjectTree();
+                    OpenFileInTab(toc);
+                    RebuildSymbolIndex();
+                    PathText.Text = $"Project: {_project.RootPath}";
+                    Status("Cloned and opened project.");
+                }
+            }
+            catch (Exception ex) { MessageBox.Show(this, ex.Message, "Git Clone", MessageBoxButton.OK, MessageBoxImage.Error); }
+        }
+
+        private void GitSetRemote_Click(object sender, RoutedEventArgs e)
+        {
+            if (!EnsureProject()) return;
+            var url = Interaction.InputBox("Remote 'origin' URL:", "Set Remote", _settings.GitRemoteUrl);
+            if (string.IsNullOrWhiteSpace(url)) return;
+            try
+            {
+                GitService.EnsureRemote(_project!.RootPath, "origin", url);
+                _settings.GitRemoteUrl = url; SaveSettings();
+                Log($"Git: origin = {url}");
+            }
+            catch (Exception ex) { MessageBox.Show(this, ex.Message, "Set Remote", MessageBoxButton.OK, MessageBoxImage.Error); }
+        }
+
+        private void GitStatus_Click(object sender, RoutedEventArgs e)
+        {
+            if (!EnsureProject()) return;
+            try { foreach (var line in GitService.Status(_project!.RootPath)) Log(line); }
+            catch (Exception ex) { MessageBox.Show(this, ex.Message, "Git Status", MessageBoxButton.OK, MessageBoxImage.Error); }
+        }
+
+        private void GitCommit_Click(object sender, RoutedEventArgs e)
+        {
+            if (!EnsureProject()) return;
+            try
+            {
+                var win = new Windows.GitCommitWindow { Owner = this };
+                if (win.ShowDialog() == true)
+                {
+                    SaveAll_Click(sender, e);
+                    GitService.CommitAll(_project!.RootPath, _settings, win.CommitMessage);
+                    Log("Git: committed.");
+                }
+            }
+            catch (Exception ex) { MessageBox.Show(this, ex.Message, "Git Commit", MessageBoxButton.OK, MessageBoxImage.Error); }
+        }
+
+        private async void GitPull_Click(object sender, RoutedEventArgs e)
+        {
+            if (!EnsureProject()) return;
+            Status("Git: pulling...");
+            try
+            {
+                var root = _project!.RootPath;
+                var settings = _settings;
+                await Task.Run(() => GitService.Pull(root, settings));
+                Log("Git: pulled.");
+                Status("Git: pull complete.");
+                UpdateGitStatusStrip();
+            }
+            catch (Exception ex) { MessageBox.Show(this, ex.Message, "Git Pull", MessageBoxButton.OK, MessageBoxImage.Error); }
+        }
+
+        private async void GitPush_Click(object sender, RoutedEventArgs e)
+        {
+            if (!EnsureProject()) return;
+            Status("Git: pushing...");
+            try
+            {
+                var root = _project!.RootPath;
+                var settings = _settings;
+                await Task.Run(() => GitService.Push(root, settings));
+                Log("Git: pushed.");
+                Status("Git: push complete.");
+                UpdateGitStatusStrip();
+            }
+            catch (Exception ex) { MessageBox.Show(this, ex.Message, "Git Push", MessageBoxButton.OK, MessageBoxImage.Error); }
+        }
+
+        private async void GitSync_Click(object sender, RoutedEventArgs e)
+        {
+            if (!EnsureProject()) return;
+            Status("Git: syncing (pull + push)...");
+            try
+            {
+                var root = _project!.RootPath;
+                var settings = _settings;
+                await Task.Run(() => GitService.Sync(root, settings));
+                Log("Git: sync done (pull + push).");
+                Status("Git: sync complete.");
+                UpdateGitStatusStrip();
+            }
+            catch (Exception ex) { MessageBox.Show(this, ex.Message, "Git Sync", MessageBoxButton.OK, MessageBoxImage.Error); }
+        }
+
+        private void GitCreateBranch_Click(object sender, RoutedEventArgs e)
+        {
+            if (!EnsureProject()) return;
+            var name = Interaction.InputBox("New branch name:", "Create Branch", "feature/new-thing");
+            if (string.IsNullOrWhiteSpace(name)) return;
+            try { GitService.CreateBranch(_project!.RootPath, name, checkout: true); Log($"Git: created & checked out {name}."); }
+            catch (Exception ex) { MessageBox.Show(this, ex.Message, "Create Branch", MessageBoxButton.OK, MessageBoxImage.Error); }
+        }
+
+        private void GitCheckoutBranch_Click(object sender, RoutedEventArgs e)
+        {
+            if (!EnsureProject()) return;
+            try
+            {
+                var branches = GitService.GetBranches(_project!.RootPath).ToList();
+                if (branches.Count == 0) { MessageBox.Show(this, "No branches."); return; }
+                var choice = Interaction.InputBox("Branch to checkout:", "Checkout Branch", branches[0]);
+                if (string.IsNullOrWhiteSpace(choice)) return;
+                GitService.CheckoutBranch(_project!.RootPath, choice);
+                Log($"Git: checked out {choice}.");
+            }
+            catch (Exception ex) { MessageBox.Show(this, ex.Message, "Checkout Branch", MessageBoxButton.OK, MessageBoxImage.Error); }
+        }
+
+        private void GitOpenOnGitHub_Click(object sender, RoutedEventArgs e)
+        {
+            if (!EnsureProject()) return;
+            try
+            {
+                var url = GitService.GetOriginUrl(_project!.RootPath) ?? _settings.GitRemoteUrl;
+                var web = GitService.ToGitHubWebUrl(url ?? "");
+                if (web == null) { MessageBox.Show(this, "Origin is not a GitHub remote."); return; }
+                Process.Start(new ProcessStartInfo { FileName = web, UseShellExecute = true });
+            }
+            catch (Exception ex) { MessageBox.Show(this, ex.Message, "Open on GitHub", MessageBoxButton.OK, MessageBoxImage.Error); }
+        }
+
+        private async void GitCreateGitHubRepo_Click(object sender, RoutedEventArgs e)
+        {
+            if (!EnsureProject()) return;
+
+            try
+            {
+                if (string.IsNullOrWhiteSpace(_settings.GitHubToken))
+                {
+                    MessageBox.Show(this, "Set your GitHub Token first (Git/GitHub Settings…).",
+                        "GitHub", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                var repoName = Path.GetFileName(_project!.RootPath.TrimEnd('\\', '/'));
+                var owner = Interaction.InputBox(
+                    "Owner (leave blank for your user; enter org name to create in an org):",
+                    "Create GitHub Repo", "");
+                var isPrivate = MessageBox.Show(this, "Create as private repo?", "GitHub",
+                    MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
+
+                var client = new Octokit.GitHubClient(new Octokit.ProductHeaderValue("WoWAddonIDE"))
+                {
+                    Credentials = new Octokit.Credentials(_settings.GitHubToken)
+                };
+
+                Octokit.Repository repo;
+                var newRepo = new Octokit.NewRepository(repoName) { Private = isPrivate };
+
+                if (string.IsNullOrWhiteSpace(owner))
+                    repo = await client.Repository.Create(newRepo);
+                else
+                    repo = await client.Repository.Create(owner, newRepo);
+
+                var remoteUrl = repo.CloneUrl; // HTTPS
+                GitService.EnsureRemote(_project!.RootPath, "origin", remoteUrl);
+                _settings.GitRemoteUrl = remoteUrl; SaveSettings();
+                Log($"GitHub: repo created at {repo.HtmlUrl}");
+
+                try { GitService.CommitAll(_project!.RootPath, _settings, "Initial commit"); } catch (Exception ex) { LogService.Error("GitCreateGitHubRepo_Click: initial commit failed", ex); }
+                GitService.Push(_project!.RootPath, _settings);
+                Process.Start(new ProcessStartInfo { FileName = repo.HtmlUrl, UseShellExecute = true });
+            }
+            catch (Octokit.AuthorizationException)
+            {
+                MessageBox.Show(this,
+                    "GitHub says: 'Resource not accessible by personal access token'.\n\n" +
+                    "Fix it by doing ONE of these:\n" +
+                    " • Use a CLASSIC PAT with the 'repo' scope (recommended for creating repos), OR\n" +
+                    " • Create the repo in your browser, then Git → Set Remote (origin)… and Push, OR\n" +
+                    " • If creating in an organization with SAML SSO, open your PAT on GitHub and click 'Authorize' for that org.",
+                    "GitHub authorization", MessageBoxButton.OK, MessageBoxImage.Warning);
+
+                Process.Start(new ProcessStartInfo { FileName = "https://github.com/new", UseShellExecute = true });
+            }
+            catch (Octokit.ForbiddenException ex)
+            {
+                MessageBox.Show(this,
+                    "GitHub refused the request (Forbidden). If your org enforces SAML SSO, authorize your token for that org.\n\n" +
+                    ex.Message, "GitHub", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, ex.Message, "Create GitHub Repo", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async void GitSignIn_Click(object sender, RoutedEventArgs e)
+        {
+            // All values trimmed; secret may be blank for PKCE.
+            var clientId = (Properties.Settings.Default.GitHubOAuthClientId ?? "").Trim();
+            string? clientSecret = string.IsNullOrWhiteSpace(Properties.Settings.Default.GitHubOAuthClientSecret)
+                ? null
+                : Properties.Settings.Default.GitHubOAuthClientSecret.Trim();
+
+            // NEW: make redirect configurable so it can exactly match what's on GitHub
+            var redirect = (Properties.Settings.Default.GitHubOAuthRedirect ?? "http://localhost:53117/callback/").Trim();
+
+            var w = new Windows.GitHubSignInWindow(clientId, clientSecret, redirect) { Owner = this };
+            if (w.ShowDialog() == true && !string.IsNullOrWhiteSpace(w.AccessToken))
+            {
+                _settings.GitHubToken = w.AccessToken!;
+                SaveSettings();
+                Log("Signed in to GitHub. OAuth token stored.");
+                await OpenGitHubRepoPickerAsync(afterSignIn: true);
+            }
+        }
+
+        private async void GitHubPickOrInit_Click(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(_settings.GitHubToken))
+            {
+                MessageBox.Show(this, "Sign in to GitHub first.", "GitHub",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            await OpenGitHubRepoPickerAsync();
+        }
+
+        private void GitOpenDotGit_Click(object sender, RoutedEventArgs e)
+        {
+            if (!EnsureProject()) return;
+            var path = Path.Combine(_project!.RootPath, ".git");
+            if (!Directory.Exists(path)) { MessageBox.Show(this, "No .git folder here."); return; }
+            Process.Start("explorer.exe", path);
+        }
+
+        // Normalizes any repo path that might accidentally point into ".git"
+        private static string NormalizeRepoWorkdir(string? path)
+        {
+            if (string.IsNullOrWhiteSpace(path)) return path ?? string.Empty;
+
+            // Trim trailing separators
+            var p = path.TrimEnd('\\', '/');
+
+            // If the last segment is ".git", go up one directory
+            if (string.Equals(System.IO.Path.GetFileName(p), ".git", StringComparison.OrdinalIgnoreCase))
+                return System.IO.Directory.GetParent(p)?.FullName ?? p;
+
+            // If the path contains "\.git\..." anywhere, strip everything from that segment
+            var norm = p.Replace('/', '\\');
+            const string token = "\\.git\\";
+            var i = norm.IndexOf(token, StringComparison.OrdinalIgnoreCase);
+            if (i >= 0)
+                return norm.Substring(0, i).TrimEnd('\\');
+
+            return p;
+        }
+
+
+        private async System.Threading.Tasks.Task OpenGitHubRepoPickerAsync(bool afterSignIn = false)
+        {
+            string? currentProjectPath = _project?.RootPath;
+            var picker = new Windows.GitHubRepoPickerWindow(_settings, currentProjectPath) { Owner = this };
+
+            if (picker.ShowDialog() == true)
+            {
+                string? toOpen = picker.ResultClonedPath ?? picker.ResultOpenedLocalPath;
+
+                if (!string.IsNullOrWhiteSpace(toOpen))
+                {
+                    // ✅ Normalize out any ".git" segment that might have slipped in
+                    var normalized = NormalizeRepoWorkdir(toOpen);
+
+                    if (!System.IO.Directory.Exists(normalized))
+                    {
+                        MessageBox.Show(this, "The selected folder no longer exists.", "Open Project",
+                            MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+
+                    Log($"Watching for .toc under: {normalized}");
+                    var addonRoot = await WaitForAddonRootAsync(normalized);
+                    Log($"Watcher finished. Found: {addonRoot ?? "(none)"}");
+
+                    // If still nothing (AV lag or nested layout), let the user pick a .toc
+                    if (addonRoot == null)
+                        addonRoot = AskUserForAddonRoot(this, normalized);
+
+                    if (addonRoot == null)
+                    {
+                        MessageBox.Show(this, "That folder doesn’t look like a WoW addon project (no .toc found).",
+                            "Open Project", MessageBoxButton.OK, MessageBoxImage.Information);
+                        return;
+                    }
+
+                    var proj = Models.AddonProject.LoadFromDirectory(addonRoot);
+                    if (proj == null)
+                    {
+                        MessageBox.Show(this, "Couldn’t load the project from that folder.",
+                            "Open Project", MessageBoxButton.OK, MessageBoxImage.Information);
+                        return;
+                    }
+
+                    _project = proj;
+                    RefreshProjectTree();
+
+                    var toc = System.IO.Directory.GetFiles(addonRoot, "*.toc", SearchOption.TopDirectoryOnly).FirstOrDefault();
+                    if (toc != null) OpenFileInTab(toc);
+
+                    RebuildSymbolIndex();
+                    PathText.Text = $"Project: {_project.RootPath}";
+                    Status(afterSignIn ? "Signed in and opened project." : "Project opened.");
+                    UpdateGitStatusStrip();
+                    return;
+                }
+
+                // Case: current project was initialized on GitHub
+                if (!string.IsNullOrWhiteSpace(picker.ResultInitializedRemoteUrl))
+                {
+                    Status("Project initialized on GitHub and pushed.");
+                    Log($"GitHub: {_settings.GitRemoteUrl}");
+                    UpdateGitStatusStrip();
+                }
+            }
+        }
+
+        private static string? TryFindAddonRootOnce(string root)
+        {
+            try
+            {
+                // quick top-level check
+                var top = Directory.GetFiles(root, "*.toc", SearchOption.TopDirectoryOnly).FirstOrDefault();
+                if (top != null) return root;
+            }
+            catch (Exception ex) { LogService.Warn("TryFindAddonRootOnce: failed top-level .toc check", ex); }
+
+            // robust DFS that tolerates errors and skips .git
+            string repoName = Path.GetFileName(root.TrimEnd('\\', '/'));
+            string? bestDir = null; int bestDepth = int.MaxValue;
+
+            var stack = new Stack<string>();
+            stack.Push(root);
+
+            while (stack.Count > 0)
+            {
+                var dir = stack.Pop();
+
+                try
+                {
+                    // files in this dir
+                    foreach (var toc in Directory.EnumerateFiles(dir, "*.toc", SearchOption.TopDirectoryOnly))
+                    {
+                        var dirName = Path.GetFileName(dir);
+                        var tocName = Path.GetFileNameWithoutExtension(toc);
+
+                        if (string.Equals(dirName, tocName, StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(dirName, repoName, StringComparison.OrdinalIgnoreCase))
+                            return dir; // best match
+
+                        int depth = dir.Count(c => c == '\\' || c == '/');
+                        if (depth < bestDepth) { bestDepth = depth; bestDir = dir; }
+                    }
+
+                    // subdirs
+                    foreach (var sub in Directory.EnumerateDirectories(dir, "*", SearchOption.TopDirectoryOnly))
+                    {
+                        var name = Path.GetFileName(sub);
+                        if (string.Equals(name, ".git", StringComparison.OrdinalIgnoreCase)) continue;
+                        stack.Push(sub);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LogService.Warn("TryFindAddonRootOnce: failed to enumerate directory during DFS", ex);
+                }
+            }
+
+            return bestDir;
+        }
+
+        private static async Task<string?> WaitForAddonRootAsync(string path, int maxWaitMs = 60000)
+        {
+            var found = TryFindAddonRootOnce(path);
+            // Log($"Watching for .toc under: {path}"); // Removed static call to instance method
+            if (found != null) return found;
+
+            var tcs = new TaskCompletionSource<string?>(TaskCreationOptions.RunContinuationsAsynchronously);
+            using var watcher = new FileSystemWatcher(path, "*.toc")
+            {
+                IncludeSubdirectories = true,
+                NotifyFilter = NotifyFilters.FileName | NotifyFilters.CreationTime | NotifyFilters.LastWrite,
+                EnableRaisingEvents = true
+            };
+
+            void check() { tcs.TrySetResult(TryFindAddonRootOnce(path)); }
+
+            FileSystemEventHandler onAny = (_, __) => check();
+            RenamedEventHandler onRen = (_, __) => check();
+            watcher.Created += onAny;
+            watcher.Changed += onAny;
+            watcher.Renamed += onRen;
+
+            var sw = Stopwatch.StartNew();
+            while (sw.ElapsedMilliseconds < maxWaitMs)
+            {
+                await Task.Delay(250);
+                var r = TryFindAddonRootOnce(path);
+                if (r != null) return r;
+                if (tcs.Task.IsCompleted && tcs.Task.Result != null) return tcs.Task.Result;
+            }
+
+            return TryFindAddonRootOnce(path);
+        }
+
+        /// If still no .toc after waiting, let the user pick one explicitly.
+        private static string? AskUserForAddonRoot(Window owner, string startDir)
+        {
+            try
+            {
+                var ofd = new VistaOpenFileDialog
+                {
+                    Title = "Select the addon's .toc file",
+                    Filter = "WoW Addon TOC (*.toc)|*.toc|All files (*.*)|*.*",
+                    Multiselect = false,
+                    InitialDirectory = Directory.Exists(startDir) ? startDir : Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+                };
+                if (ofd.ShowDialog(owner) == true && File.Exists(ofd.FileName))
+                    return Path.GetDirectoryName(ofd.FileName);
+            }
+            catch (Exception ex) { LogService.Warn("AskUserForAddonRoot: failed to show .toc file picker", ex); }
+            return null;
+        }
+
+
+    }
+}

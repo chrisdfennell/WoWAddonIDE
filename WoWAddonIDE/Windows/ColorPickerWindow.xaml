@@ -1,0 +1,111 @@
+﻿<Window x:Class="WoWAddonIDE.Windows.ColorPickerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Pick Color"
+        Width="520" MinWidth="520"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResizeWithGrip"
+        UseLayoutRounding="True" SnapsToDevicePixels="True">
+
+    <Grid Margin="14" Grid.IsSharedSizeScope="True">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="12"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="12"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="16"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Preview + readouts -->
+        <DockPanel Grid.Row="0" LastChildFill="True">
+            <Border x:Name="Preview"
+                    Width="64" Height="64"
+                    CornerRadius="6"
+                    BorderBrush="#33000000" BorderThickness="1"
+                    Margin="0,0,14,0"/>
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="ARGB" FontWeight="Bold" Margin="0,0,12,0"/>
+                    <TextBlock x:Name="ArgbText" FontFamily="Consolas"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,8,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="WoW code" FontWeight="Bold" Margin="0,0,12,0"/>
+                    <TextBlock x:Name="WowText" FontFamily="Consolas"/>
+                </StackPanel>
+            </StackPanel>
+        </DockPanel>
+
+        <!-- Sliders -->
+        <Grid Grid.Row="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="8"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="8"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="8"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="28" SharedSizeGroup="lbl"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="64" SharedSizeGroup="val"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- A -->
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="A" VerticalAlignment="Center"/>
+            <Slider   x:Name="A" Grid.Row="0" Grid.Column="1"
+                      Minimum="0" Maximum="255"
+                      TickFrequency="1" IsSnapToTickEnabled="True"
+                      ValueChanged="AnyChanged"/>
+            <TextBox  x:Name="AT" Grid.Row="0" Grid.Column="2" Margin="8,0,0,0"
+                      HorizontalContentAlignment="Right"
+                      TextChanged="AT_TextChanged"/>
+
+            <!-- R -->
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="R" VerticalAlignment="Center"/>
+            <Slider   x:Name="R" Grid.Row="2" Grid.Column="1"
+                      Minimum="0" Maximum="255"
+                      TickFrequency="1" IsSnapToTickEnabled="True"
+                      ValueChanged="AnyChanged"/>
+            <TextBox  x:Name="RT" Grid.Row="2" Grid.Column="2" Margin="8,0,0,0"
+                      HorizontalContentAlignment="Right"
+                      TextChanged="RT_TextChanged"/>
+
+            <!-- G -->
+            <TextBlock Grid.Row="4" Grid.Column="0" Text="G" VerticalAlignment="Center"/>
+            <Slider   x:Name="G" Grid.Row="4" Grid.Column="1"
+                      Minimum="0" Maximum="255"
+                      TickFrequency="1" IsSnapToTickEnabled="True"
+                      ValueChanged="AnyChanged"/>
+            <TextBox  x:Name="GT" Grid.Row="4" Grid.Column="2" Margin="8,0,0,0"
+                      HorizontalContentAlignment="Right"
+                      TextChanged="GT_TextChanged"/>
+
+            <!-- B -->
+            <TextBlock Grid.Row="6" Grid.Column="0" Text="B" VerticalAlignment="Center"/>
+            <Slider   x:Name="B" Grid.Row="6" Grid.Column="1"
+                      Minimum="0" Maximum="255"
+                      TickFrequency="1" IsSnapToTickEnabled="True"
+                      ValueChanged="AnyChanged"/>
+            <TextBox  x:Name="BT" Grid.Row="6" Grid.Column="2" Margin="8,0,0,0"
+                      HorizontalContentAlignment="Right"
+                      TextChanged="BT_TextChanged"/>
+        </Grid>
+
+        <!-- Hex -->
+        <StackPanel Grid.Row="4" Orientation="Horizontal" VerticalAlignment="Center">
+            <TextBlock Text="Hex #AARRGGBB" VerticalAlignment="Center" Margin="0,0,8,0"/>
+            <TextBox x:Name="HexBox" Width="200" FontFamily="Consolas" TextChanged="HexBox_TextChanged"/>
+        </StackPanel>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="OK" Width="90" Margin="0,0,8,0" IsDefault="True" Click="Ok_Click"/>
+            <Button Content="Cancel" Width="90" IsCancel="True"/>
+        </StackPanel>
+    </Grid>
+</Window>

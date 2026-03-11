@@ -1,0 +1,35 @@
+﻿<Application x:Class="WoWAddonIDE.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             StartupUri="MainWindow.xaml">
+    <Application.Resources>
+        <ResourceDictionary>
+            <!-- Base colors (light defaults — overridden at runtime by ThemeManager) -->
+            <Color x:Key="Color.Background">#FFF3F3F3</Color>
+            <Color x:Key="Color.Foreground">#FF383A42</Color>
+            <Color x:Key="Color.Border">#FFD4D4D4</Color>
+            <Color x:Key="Color.EditorLine">#FFE5E5E6</Color>
+            <Color x:Key="Color.EditorSelection">#FFADD6FF</Color>
+            <Color x:Key="Color.SelectionBorder">#FF86A5C6</Color>
+
+            <!-- App brushes (names your code already uses) -->
+            <SolidColorBrush x:Key="App.BackgroundBrush" Color="{StaticResource Color.Background}"/>
+            <SolidColorBrush x:Key="App.ForegroundBrush" Color="{StaticResource Color.Foreground}"/>
+            <SolidColorBrush x:Key="App.BackgroundHoverBrush" Color="{StaticResource Color.EditorLine}"/>
+            <SolidColorBrush x:Key="App.BackgroundPressedBrush" Color="#FFD0D0D2"/>
+            <SolidColorBrush x:Key="App.BorderBrush"    Color="{StaticResource Color.Border}"/>
+            <SolidColorBrush x:Key="Brush.Window"       Color="{StaticResource Color.Background}"/>
+            <SolidColorBrush x:Key="Brush.Border"       Color="{StaticResource Color.Border}"/>
+
+            <!-- Editor brushes used by ThemeManager.ApplyToEditor -->
+            <SolidColorBrush x:Key="Brush.EditorBG"        Color="#FFFFFFFF"/>
+            <SolidColorBrush x:Key="Brush.EditorFG"        Color="#FF383A42"/>
+            <SolidColorBrush x:Key="Brush.EditorLine"      Color="{StaticResource Color.EditorLine}"/>
+            <SolidColorBrush x:Key="Brush.EditorCurrentLineBG" Color="#FFEBF1F8"/>
+            <SolidColorBrush x:Key="Brush.EditorSelection" Color="{StaticResource Color.EditorSelection}"/>
+            <Pen x:Key="Brush.SelectionBorder"
+             Thickness="1"
+             Brush="#FF86A5C6"/>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>
