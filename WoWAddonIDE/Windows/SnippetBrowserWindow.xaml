@@ -1,0 +1,39 @@
+<Window x:Class="WoWAddonIDE.Windows.SnippetBrowserWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Snippet Browser" Height="520" Width="740"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource App.BackgroundBrush}"
+        Foreground="{DynamicResource App.ForegroundBrush}">
+    <Grid Margin="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="220"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,8"
+                   Text="Browse and insert WoW addon code snippets. Double-click or press Insert to add to the active editor."/>
+
+        <ListBox x:Name="SnippetList" Grid.Row="1" Grid.Column="0" Margin="0,0,8,0"
+                 SelectionChanged="SnippetList_SelectionChanged"
+                 MouseDoubleClick="SnippetList_MouseDoubleClick"/>
+
+        <TextBox x:Name="PreviewBox" Grid.Row="1" Grid.Column="1"
+                 IsReadOnly="True" AcceptsReturn="True"
+                 VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+                 FontFamily="Consolas" FontSize="12" TextWrapping="NoWrap"/>
+
+        <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Orientation="Horizontal"
+                    HorizontalAlignment="Right" Margin="0,8,0,0">
+            <TextBlock x:Name="TriggerLabel" VerticalAlignment="Center" Margin="0,0,16,0"
+                       FontStyle="Italic" Foreground="Gray"/>
+            <Button Content="Insert" Width="100" Margin="0,0,8,0" Click="Insert_Click"/>
+            <Button Content="Close" Width="80" IsCancel="True"/>
+        </StackPanel>
+    </Grid>
+</Window>

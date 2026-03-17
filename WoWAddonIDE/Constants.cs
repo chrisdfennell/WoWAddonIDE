@@ -36,6 +36,19 @@ namespace WoWAddonIDE
         public const string TocNotesPrefix = "## Notes:";
         public const string DefaultInterfaceVersion = "110005";
 
+        // -------- WoW Game Flavors (for multi-TOC) --------
+        public static readonly (string Suffix, string DisplayName, string DefaultInterface)[] WowFlavors =
+        {
+            ("Mainline",  "Retail (Mainline)",      "110005"),
+            ("Vanilla",   "Classic Era (Vanilla)",   "11506"),
+            ("Cata",      "Cataclysm Classic",       "40401"),
+            ("Wrath",     "Wrath Classic",            "30403"),
+        };
+
+        // -------- GitHub (for auto-update) --------
+        public const string GitHubRepoOwner = "chrisdfennell";
+        public const string GitHubRepoName = "WoWAddonIDE";
+
         // -------- Hidden Folders (excluded from project tree) --------
         public static readonly string[] HiddenFolders = { ".git", ".vs" };
 

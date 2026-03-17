@@ -110,5 +110,44 @@ namespace WoWAddonIDE
                 OpenFileInTab(_project.TocPath);
             }
         }
+
+        private void PkgmetaEditor_Click(object sender, RoutedEventArgs e)
+        {
+            if (!EnsureProject()) return;
+
+            var w = new Windows.PkgmetaEditorWindow(_project!.RootPath, _project.Name) { Owner = this };
+            if (w.ShowDialog() == true && w.GeneratedFilePath != null)
+            {
+                _project = Models.AddonProject.LoadFromDirectory(_project.RootPath);
+                RefreshProjectTree();
+                OpenFileInTab(w.GeneratedFilePath);
+                Log($".pkgmeta generated.");
+            }
+        }
+
+        private void GenerateFlavorTocs_Click(object sender, RoutedEventArgs e)
+        {
+            if (!EnsureProject()) return;
+
+            var w = new Windows.MultiTocWindow(
+                _project!.RootPath,
+                _project.Name,
+                _project.TocPath)
+            { Owner = this };
+
+            if (w.ShowDialog() == true && w.GeneratedFiles.Count > 0)
+            {
+                // Refresh project tree to show new TOC files
+                _project = Models.AddonProject.LoadFromDirectory(_project.RootPath);
+                RefreshProjectTree();
+
+                foreach (var f in w.GeneratedFiles)
+                    Log($"Generated: {Path.GetFileName(f)}");
+
+                // Open the first generated file
+                if (w.GeneratedFiles.Count > 0)
+                    OpenFileInTab(w.GeneratedFiles[0]);
+            }
+        }
     }
 }

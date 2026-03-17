@@ -87,5 +87,25 @@ namespace WoWAddonIDE
             win.Owner = this;
             win.ShowDialog();
         }
+
+        // Menu: Tools → Snippet Browser…
+        private void OpenSnippetBrowser_Click(object sender, RoutedEventArgs e)
+        {
+            var win = new WoWAddonIDE.Windows.SnippetBrowserWindow { Owner = this };
+            if (win.ShowDialog() == true && win.SelectedSnippetBody != null)
+            {
+                if (TryGetActiveEditor(out var ed, out _))
+                {
+                    ed.Document.Insert(ed.CaretOffset, win.SelectedSnippetBody);
+                    ed.Focus();
+                    Status("Snippet inserted.");
+                }
+                else
+                {
+                    Status("No editor open — snippet copied to clipboard.");
+                    try { System.Windows.Clipboard.SetText(win.SelectedSnippetBody); } catch { }
+                }
+            }
+        }
     }
 }

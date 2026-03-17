@@ -943,11 +943,27 @@ namespace WoWAddonIDE
                 var doc = editor.Document;
                 if (doc == null) { renderer.ClearHighlight(); return; }
 
-                var result = FindMatchingBracket(doc.Text, offset);
+                var text = doc.Text;
+
+                // Try single-char bracket match first
+                var result = FindMatchingBracket(text, offset);
                 if (result.HasValue)
-                    renderer.SetHighlight(result.Value.Item1, result.Value.Item2);
-                else
-                    renderer.ClearHighlight();
+                {
+                    renderer.SetHighlight(result.Value.Item1, 1, result.Value.Item2, 1);
+                    return;
+                }
+
+                // Try Lua keyword match (if/end, function/end, etc.)
+                var kwResult = FindMatchingLuaKeyword(text, offset);
+                if (kwResult.HasValue)
+                {
+                    renderer.SetHighlight(
+                        kwResult.Value.Pos1, kwResult.Value.Len1,
+                        kwResult.Value.Pos2, kwResult.Value.Len2);
+                    return;
+                }
+
+                renderer.ClearHighlight();
             };
         }
 
@@ -955,7 +971,6 @@ namespace WoWAddonIDE
         {
             if (offset <= 0 || offset > text.Length) return null;
 
-            // Check character before caret
             char ch = text[offset - 1];
             char match;
             bool forward;
@@ -992,6 +1007,196 @@ namespace WoWAddonIDE
             }
 
             return null;
+        }
+
+        // -------- Lua keyword matching (if/end, function/end, do/end, etc.) --------
+
+        private static readonly string[] _blockOpeners = { "if", "function", "for", "while", "repeat", "do" };
+        private static readonly string[] _blockClosers = { "end", "until" };
+
+        private struct LuaKeywordMatch
+        {
+            public int Pos1, Len1, Pos2, Len2;
+        }
+
+        private static LuaKeywordMatch? FindMatchingLuaKeyword(string text, int caretOffset)
+        {
+            // Get the word at or near the caret
+            var (wordStart, word) = GetWordAtCaret(text, caretOffset);
+            if (string.IsNullOrEmpty(word)) return null;
+
+            var wordLower = word.ToLowerInvariant();
+
+            // Is caret on a block opener?
+            if (_blockOpeners.Contains(wordLower))
+            {
+                var closeResult = FindBlockClose(text, wordStart, wordLower);
+                if (closeResult.HasValue)
+                    return new LuaKeywordMatch
+                    {
+                        Pos1 = wordStart, Len1 = word.Length,
+                        Pos2 = closeResult.Value.pos, Len2 = closeResult.Value.len
+                    };
+            }
+
+            // Is caret on a block closer?
+            if (_blockClosers.Contains(wordLower))
+            {
+                var openResult = FindBlockOpen(text, wordStart, wordLower);
+                if (openResult.HasValue)
+                    return new LuaKeywordMatch
+                    {
+                        Pos1 = openResult.Value.pos, Len1 = openResult.Value.len,
+                        Pos2 = wordStart, Len2 = word.Length
+                    };
+            }
+
+            return null;
+        }
+
+        private static (int pos, int len)? FindBlockClose(string text, int openerStart, string openerWord)
+        {
+            // Scan forward from the opener, tracking depth
+            int depth = 1;
+            int i = openerStart + openerWord.Length;
+            bool repeatMode = openerWord == "repeat";
+
+            while (i < text.Length)
+            {
+                if (IsInComment(text, i)) { i = SkipToEndOfLine(text, i); continue; }
+                if (IsInString(text, i)) { i = SkipString(text, i); continue; }
+
+                var (ws, w) = GetWordAt(text, i);
+                if (w == null) { i++; continue; }
+
+                var wl = w.ToLowerInvariant();
+                if (_blockOpeners.Contains(wl))
+                    depth++;
+                else if (repeatMode && wl == "until" && depth == 1)
+                    return (ws, w.Length);
+                else if (wl == "end")
+                {
+                    depth--;
+                    if (depth == 0) return (ws, w.Length);
+                }
+
+                i = ws + w.Length;
+            }
+            return null;
+        }
+
+        private static (int pos, int len)? FindBlockOpen(string text, int closerStart, string closerWord)
+        {
+            // Scan backward from the closer
+            int depth = 1;
+            int i = closerStart - 1;
+            bool untilMode = closerWord == "until";
+
+            while (i >= 0)
+            {
+                // Find the start of a word ending at or before i
+                var (ws, w) = GetWordEndingBefore(text, i);
+                if (w == null) { i--; continue; }
+
+                var wl = w.ToLowerInvariant();
+                if (wl == "end" || wl == "until")
+                    depth++;
+                else if (_blockOpeners.Contains(wl))
+                {
+                    depth--;
+                    if (depth == 0)
+                    {
+                        if (untilMode && wl != "repeat") { i = ws - 1; continue; }
+                        return (ws, w.Length);
+                    }
+                }
+
+                i = ws - 1;
+            }
+            return null;
+        }
+
+        private static (int start, string word) GetWordAtCaret(string text, int caret)
+        {
+            // Try word starting before caret
+            if (caret > 0)
+            {
+                int s = caret - 1;
+                while (s > 0 && IsWordChar(text[s - 1])) s--;
+                if (s < caret && IsWordChar(text[s]))
+                {
+                    int e = caret;
+                    while (e < text.Length && IsWordChar(text[e])) e++;
+                    var w = text.Substring(s, e - s);
+                    if (w.Length > 0) return (s, w);
+                }
+            }
+            // Try word starting at caret
+            if (caret < text.Length && IsWordChar(text[caret]))
+            {
+                int s = caret;
+                int e = caret;
+                while (e < text.Length && IsWordChar(text[e])) e++;
+                return (s, text.Substring(s, e - s));
+            }
+            return (-1, "");
+        }
+
+        private static (int start, string? word) GetWordAt(string text, int pos)
+        {
+            if (pos >= text.Length || !IsWordChar(text[pos])) return (-1, null);
+            int s = pos;
+            int e = pos;
+            while (e < text.Length && IsWordChar(text[e])) e++;
+            return (s, text.Substring(s, e - s));
+        }
+
+        private static (int start, string? word) GetWordEndingBefore(string text, int pos)
+        {
+            // Skip non-word chars backward
+            while (pos >= 0 && !IsWordChar(text[pos])) pos--;
+            if (pos < 0) return (-1, null);
+
+            int e = pos + 1;
+            while (pos > 0 && IsWordChar(text[pos - 1])) pos--;
+            return (pos, text.Substring(pos, e - pos));
+        }
+
+        private static bool IsWordChar(char c) => char.IsLetterOrDigit(c) || c == '_';
+
+        private static bool IsInComment(string text, int pos)
+        {
+            // Check if pos is after '--' on the same line
+            int lineStart = text.LastIndexOf('\n', Math.Max(0, pos - 1)) + 1;
+            int commentIdx = text.IndexOf("--", lineStart, pos - lineStart, StringComparison.Ordinal);
+            return commentIdx >= 0 && commentIdx < pos;
+        }
+
+        private static int SkipToEndOfLine(string text, int pos)
+        {
+            int nl = text.IndexOf('\n', pos);
+            return nl >= 0 ? nl + 1 : text.Length;
+        }
+
+        private static bool IsInString(string text, int pos)
+        {
+            if (pos >= text.Length) return false;
+            char c = text[pos];
+            return c == '"' || c == '\'';
+        }
+
+        private static int SkipString(string text, int pos)
+        {
+            if (pos >= text.Length) return pos + 1;
+            char quote = text[pos];
+            pos++;
+            while (pos < text.Length)
+            {
+                if (text[pos] == '\\') { pos += 2; continue; }
+                if (text[pos] == quote) return pos + 1;
+                pos++;
+            }
+            return pos;
         }
 
         // -------- Auto-insert 'end' for Lua blocks --------
@@ -1046,12 +1251,13 @@ namespace WoWAddonIDE
     }
 
     /// <summary>
-    /// Background renderer that highlights matching bracket pairs.
+    /// Background renderer that highlights matching bracket/keyword pairs.
+    /// Supports variable-length highlights (single chars for brackets, multi-char for keywords).
     /// </summary>
     internal class BracketHighlightRenderer : ICSharpCode.AvalonEdit.Rendering.IBackgroundRenderer
     {
         private readonly ICSharpCode.AvalonEdit.Rendering.TextView _textView;
-        private int _pos1 = -1, _pos2 = -1;
+        private int _pos1 = -1, _len1 = 1, _pos2 = -1, _len2 = 1;
 
         public BracketHighlightRenderer(ICSharpCode.AvalonEdit.Rendering.TextView textView)
         {
@@ -1059,10 +1265,10 @@ namespace WoWAddonIDE
             _textView.BackgroundRenderers.Add(this);
         }
 
-        public void SetHighlight(int pos1, int pos2)
+        public void SetHighlight(int pos1, int len1, int pos2, int len2)
         {
-            _pos1 = pos1;
-            _pos2 = pos2;
+            _pos1 = pos1; _len1 = len1;
+            _pos2 = pos2; _len2 = len2;
             _textView.InvalidateLayer(Layer);
         }
 
@@ -1090,11 +1296,17 @@ namespace WoWAddonIDE
                 System.Windows.Media.Color.FromArgb(0x40, 0xFF, 0xD7, 0x00));
             brush.Freeze();
 
-            foreach (var pos in new[] { _pos1, _pos2 })
+            var docLen = textView.Document.TextLength;
+
+            if (_pos1 >= 0 && _pos1 + _len1 <= docLen)
             {
-                if (pos < 0 || pos >= textView.Document.TextLength) continue;
-                var segment = new ICSharpCode.AvalonEdit.Document.TextSegment { StartOffset = pos, Length = 1 };
-                builder.AddSegment(textView, segment);
+                var seg1 = new ICSharpCode.AvalonEdit.Document.TextSegment { StartOffset = _pos1, Length = _len1 };
+                builder.AddSegment(textView, seg1);
+            }
+            if (_pos2 >= 0 && _pos2 + _len2 <= docLen)
+            {
+                var seg2 = new ICSharpCode.AvalonEdit.Document.TextSegment { StartOffset = _pos2, Length = _len2 };
+                builder.AddSegment(textView, seg2);
             }
 
             var geometry = builder.CreateGeometry();

@@ -172,6 +172,8 @@ namespace WoWAddonIDE
             Map(Key.OemComma, ModifierKeys.Control | ModifierKeys.Alt, () => GitAuth_Click(this, new RoutedEventArgs())); // Ctrl+Alt+,
             Map(Key.P, ModifierKeys.Control | ModifierKeys.Shift, () => OpenCommandPalette_Click(this, new RoutedEventArgs())); // Ctrl+Shift+P
 
+            Map(Key.N, ModifierKeys.Control | ModifierKeys.Shift, () => OpenSnippetBrowser_Click(this, new RoutedEventArgs())); // Ctrl+Shift+N
+
             // ===== HELP =====
             Map0(Key.F1, OpenHelpWindow);                                                                         // F1
 
@@ -180,6 +182,66 @@ namespace WoWAddonIDE
                 Log("Lua highlight NOT available — check Resources/Lua.xshd (Build Action: Resource) and XML.");
             else
                 Log("Lua highlight is available.");
+
+            // Auto-update check (fire and forget, non-blocking)
+            CheckForUpdatesOnStartup();
+        }
+
+        private async void CheckForUpdatesOnStartup()
+        {
+            try
+            {
+                var result = await Services.UpdateService.CheckForUpdateAsync();
+                if (result.UpdateAvailable)
+                {
+                    Log($"Update available: v{result.LatestVersion} (current: v{result.CurrentVersion})");
+                    Status($"Update available: v{result.LatestVersion}");
+
+                    var win = new Windows.UpdateAvailableWindow(result) { Owner = this };
+                    win.ShowDialog();
+                }
+                else if (result.Error == null)
+                {
+                    Log($"Up to date (v{result.CurrentVersion}).");
+                }
+            }
+            catch (Exception ex)
+            {
+                Services.LogService.Warn("Startup update check failed", ex);
+            }
+        }
+
+        private async void CheckForUpdates_Click(object sender, RoutedEventArgs e)
+        {
+            Status("Checking for updates...");
+            try
+            {
+                var result = await Services.UpdateService.CheckForUpdateAsync();
+                if (result.Error != null)
+                {
+                    MessageBox.Show(this, $"Update check failed:\n{result.Error}", "Check for Updates",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                if (result.UpdateAvailable)
+                {
+                    var win = new Windows.UpdateAvailableWindow(result) { Owner = this };
+                    win.ShowDialog();
+                }
+                else
+                {
+                    MessageBox.Show(this,
+                        $"You're up to date!\n\nCurrent version: v{result.CurrentVersion}",
+                        "Check for Updates", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, ex.Message, "Check for Updates",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            Status("Ready");
         }
 
         private void Log(string text)

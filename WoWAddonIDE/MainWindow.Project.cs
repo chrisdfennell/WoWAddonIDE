@@ -182,7 +182,8 @@ print(ADDON_NAME .. ' loaded!')
             if (!EnsureProject()) return;
             SaveAll_Click(sender, e);
 
-            foreach (var p in LuaLint.Pass(_project!)) Log(p);
+            // Run lint and populate Error List panel
+            RunLintAndPopulateErrorList();
 
             if (string.IsNullOrWhiteSpace(_settings.AddOnsPath) || !Directory.Exists(_settings.AddOnsPath))
             {

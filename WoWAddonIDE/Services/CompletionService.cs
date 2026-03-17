@@ -180,10 +180,8 @@ namespace WoWAddonIDE.Services
             }
 
             // Snippet triggers (prefixed with '!')
-            if ("!slash".StartsWith(currentWord, StringComparison.OrdinalIgnoreCase))
-                data.Add(Snippets.SlashCommandSnippet());
-            if ("!ace".StartsWith(currentWord, StringComparison.OrdinalIgnoreCase))
-                data.Add(Snippets.Ace3Snippet());
+            foreach (var snippet in Snippets.GetMatchingSnippets(currentWord))
+                data.Add(snippet);
 
             cw.Show();
         }
@@ -325,22 +323,18 @@ namespace WoWAddonIDE.Services
         public string CurrentIndexText => "1 of 1";
     }
 
-    // --- Simple snippets ---
+    // --- Snippets ---
     public static class Snippets
     {
-        public static ICompletionData SlashCommandSnippet()
+        /// <summary>All available snippet definitions (trigger, title, body).</summary>
+        public static readonly (string Trigger, string Title, string Body)[] All =
         {
-            return new SnippetCompletionData("!slash", "Slash command boilerplate",
-@"SLASH_MYADDON1 = '/myaddon'
+            ("!slash", "Slash command", @"SLASH_MYADDON1 = '/myaddon'
 SlashCmdList['MYADDON'] = function(msg)
     print('Hello from /myaddon:', msg)
-end");
-        }
+end"),
 
-        public static ICompletionData Ace3Snippet()
-        {
-            return new SnippetCompletionData("!ace", "AceAddon-3.0 boilerplate",
-@"local ADDON_NAME, ns = ...
+            ("!ace", "AceAddon-3.0 skeleton", @"local ADDON_NAME, ns = ...
 local MyAddon = LibStub('AceAddon-3.0'):NewAddon(ADDON_NAME, 'AceConsole-3.0', 'AceEvent-3.0')
 
 function MyAddon:OnInitialize()
@@ -353,7 +347,169 @@ end
 
 function MyAddon:OnDisable()
     self:Print('Disabled!')
-end");
+end"),
+
+            ("!event", "Event handler frame", @"local f = CreateFrame('Frame')
+f:RegisterEvent('ADDON_LOADED')
+f:RegisterEvent('PLAYER_LOGIN')
+f:SetScript('OnEvent', function(self, event, ...)
+    if event == 'ADDON_LOADED' then
+        local addonName = ...
+        -- initialize here
+    elseif event == 'PLAYER_LOGIN' then
+        -- player is ready
+    end
+end)"),
+
+            ("!savedvars", "SavedVariables init pattern", @"local ADDON_NAME, ns = ...
+
+-- Defaults (deep-copied on first load)
+local defaults = {
+    enabled = true,
+    scale = 1.0,
+    position = { x = 0, y = 0 },
+}
+
+local f = CreateFrame('Frame')
+f:RegisterEvent('ADDON_LOADED')
+f:RegisterEvent('PLAYER_LOGOUT')
+f:SetScript('OnEvent', function(self, event, ...)
+    if event == 'ADDON_LOADED' and ... == ADDON_NAME then
+        -- Merge saved data with defaults
+        if not MyAddonDB then MyAddonDB = {} end
+        for k, v in pairs(defaults) do
+            if MyAddonDB[k] == nil then MyAddonDB[k] = v end
+        end
+        ns.db = MyAddonDB
+    elseif event == 'PLAYER_LOGOUT' then
+        -- Data is auto-saved by WoW; do cleanup here if needed
+    end
+end)"),
+
+            ("!locale", "Localization table", @"local ADDON_NAME, ns = ...
+
+-- Default locale (English)
+local L = setmetatable({}, { __index = function(t, k) t[k] = k; return k end })
+ns.L = L
+
+-- To add translations, create locale files:
+-- if GetLocale() == 'deDE' then
+--     L['Hello'] = 'Hallo'
+-- end"),
+
+            ("!options", "Interface Options panel", @"local ADDON_NAME, ns = ...
+
+local panel = CreateFrame('Frame')
+panel.name = ADDON_NAME
+
+local title = panel:CreateFontString(nil, 'ARTWORK', 'GameFontNormalLarge')
+title:SetPoint('TOPLEFT', 16, -16)
+title:SetText(ADDON_NAME)
+
+local desc = panel:CreateFontString(nil, 'ARTWORK', 'GameFontHighlightSmall')
+desc:SetPoint('TOPLEFT', title, 'BOTTOMLEFT', 0, -8)
+desc:SetText('Configure ' .. ADDON_NAME .. ' settings.')
+
+-- Add your checkboxes, sliders, etc. here
+
+if Settings and Settings.RegisterCanvasLayoutCategory then
+    local category = Settings.RegisterCanvasLayoutCategory(panel, ADDON_NAME)
+    Settings.RegisterAddOnCategory(category)
+else
+    InterfaceOptions_AddCategory(panel)
+end"),
+
+            ("!minimap", "Minimap button (LibDataBroker)", @"local ADDON_NAME, ns = ...
+local ldb = LibStub('LibDataBroker-1.1')
+local icon = LibStub('LibDBIcon-1.0')
+
+local broker = ldb:NewDataObject(ADDON_NAME, {
+    type = 'launcher',
+    icon = 'Interface\\Icons\\INV_Misc_QuestionMark',
+    OnClick = function(self, button)
+        if button == 'LeftButton' then
+            -- toggle main window
+        elseif button == 'RightButton' then
+            -- open settings
+        end
+    end,
+    OnTooltipShow = function(tooltip)
+        tooltip:AddLine(ADDON_NAME)
+        tooltip:AddLine('Left-click to toggle', 1, 1, 1)
+        tooltip:AddLine('Right-click for settings', 1, 1, 1)
+    end,
+})
+
+-- In your ADDON_LOADED handler:
+-- if not MyAddonDB then MyAddonDB = {} end
+-- if not MyAddonDB.minimap then MyAddonDB.minimap = {} end
+-- icon:Register(ADDON_NAME, broker, MyAddonDB.minimap)"),
+
+            ("!comm", "Addon communication (CHAT_MSG_ADDON)", @"local ADDON_NAME, ns = ...
+local PREFIX = ADDON_NAME
+
+C_ChatInfo.RegisterAddonMessagePrefix(PREFIX)
+
+local f = CreateFrame('Frame')
+f:RegisterEvent('CHAT_MSG_ADDON')
+f:SetScript('OnEvent', function(self, event, prefix, message, channel, sender)
+    if prefix ~= PREFIX then return end
+    -- Handle incoming message
+    print(format('[%s] %s: %s', prefix, sender, message))
+end)
+
+-- Send a message:
+-- C_ChatInfo.SendAddonMessage(PREFIX, 'hello', 'PARTY')
+-- C_ChatInfo.SendAddonMessage(PREFIX, 'hello', 'WHISPER', targetName)"),
+
+            ("!securehook", "Secure hook pattern", @"-- Hook a global function without tainting it
+hooksecurefunc('FunctionName', function(...)
+    -- Your code runs AFTER the original function
+end)
+
+-- Hook a method on a frame
+hooksecurefunc(GameTooltip, 'SetUnitBuff', function(self, ...)
+    -- Runs after SetUnitBuff
+end)"),
+
+            ("!frame", "Basic frame with backdrop", @"local f = CreateFrame('Frame', 'MyAddonFrame', UIParent, 'BackdropTemplate')
+f:SetSize(300, 200)
+f:SetPoint('CENTER')
+f:SetBackdrop({
+    bgFile = 'Interface\\DialogFrame\\UI-DialogBox-Background',
+    edgeFile = 'Interface\\DialogFrame\\UI-DialogBox-Border',
+    edgeSize = 16,
+    insets = { left = 4, right = 4, top = 4, bottom = 4 },
+})
+f:SetBackdropColor(0, 0, 0, 0.8)
+f:SetMovable(true)
+f:EnableMouse(true)
+f:RegisterForDrag('LeftButton')
+f:SetScript('OnDragStart', f.StartMoving)
+f:SetScript('OnDragStop', f.StopMovingOrSizing)
+
+local title = f:CreateFontString(nil, 'OVERLAY', 'GameFontNormal')
+title:SetPoint('TOP', 0, -10)
+title:SetText('My Frame')
+
+local close = CreateFrame('Button', nil, f, 'UIPanelCloseButton')
+close:SetPoint('TOPRIGHT', -2, -2)"),
+        };
+
+        public static ICompletionData SlashCommandSnippet() =>
+            new SnippetCompletionData(All[0].Trigger, All[0].Title, All[0].Body);
+
+        public static ICompletionData Ace3Snippet() =>
+            new SnippetCompletionData(All[1].Trigger, All[1].Title, All[1].Body);
+
+        /// <summary>Get all snippet completion items matching the given prefix.</summary>
+        public static IEnumerable<ICompletionData> GetMatchingSnippets(string prefix)
+        {
+            foreach (var (trigger, title, body) in All)
+            {
+                if (trigger.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                    yield return new SnippetCompletionData(trigger, title, body);
+            }
         }
     }
 

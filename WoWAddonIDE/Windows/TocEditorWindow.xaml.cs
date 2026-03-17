@@ -1,25 +1,67 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
+using WoWAddonIDE.Services;
 
 namespace WoWAddonIDE.Windows
 {
     public partial class TocEditorWindow : Window
     {
+        public class TocFileEntry
+        {
+            public string Label { get; set; } = "";
+            public string Path { get; set; } = "";
+        }
+
         private string _tocPath = "";
         private string _root = "";
+        private readonly List<TocFileEntry> _tocFiles = new();
 
         public TocEditorWindow(string tocPath)
         {
             InitializeComponent();
             _tocPath = tocPath;
             _root = System.IO.Path.GetDirectoryName(_tocPath)!;
-            LoadToc();
+
+            // Discover all TOC files for this addon
+            var addonName = System.IO.Path.GetFileNameWithoutExtension(_tocPath);
+            _tocFiles.AddRange(
+                TocParser.DiscoverTocFiles(_root, addonName)
+                    .Select(t => new TocFileEntry { Label = $"{t.Label} ({System.IO.Path.GetFileName(t.Path)})", Path = t.Path }));
+
+            if (_tocFiles.Count == 0)
+                _tocFiles.Add(new TocFileEntry { Label = System.IO.Path.GetFileName(_tocPath), Path = _tocPath });
+
+            TocSelector.ItemsSource = _tocFiles;
+
+            // Select the entry matching the requested path
+            var match = _tocFiles.FindIndex(t => t.Path.Equals(_tocPath, StringComparison.OrdinalIgnoreCase));
+            TocSelector.SelectedIndex = match >= 0 ? match : 0;
+
+            // Hide the selector row if there's only one TOC
+            if (_tocFiles.Count <= 1)
+                TocSelector.Visibility = Visibility.Collapsed;
+        }
+
+        private void TocSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (TocSelector.SelectedItem is TocFileEntry entry)
+            {
+                _tocPath = entry.Path;
+                LoadToc();
+            }
         }
 
         private void LoadToc()
         {
+            Interface.Text = "";
+            TitleBox.Text = "";
+            Notes.Text = "";
+            Files.Items.Clear();
+
             if (!File.Exists(_tocPath)) return;
             var lines = File.ReadAllLines(_tocPath).ToList();
 
@@ -47,7 +89,7 @@ namespace WoWAddonIDE.Windows
 
         private void Save_Click(object sender, RoutedEventArgs e)
         {
-            var lines = new System.Collections.Generic.List<string>
+            var lines = new List<string>
             {
                 "## Interface: " + Interface.Text.Trim(),
                 "## Title: " + TitleBox.Text.Trim(),

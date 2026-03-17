@@ -703,5 +703,2226 @@
     "name": "AceConsole-3.0:Print",
     "signature": "addon:Print(message)",
     "description": "Print via AceConsole."
+  },
+
+  {
+    "name": "string.len",
+    "signature": "string.len(s) -> number",
+    "description": "Returns the length of a string."
+  },
+  {
+    "name": "string.sub",
+    "signature": "string.sub(s, i[, j]) -> string",
+    "description": "Returns substring from index i to j."
+  },
+  {
+    "name": "string.rep",
+    "signature": "string.rep(s, n) -> string",
+    "description": "Returns string repeated n times."
+  },
+  {
+    "name": "string.byte",
+    "signature": "string.byte(s[, i[, j]]) -> byte...",
+    "description": "Returns numeric byte values of characters."
+  },
+  {
+    "name": "string.char",
+    "signature": "string.char(...) -> string",
+    "description": "Returns string from numeric byte values."
+  },
+  {
+    "name": "string.lower",
+    "signature": "string.lower(s) -> string",
+    "description": "Returns lowercase version of string."
+  },
+  {
+    "name": "string.upper",
+    "signature": "string.upper(s) -> string",
+    "description": "Returns uppercase version of string."
+  },
+  {
+    "name": "string.reverse",
+    "signature": "string.reverse(s) -> string",
+    "description": "Returns reversed string."
+  },
+  {
+    "name": "string.gmatch",
+    "signature": "string.gmatch(s, pattern) -> iterator",
+    "description": "Returns iterator over all pattern matches in string."
+  },
+  {
+    "name": "table.concat",
+    "signature": "table.concat(t[, sep[, i[, j]]]) -> string",
+    "description": "Concatenates table elements into a string with separator."
+  },
+  {
+    "name": "table.wipe",
+    "signature": "table.wipe(t) -> t",
+    "description": "Removes all entries from a table (WoW extension)."
+  },
+  {
+    "name": "math.abs",
+    "signature": "math.abs(x) -> number",
+    "description": "Returns absolute value."
+  },
+  {
+    "name": "math.random",
+    "signature": "math.random([m[, n]]) -> number",
+    "description": "Returns pseudo-random number."
+  },
+  {
+    "name": "math.sqrt",
+    "signature": "math.sqrt(x) -> number",
+    "description": "Returns square root."
+  },
+  {
+    "name": "math.pi",
+    "signature": "math.pi -> number",
+    "description": "The value of pi (3.14159...)."
+  },
+  {
+    "name": "math.sin",
+    "signature": "math.sin(x) -> number",
+    "description": "Returns sine of angle in radians."
+  },
+  {
+    "name": "math.cos",
+    "signature": "math.cos(x) -> number",
+    "description": "Returns cosine of angle in radians."
+  },
+  {
+    "name": "math.fmod",
+    "signature": "math.fmod(x, y) -> number",
+    "description": "Returns remainder of x divided by y."
+  },
+  {
+    "name": "math.huge",
+    "signature": "math.huge -> number",
+    "description": "Positive infinity constant."
+  },
+  {
+    "name": "select",
+    "signature": "select(index, ...) -> values",
+    "description": "Returns arguments after index, or count with '#'."
+  },
+  {
+    "name": "unpack",
+    "signature": "unpack(t[, i[, j]]) -> values...",
+    "description": "Returns elements from a table as multiple values."
+  },
+  {
+    "name": "rawget",
+    "signature": "rawget(t, k) -> value",
+    "description": "Gets table value bypassing metamethods."
+  },
+  {
+    "name": "rawset",
+    "signature": "rawset(t, k, v) -> t",
+    "description": "Sets table value bypassing metamethods."
+  },
+  {
+    "name": "setmetatable",
+    "signature": "setmetatable(t, mt) -> t",
+    "description": "Sets the metatable for a table."
+  },
+  {
+    "name": "getmetatable",
+    "signature": "getmetatable(obj) -> mt",
+    "description": "Returns the metatable of an object."
+  },
+  {
+    "name": "assert",
+    "signature": "assert(v[, message]) -> v",
+    "description": "Raises error if value is nil or false."
+  },
+  {
+    "name": "next",
+    "signature": "next(t[, key]) -> nextKey, nextValue",
+    "description": "Returns next key-value pair in table traversal."
+  },
+  {
+    "name": "date",
+    "signature": "date([format[, time]]) -> string|table",
+    "description": "Returns formatted date/time string or table."
+  },
+  {
+    "name": "time",
+    "signature": "time([table]) -> number",
+    "description": "Returns current time as epoch seconds."
+  },
+  {
+    "name": "format",
+    "signature": "format(fmt, ...) -> string",
+    "description": "WoW alias for string.format."
+  },
+  {
+    "name": "strsplit",
+    "signature": "strsplit(delimiter, str[, pieces]) -> ...",
+    "description": "Splits string by delimiter, returns multiple values."
+  },
+  {
+    "name": "strsub",
+    "signature": "strsub(s, i[, j]) -> string",
+    "description": "WoW alias for string.sub."
+  },
+  {
+    "name": "strlen",
+    "signature": "strlen(s) -> number",
+    "description": "WoW alias for string.len."
+  },
+  {
+    "name": "strtrim",
+    "signature": "strtrim(s[, chars]) -> string",
+    "description": "Trims whitespace from both ends of string."
+  },
+  {
+    "name": "strupper",
+    "signature": "strupper(s) -> string",
+    "description": "WoW alias for string.upper."
+  },
+  {
+    "name": "strlower",
+    "signature": "strlower(s) -> string",
+    "description": "WoW alias for string.lower."
+  },
+  {
+    "name": "strjoin",
+    "signature": "strjoin(delimiter, ...) -> string",
+    "description": "Joins multiple strings with delimiter."
+  },
+  {
+    "name": "strmatch",
+    "signature": "strmatch(s, pattern[, init]) -> captures...",
+    "description": "WoW alias for string.match."
+  },
+  {
+    "name": "strfind",
+    "signature": "strfind(s, pattern[, init[, plain]]) -> start, end, caps...",
+    "description": "WoW alias for string.find."
+  },
+  {
+    "name": "gsub",
+    "signature": "gsub(s, pattern, repl[, n]) -> new, count",
+    "description": "WoW alias for string.gsub."
+  },
+  {
+    "name": "tinsert",
+    "signature": "tinsert(t, [pos,] value)",
+    "description": "WoW alias for table.insert."
+  },
+  {
+    "name": "tremove",
+    "signature": "tremove(t[, pos]) -> value",
+    "description": "WoW alias for table.remove."
+  },
+  {
+    "name": "wipe",
+    "signature": "wipe(t) -> t",
+    "description": "WoW alias for table.wipe. Removes all entries from a table."
+  },
+  {
+    "name": "CopyTable",
+    "signature": "CopyTable(t) -> copy",
+    "description": "Deep copies a table."
+  },
+  {
+    "name": "tContains",
+    "signature": "tContains(t, value) -> boolean",
+    "description": "Returns true if table contains value."
+  },
+  {
+    "name": "tInvert",
+    "signature": "tInvert(t) -> inverted",
+    "description": "Returns new table with keys and values swapped."
+  },
+  {
+    "name": "rawequal",
+    "signature": "rawequal(a, b) -> boolean",
+    "description": "Compares two values without invoking metamethods."
+  },
+  {
+    "name": "loadstring",
+    "signature": "loadstring(s) -> func|nil, err",
+    "description": "Compiles a string as Lua code and returns it as a function."
+  },
+
+  {
+    "name": "C_Spell.GetSpellInfo",
+    "signature": "C_Spell.GetSpellInfo(spellIdentifier) -> spellInfo",
+    "description": "Returns spell info table (modern replacement for GetSpellInfo)."
+  },
+  {
+    "name": "C_Spell.GetSpellName",
+    "signature": "C_Spell.GetSpellName(spellIdentifier) -> string",
+    "description": "Returns the localized name of a spell."
+  },
+  {
+    "name": "C_Spell.GetSpellTexture",
+    "signature": "C_Spell.GetSpellTexture(spellIdentifier) -> textureID",
+    "description": "Returns the icon texture for a spell."
+  },
+  {
+    "name": "C_Spell.GetSpellCooldown",
+    "signature": "C_Spell.GetSpellCooldown(spellIdentifier) -> cooldownInfo",
+    "description": "Returns spell cooldown info table."
+  },
+  {
+    "name": "C_Spell.GetSpellDescription",
+    "signature": "C_Spell.GetSpellDescription(spellIdentifier) -> string",
+    "description": "Returns the tooltip description text for a spell."
+  },
+  {
+    "name": "C_Spell.IsSpellUsable",
+    "signature": "C_Spell.IsSpellUsable(spellIdentifier) -> boolean",
+    "description": "Returns whether the spell can currently be cast."
+  },
+  {
+    "name": "C_Spell.GetSpellLink",
+    "signature": "C_Spell.GetSpellLink(spellIdentifier) -> string",
+    "description": "Returns the hyperlink for a spell."
+  },
+  {
+    "name": "C_Spell.GetSpellSubtext",
+    "signature": "C_Spell.GetSpellSubtext(spellIdentifier) -> string",
+    "description": "Returns the spell rank or subtext."
+  },
+  {
+    "name": "C_Spell.DoesSpellExist",
+    "signature": "C_Spell.DoesSpellExist(spellIdentifier) -> boolean",
+    "description": "Returns whether a spell exists for the given identifier."
+  },
+  {
+    "name": "C_Spell.GetSpellCharges",
+    "signature": "C_Spell.GetSpellCharges(spellIdentifier) -> chargeInfo",
+    "description": "Returns charge info for spells with charges."
+  },
+  {
+    "name": "C_Spell.RequestLoadSpellData",
+    "signature": "C_Spell.RequestLoadSpellData(spellIdentifier)",
+    "description": "Requests asynchronous loading of spell data."
+  },
+  {
+    "name": "C_Spell.IsSpellDataCached",
+    "signature": "C_Spell.IsSpellDataCached(spellIdentifier) -> boolean",
+    "description": "Returns whether spell data is cached and available."
+  },
+
+  {
+    "name": "C_Item.GetItemInfo",
+    "signature": "C_Item.GetItemInfo(itemIdentifier) -> itemInfo",
+    "description": "Returns item info table (modern C_Item version)."
+  },
+  {
+    "name": "C_Item.GetItemName",
+    "signature": "C_Item.GetItemName(itemLocation) -> string",
+    "description": "Returns the localized name of an item at a location."
+  },
+  {
+    "name": "C_Item.GetItemIcon",
+    "signature": "C_Item.GetItemIcon(itemLocation) -> textureID",
+    "description": "Returns the icon texture for an item."
+  },
+  {
+    "name": "C_Item.GetItemQualityByID",
+    "signature": "C_Item.GetItemQualityByID(itemID) -> quality",
+    "description": "Returns the quality enum for an item ID."
+  },
+  {
+    "name": "C_Item.GetItemLink",
+    "signature": "C_Item.GetItemLink(itemLocation) -> string",
+    "description": "Returns the hyperlink for an item at a location."
+  },
+  {
+    "name": "C_Item.DoesItemExistByID",
+    "signature": "C_Item.DoesItemExistByID(itemID) -> boolean",
+    "description": "Returns whether an item exists for the given ID."
+  },
+  {
+    "name": "C_Item.IsItemInRange",
+    "signature": "C_Item.IsItemInRange(itemLocation, unit) -> boolean",
+    "description": "Returns whether an item is in range of a unit."
+  },
+  {
+    "name": "C_Item.GetCurrentItemLevel",
+    "signature": "C_Item.GetCurrentItemLevel(itemLocation) -> number",
+    "description": "Returns the current item level of an equipped item."
+  },
+  {
+    "name": "C_Item.RequestLoadItemDataByID",
+    "signature": "C_Item.RequestLoadItemDataByID(itemID)",
+    "description": "Requests asynchronous loading of item data."
+  },
+  {
+    "name": "C_Item.IsItemDataCachedByID",
+    "signature": "C_Item.IsItemDataCachedByID(itemID) -> boolean",
+    "description": "Returns whether item data is cached for the given ID."
+  },
+  {
+    "name": "C_Item.GetItemNameByID",
+    "signature": "C_Item.GetItemNameByID(itemID) -> string",
+    "description": "Returns item name by numeric item ID."
+  },
+  {
+    "name": "C_Item.GetItemIconByID",
+    "signature": "C_Item.GetItemIconByID(itemID) -> textureID",
+    "description": "Returns item icon texture by numeric item ID."
+  },
+  {
+    "name": "C_Item.GetItemQualityColor",
+    "signature": "C_Item.GetItemQualityColor(quality) -> r, g, b, hex",
+    "description": "Returns RGBA color values for an item quality."
+  },
+
+  {
+    "name": "GetSpecialization",
+    "signature": "GetSpecialization() -> specIndex",
+    "description": "Returns the index of the player's active specialization."
+  },
+  {
+    "name": "GetSpecializationInfo",
+    "signature": "GetSpecializationInfo(specIndex) -> id, name, description, icon, role, classFile",
+    "description": "Returns info about a specialization by index."
+  },
+  {
+    "name": "GetPlayerInfoByGUID",
+    "signature": "GetPlayerInfoByGUID(guid) -> localizedClass, englishClass, localizedRace, englishRace, sex, name, realm",
+    "description": "Returns class, race, name info from a player GUID."
+  },
+  {
+    "name": "GetAverageItemLevel",
+    "signature": "GetAverageItemLevel() -> avgItemLevel, avgItemLevelEquipped, avgItemLevelPvP",
+    "description": "Returns the player's average item level."
+  },
+  {
+    "name": "UnitSex",
+    "signature": "UnitSex(unit) -> sex",
+    "description": "Returns the gender of a unit (1=unknown, 2=male, 3=female)."
+  },
+  {
+    "name": "UnitIsPlayer",
+    "signature": "UnitIsPlayer(unit) -> boolean",
+    "description": "Returns true if unit is a player character."
+  },
+  {
+    "name": "UnitIsUnit",
+    "signature": "UnitIsUnit(unit1, unit2) -> boolean",
+    "description": "Returns true if both unit IDs refer to the same unit."
+  },
+  {
+    "name": "UnitIsEnemy",
+    "signature": "UnitIsEnemy(unit1, unit2) -> boolean",
+    "description": "Returns true if unit2 is hostile to unit1."
+  },
+  {
+    "name": "UnitIsFriend",
+    "signature": "UnitIsFriend(unit1, unit2) -> boolean",
+    "description": "Returns true if unit2 is friendly to unit1."
+  },
+  {
+    "name": "UnitIsConnected",
+    "signature": "UnitIsConnected(unit) -> boolean",
+    "description": "Returns true if unit is online."
+  },
+  {
+    "name": "UnitIsAFK",
+    "signature": "UnitIsAFK(unit) -> boolean",
+    "description": "Returns true if unit is flagged AFK."
+  },
+  {
+    "name": "UnitIsDeadOrGhost",
+    "signature": "UnitIsDeadOrGhost(unit) -> boolean",
+    "description": "Returns true if unit is dead or a ghost."
+  },
+  {
+    "name": "UnitIsGhost",
+    "signature": "UnitIsGhost(unit) -> boolean",
+    "description": "Returns true if unit is a ghost (released spirit)."
+  },
+  {
+    "name": "UnitIsGroupLeader",
+    "signature": "UnitIsGroupLeader(unit[, partyCategory]) -> boolean",
+    "description": "Returns true if unit is the group leader."
+  },
+  {
+    "name": "UnitIsGroupAssistant",
+    "signature": "UnitIsGroupAssistant(unit) -> boolean",
+    "description": "Returns true if unit is a raid assistant."
+  },
+  {
+    "name": "UnitGroupRolesAssigned",
+    "signature": "UnitGroupRolesAssigned(unit) -> role",
+    "description": "Returns assigned role: TANK, HEALER, DAMAGER, or NONE."
+  },
+  {
+    "name": "GetRealZoneText",
+    "signature": "GetRealZoneText() -> string",
+    "description": "Returns the name of the zone the player is in."
+  },
+  {
+    "name": "GetSubZoneText",
+    "signature": "GetSubZoneText() -> string",
+    "description": "Returns the name of the subzone the player is in."
+  },
+  {
+    "name": "GetZoneText",
+    "signature": "GetZoneText() -> string",
+    "description": "Returns the general zone name displayed on screen."
+  },
+  {
+    "name": "GetMinimapZoneText",
+    "signature": "GetMinimapZoneText() -> string",
+    "description": "Returns the zone text shown on the minimap."
+  },
+  {
+    "name": "GetRealmName",
+    "signature": "GetRealmName() -> string",
+    "description": "Returns the player's realm name with spaces."
+  },
+  {
+    "name": "GetNormalizedRealmName",
+    "signature": "GetNormalizedRealmName() -> string",
+    "description": "Returns the player's realm name without spaces."
+  },
+  {
+    "name": "UnitXP",
+    "signature": "UnitXP(unit) -> number",
+    "description": "Returns current experience points."
+  },
+  {
+    "name": "UnitXPMax",
+    "signature": "UnitXPMax(unit) -> number",
+    "description": "Returns experience needed for next level."
+  },
+  {
+    "name": "GetMoney",
+    "signature": "GetMoney() -> number",
+    "description": "Returns the player's total money in copper."
+  },
+  {
+    "name": "GetCoinTextureString",
+    "signature": "GetCoinTextureString(amount) -> string",
+    "description": "Returns formatted gold/silver/copper string with icons."
+  },
+  {
+    "name": "UnitCreatureType",
+    "signature": "UnitCreatureType(unit) -> string",
+    "description": "Returns the creature type (Beast, Humanoid, etc.)."
+  },
+  {
+    "name": "UnitClassification",
+    "signature": "UnitClassification(unit) -> string",
+    "description": "Returns unit classification (normal, elite, worldboss, etc.)."
+  },
+  {
+    "name": "UnitReaction",
+    "signature": "UnitReaction(unit1, unit2) -> number",
+    "description": "Returns reaction level of unit2 toward unit1 (1-8)."
+  },
+  {
+    "name": "UnitIsVisible",
+    "signature": "UnitIsVisible(unit) -> boolean",
+    "description": "Returns true if unit model is visible to the player."
+  },
+  {
+    "name": "CheckInteractDistance",
+    "signature": "CheckInteractDistance(unit, distIndex) -> boolean",
+    "description": "Returns whether unit is within interaction range."
+  },
+  {
+    "name": "UnitInRange",
+    "signature": "UnitInRange(unit) -> inRange, checkedRange",
+    "description": "Returns whether a group member is in range."
+  },
+  {
+    "name": "UnitDetailedThreatSituation",
+    "signature": "UnitDetailedThreatSituation(unit, mobUnit) -> isTanking, status, threatPct, rawThreatPct, threatValue",
+    "description": "Returns detailed threat info for unit on mob."
+  },
+
+  {
+    "name": "C_ChatInfo.RegisterAddonMessagePrefix",
+    "signature": "C_ChatInfo.RegisterAddonMessagePrefix(prefix) -> boolean",
+    "description": "Registers a prefix for addon communication messages."
+  },
+  {
+    "name": "C_ChatInfo.SendAddonMessage",
+    "signature": "C_ChatInfo.SendAddonMessage(prefix, message, chatType[, target]) -> boolean",
+    "description": "Sends an addon message to other players."
+  },
+  {
+    "name": "C_ChatInfo.IsAddonMessagePrefixRegistered",
+    "signature": "C_ChatInfo.IsAddonMessagePrefixRegistered(prefix) -> boolean",
+    "description": "Checks whether an addon message prefix is registered."
+  },
+  {
+    "name": "C_ChatInfo.GetNumActiveChannels",
+    "signature": "C_ChatInfo.GetNumActiveChannels() -> number",
+    "description": "Returns the number of active chat channels."
+  },
+  {
+    "name": "RegisterAddonMessagePrefix",
+    "signature": "RegisterAddonMessagePrefix(prefix) -> boolean",
+    "description": "Legacy alias for C_ChatInfo.RegisterAddonMessagePrefix."
+  },
+
+  {
+    "name": "UnitCastingInfo",
+    "signature": "UnitCastingInfo(unit) -> name, text, texture, startTime, endTime, isTradeSkill, castID, notInterruptible, spellID",
+    "description": "Returns info about a unit's current cast."
+  },
+  {
+    "name": "UnitChannelInfo",
+    "signature": "UnitChannelInfo(unit) -> name, text, texture, startTime, endTime, isTradeSkill, notInterruptible, spellID",
+    "description": "Returns info about a unit's current channel."
+  },
+  {
+    "name": "GetActionInfo",
+    "signature": "GetActionInfo(slot) -> actionType, id, subType",
+    "description": "Returns type and ID of an action bar slot."
+  },
+  {
+    "name": "GetActionTexture",
+    "signature": "GetActionTexture(slot) -> texture",
+    "description": "Returns the icon texture of an action bar slot."
+  },
+  {
+    "name": "IsCurrentAction",
+    "signature": "IsCurrentAction(slot) -> boolean",
+    "description": "Returns true if the action is currently active."
+  },
+  {
+    "name": "HasAction",
+    "signature": "HasAction(slot) -> boolean",
+    "description": "Returns true if an action bar slot has an action."
+  },
+  {
+    "name": "IsAttackAction",
+    "signature": "IsAttackAction(slot) -> boolean",
+    "description": "Returns true if the action slot is the auto-attack."
+  },
+  {
+    "name": "IsAutoRepeatAction",
+    "signature": "IsAutoRepeatAction(slot) -> boolean",
+    "description": "Returns true if the action slot is an auto-repeat spell."
+  },
+  {
+    "name": "GetActionCooldown",
+    "signature": "GetActionCooldown(slot) -> start, duration, enable, modRate",
+    "description": "Returns cooldown info for an action bar slot."
+  },
+  {
+    "name": "GetActionCount",
+    "signature": "GetActionCount(slot) -> count",
+    "description": "Returns the count (charges/items) for an action slot."
+  },
+  {
+    "name": "IsUsableAction",
+    "signature": "IsUsableAction(slot) -> usable, notEnoughMana",
+    "description": "Returns whether an action slot is currently usable."
+  },
+
+  {
+    "name": "C_ClassTalents.GetActiveConfigID",
+    "signature": "C_ClassTalents.GetActiveConfigID() -> configID",
+    "description": "Returns the active talent configuration ID."
+  },
+  {
+    "name": "C_Traits.GetNodeInfo",
+    "signature": "C_Traits.GetNodeInfo(configID, nodeID) -> nodeInfo",
+    "description": "Returns talent node info for a configuration."
+  },
+  {
+    "name": "C_Traits.GetEntryInfo",
+    "signature": "C_Traits.GetEntryInfo(configID, entryID) -> entryInfo",
+    "description": "Returns talent entry info for a configuration."
+  },
+  {
+    "name": "C_Traits.GetDefinitionInfo",
+    "signature": "C_Traits.GetDefinitionInfo(definitionID) -> definitionInfo",
+    "description": "Returns talent definition info (spell, name, etc.)."
+  },
+  {
+    "name": "C_Traits.GetConfigInfo",
+    "signature": "C_Traits.GetConfigInfo(configID) -> configInfo",
+    "description": "Returns talent tree configuration info."
+  },
+  {
+    "name": "C_ClassTalents.GetHasStarterBuild",
+    "signature": "C_ClassTalents.GetHasStarterBuild() -> boolean",
+    "description": "Returns whether player has a starter talent build."
+  },
+  {
+    "name": "C_Traits.GetTreeNodes",
+    "signature": "C_Traits.GetTreeNodes(treeID) -> nodeIDs",
+    "description": "Returns all node IDs in a talent tree."
+  },
+  {
+    "name": "C_Traits.GetConditionInfo",
+    "signature": "C_Traits.GetConditionInfo(configID, condID) -> condInfo",
+    "description": "Returns condition info for a talent node."
+  },
+
+  {
+    "name": "GetRaidRosterInfo",
+    "signature": "GetRaidRosterInfo(index) -> name, rank, subgroup, level, class, fileName, zone, online, isDead, role, isML, combatRole",
+    "description": "Returns info about a raid member by index."
+  },
+  {
+    "name": "UnitInParty",
+    "signature": "UnitInParty(unit) -> boolean",
+    "description": "Returns true if unit is in the player's party."
+  },
+  {
+    "name": "UnitInRaid",
+    "signature": "UnitInRaid(unit) -> index|nil",
+    "description": "Returns raid index if unit is in the player's raid."
+  },
+  {
+    "name": "UnitInBattleground",
+    "signature": "UnitInBattleground(unit) -> index|nil",
+    "description": "Returns battleground index for unit if applicable."
+  },
+  {
+    "name": "GetInstanceInfo",
+    "signature": "GetInstanceInfo() -> name, instanceType, difficultyID, difficultyName, maxPlayers, dynamicDifficulty, isDynamic, instanceID, instanceGroupSize, lfgDungeonID",
+    "description": "Returns info about the current instance."
+  },
+  {
+    "name": "IsInInstance",
+    "signature": "IsInInstance() -> inInstance, instanceType",
+    "description": "Returns whether the player is in an instance and the type."
+  },
+  {
+    "name": "GetDifficultyInfo",
+    "signature": "GetDifficultyInfo(difficultyID) -> name, groupType, isHeroic, isChallengeMode, toggleDifficultyID",
+    "description": "Returns info about a difficulty ID."
+  },
+  {
+    "name": "GetNumSubgroupMembers",
+    "signature": "GetNumSubgroupMembers() -> number",
+    "description": "Returns number of players in the party (excluding player)."
+  },
+  {
+    "name": "UnitPlayerOrPetInParty",
+    "signature": "UnitPlayerOrPetInParty(unit) -> boolean",
+    "description": "Returns true if unit or its owner is in the party."
+  },
+  {
+    "name": "UnitPlayerOrPetInRaid",
+    "signature": "UnitPlayerOrPetInRaid(unit) -> boolean",
+    "description": "Returns true if unit or its owner is in the raid."
+  },
+
+  {
+    "name": "ChatFrame_AddMessageEventFilter",
+    "signature": "ChatFrame_AddMessageEventFilter(event, filterFunc)",
+    "description": "Adds a filter function for a chat message event."
+  },
+  {
+    "name": "ChatFrame_RemoveMessageEventFilter",
+    "signature": "ChatFrame_RemoveMessageEventFilter(event, filterFunc)",
+    "description": "Removes a previously added chat message filter."
+  },
+
+  {
+    "name": "C_Map.GetWorldPosFromMapPos",
+    "signature": "C_Map.GetWorldPosFromMapPos(uiMapID, mapPos) -> continentID, worldPos",
+    "description": "Converts map position to world coordinates."
+  },
+  {
+    "name": "C_Map.GetAreaInfo",
+    "signature": "C_Map.GetAreaInfo(areaID) -> name",
+    "description": "Returns the localized name for an area ID."
+  },
+  {
+    "name": "C_Map.GetMapChildrenInfo",
+    "signature": "C_Map.GetMapChildrenInfo(uiMapID[, mapType][, allDescendants]) -> mapChildrenInfo",
+    "description": "Returns child maps of a map."
+  },
+  {
+    "name": "C_Map.GetMapLinksForMap",
+    "signature": "C_Map.GetMapLinksForMap(uiMapID) -> mapLinks",
+    "description": "Returns flight-path-like links on a map."
+  },
+  {
+    "name": "C_Map.GetFallbackWorldMapID",
+    "signature": "C_Map.GetFallbackWorldMapID() -> uiMapID",
+    "description": "Returns the default world map ID."
+  },
+  {
+    "name": "C_Navigation.GetDistance",
+    "signature": "C_Navigation.GetDistance() -> distance",
+    "description": "Returns distance to the current navigation waypoint."
+  },
+  {
+    "name": "C_SuperTrack.SetSuperTrackedQuestID",
+    "signature": "C_SuperTrack.SetSuperTrackedQuestID(questID)",
+    "description": "Sets the quest to be super-tracked on the HUD."
+  },
+  {
+    "name": "C_SuperTrack.GetSuperTrackedQuestID",
+    "signature": "C_SuperTrack.GetSuperTrackedQuestID() -> questID",
+    "description": "Returns the currently super-tracked quest ID."
+  },
+  {
+    "name": "C_SuperTrack.IsSuperTrackingQuest",
+    "signature": "C_SuperTrack.IsSuperTrackingQuest() -> boolean",
+    "description": "Returns whether any quest is being super-tracked."
+  },
+
+  {
+    "name": "C_CurrencyInfo.GetCurrencyInfo",
+    "signature": "C_CurrencyInfo.GetCurrencyInfo(currencyType) -> currencyInfo",
+    "description": "Returns info about a currency type (name, count, icon, etc.)."
+  },
+  {
+    "name": "C_CurrencyInfo.GetCurrencyIDFromLink",
+    "signature": "C_CurrencyInfo.GetCurrencyIDFromLink(link) -> currencyID",
+    "description": "Extracts currency ID from a currency hyperlink."
+  },
+  {
+    "name": "C_CurrencyInfo.GetCurrencyListSize",
+    "signature": "C_CurrencyInfo.GetCurrencyListSize() -> number",
+    "description": "Returns the number of entries in the currency list."
+  },
+  {
+    "name": "C_CurrencyInfo.GetCurrencyListInfo",
+    "signature": "C_CurrencyInfo.GetCurrencyListInfo(index) -> currencyInfo",
+    "description": "Returns info about a currency at a list index."
+  },
+  {
+    "name": "C_CurrencyInfo.GetCurrencyLink",
+    "signature": "C_CurrencyInfo.GetCurrencyLink(currencyType[, amount]) -> string",
+    "description": "Returns a currency hyperlink."
+  },
+
+  {
+    "name": "GetAchievementInfo",
+    "signature": "GetAchievementInfo(achievementID) -> id, name, points, completed, month, day, year, description, flags, icon, rewardText, isGuild, wasEarnedByMe, earnedBy",
+    "description": "Returns detailed achievement info."
+  },
+  {
+    "name": "GetAchievementCriteriaInfo",
+    "signature": "GetAchievementCriteriaInfo(achievementID, criteriaIndex) -> criteriaString, criteriaType, completed, quantity, reqQuantity, ...",
+    "description": "Returns info about an achievement criterion."
+  },
+  {
+    "name": "GetStatistic",
+    "signature": "GetStatistic(achievementID) -> value",
+    "description": "Returns the player's statistic value for an achievement."
+  },
+  {
+    "name": "IsAchievementEligible",
+    "signature": "IsAchievementEligible(achievementID) -> boolean",
+    "description": "Returns whether the player can earn the achievement."
+  },
+  {
+    "name": "GetAchievementNumCriteria",
+    "signature": "GetAchievementNumCriteria(achievementID) -> number",
+    "description": "Returns the number of criteria for an achievement."
+  },
+
+  {
+    "name": "Settings.RegisterCanvasLayoutCategory",
+    "signature": "Settings.RegisterCanvasLayoutCategory(frame, name[, parentCategoryName]) -> category, layout",
+    "description": "Registers a frame-based settings category (modern API)."
+  },
+  {
+    "name": "Settings.RegisterAddOnCategory",
+    "signature": "Settings.RegisterAddOnCategory(category)",
+    "description": "Registers an addon settings category in the settings panel."
+  },
+  {
+    "name": "Settings.OpenToCategory",
+    "signature": "Settings.OpenToCategory(categoryID)",
+    "description": "Opens the settings panel to a specific category."
+  },
+  {
+    "name": "Settings.RegisterCanvasLayoutSubcategory",
+    "signature": "Settings.RegisterCanvasLayoutSubcategory(parentCategory, frame, name) -> category, layout",
+    "description": "Registers a subcategory under an existing settings category."
+  },
+
+  {
+    "name": "StaticPopup_Show",
+    "signature": "StaticPopup_Show(which[, text_arg1[, text_arg2[, data]]]) -> dialog",
+    "description": "Shows a static popup dialog by name."
+  },
+  {
+    "name": "StaticPopup_Hide",
+    "signature": "StaticPopup_Hide(which[, data])",
+    "description": "Hides a static popup dialog by name."
+  },
+  {
+    "name": "PlaySound",
+    "signature": "PlaySound(soundKitID[, channel[, forceNoDuplicates]])",
+    "description": "Plays a sound by SoundKit ID."
+  },
+  {
+    "name": "StopSound",
+    "signature": "StopSound(soundHandle[, fadeDuration])",
+    "description": "Stops a playing sound by its handle."
+  },
+  {
+    "name": "PlaySoundFile",
+    "signature": "PlaySoundFile(soundFile[, channel]) -> willPlay, soundHandle",
+    "description": "Plays a sound from a file path."
+  },
+  {
+    "name": "GetCursorPosition",
+    "signature": "GetCursorPosition() -> x, y",
+    "description": "Returns cursor position in UI coordinates."
+  },
+  {
+    "name": "GetScreenWidth",
+    "signature": "GetScreenWidth() -> number",
+    "description": "Returns the screen width in UI coordinates."
+  },
+  {
+    "name": "GetScreenHeight",
+    "signature": "GetScreenHeight() -> number",
+    "description": "Returns the screen height in UI coordinates."
+  },
+  {
+    "name": "GetCVar",
+    "signature": "GetCVar(name) -> string",
+    "description": "Returns the value of a console variable."
+  },
+  {
+    "name": "SetCVar",
+    "signature": "SetCVar(name, value[, scriptCVar])",
+    "description": "Sets the value of a console variable."
+  },
+  {
+    "name": "GetLocale",
+    "signature": "GetLocale() -> string",
+    "description": "Returns the client locale (e.g. enUS, deDE)."
+  },
+  {
+    "name": "GetCurrentRegion",
+    "signature": "GetCurrentRegion() -> number",
+    "description": "Returns current region ID (1=US, 2=KR, 3=EU, 4=TW, 5=CN)."
+  },
+  {
+    "name": "Ambiguate",
+    "signature": "Ambiguate(fullName, context) -> string",
+    "description": "Strips realm name when appropriate for the context."
+  },
+  {
+    "name": "securecallfunction",
+    "signature": "securecallfunction(func, ...) -> ...",
+    "description": "Calls a function in a secure execution context."
+  },
+  {
+    "name": "issecurevariable",
+    "signature": "issecurevariable([table,] variable) -> isSecure, taintedBy",
+    "description": "Checks whether a variable is secure (untainted)."
+  },
+  {
+    "name": "DevTools_Dump",
+    "signature": "DevTools_Dump(value)",
+    "description": "Pretty-prints a value to chat (debug utility)."
+  },
+  {
+    "name": "UIDropDownMenu_Initialize",
+    "signature": "UIDropDownMenu_Initialize(frame, initFunc[, displayMode[, level[, menuList]]])",
+    "description": "Initializes a dropdown menu frame."
+  },
+  {
+    "name": "UIDropDownMenu_AddButton",
+    "signature": "UIDropDownMenu_AddButton(info[, level])",
+    "description": "Adds a button entry to a dropdown menu."
+  },
+  {
+    "name": "UIDropDownMenu_CreateInfo",
+    "signature": "UIDropDownMenu_CreateInfo() -> info",
+    "description": "Creates a new info table for a dropdown button."
+  },
+  {
+    "name": "ToggleDropDownMenu",
+    "signature": "ToggleDropDownMenu([level[, value[, dropDownFrame[, anchorName[, xOffset[, yOffset]]]]]])",
+    "description": "Toggles a dropdown menu open or closed."
+  },
+  {
+    "name": "CloseDropDownMenus",
+    "signature": "CloseDropDownMenus([level])",
+    "description": "Closes all open dropdown menus."
+  },
+  {
+    "name": "EasyMenu",
+    "signature": "EasyMenu(menuList, menuFrame, anchor, x, y, displayMode[, autoHideDelay])",
+    "description": "Simplified dropdown menu from a table of entries."
+  },
+  {
+    "name": "UIDropDownMenu_SetWidth",
+    "signature": "UIDropDownMenu_SetWidth(frame, width)",
+    "description": "Sets the width of a dropdown menu frame."
+  },
+  {
+    "name": "UIDropDownMenu_SetText",
+    "signature": "UIDropDownMenu_SetText(frame, text)",
+    "description": "Sets the display text of a dropdown menu frame."
+  },
+  {
+    "name": "UIDropDownMenu_GetSelectedValue",
+    "signature": "UIDropDownMenu_GetSelectedValue(frame) -> value",
+    "description": "Returns the currently selected value of a dropdown."
+  },
+  {
+    "name": "UIDropDownMenu_SetSelectedValue",
+    "signature": "UIDropDownMenu_SetSelectedValue(frame, value)",
+    "description": "Sets the selected value of a dropdown menu."
+  },
+
+  {
+    "name": "Frame:GetName",
+    "signature": "frame:GetName() -> string|nil",
+    "description": "Returns the global name of the frame."
+  },
+  {
+    "name": "Frame:GetObjectType",
+    "signature": "frame:GetObjectType() -> string",
+    "description": "Returns the widget type (Frame, Button, etc.)."
+  },
+  {
+    "name": "Frame:SetAlpha",
+    "signature": "frame:SetAlpha(alpha)",
+    "description": "Sets the frame's opacity (0-1)."
+  },
+  {
+    "name": "Frame:GetAlpha",
+    "signature": "frame:GetAlpha() -> number",
+    "description": "Returns the frame's opacity."
+  },
+  {
+    "name": "Frame:SetWidth",
+    "signature": "frame:SetWidth(width)",
+    "description": "Sets the frame width."
+  },
+  {
+    "name": "Frame:SetHeight",
+    "signature": "frame:SetHeight(height)",
+    "description": "Sets the frame height."
+  },
+  {
+    "name": "Frame:GetWidth",
+    "signature": "frame:GetWidth() -> number",
+    "description": "Returns the frame width."
+  },
+  {
+    "name": "Frame:GetHeight",
+    "signature": "frame:GetHeight() -> number",
+    "description": "Returns the frame height."
+  },
+  {
+    "name": "Frame:GetPoint",
+    "signature": "frame:GetPoint(index) -> point, relativeTo, relativePoint, xOfs, yOfs",
+    "description": "Returns anchor info for the given point index."
+  },
+  {
+    "name": "Frame:GetNumPoints",
+    "signature": "frame:GetNumPoints() -> number",
+    "description": "Returns the number of anchor points set."
+  },
+  {
+    "name": "Frame:SetFrameStrata",
+    "signature": "frame:SetFrameStrata(strata)",
+    "description": "Sets the frame strata (BACKGROUND, LOW, MEDIUM, HIGH, DIALOG, FULLSCREEN, TOOLTIP)."
+  },
+  {
+    "name": "Frame:SetFrameLevel",
+    "signature": "frame:SetFrameLevel(level)",
+    "description": "Sets the frame level within its strata."
+  },
+  {
+    "name": "Frame:GetFrameLevel",
+    "signature": "frame:GetFrameLevel() -> number",
+    "description": "Returns the frame level."
+  },
+  {
+    "name": "Frame:GetFrameStrata",
+    "signature": "frame:GetFrameStrata() -> string",
+    "description": "Returns the frame strata."
+  },
+  {
+    "name": "Frame:GetEffectiveScale",
+    "signature": "frame:GetEffectiveScale() -> number",
+    "description": "Returns the effective UI scale of the frame."
+  },
+  {
+    "name": "Frame:SetScale",
+    "signature": "frame:SetScale(scale)",
+    "description": "Sets the frame's UI scale."
+  },
+  {
+    "name": "Frame:GetScale",
+    "signature": "frame:GetScale() -> number",
+    "description": "Returns the frame's scale."
+  },
+  {
+    "name": "Frame:CreateTexture",
+    "signature": "frame:CreateTexture([name][, layer][, inherits][, subLevel]) -> texture",
+    "description": "Creates a texture region on the frame."
+  },
+  {
+    "name": "Frame:CreateFontString",
+    "signature": "frame:CreateFontString([name][, layer][, inherits]) -> fontString",
+    "description": "Creates a font string on the frame."
+  },
+  {
+    "name": "Frame:CreateLine",
+    "signature": "frame:CreateLine([name][, layer][, inherits][, subLevel]) -> line",
+    "description": "Creates a line texture on the frame."
+  },
+  {
+    "name": "Frame:SetBackdrop",
+    "signature": "frame:SetBackdrop(backdropTable)",
+    "description": "Sets the frame backdrop (requires BackdropTemplateMixin)."
+  },
+  {
+    "name": "Frame:SetBackdropColor",
+    "signature": "frame:SetBackdropColor(r, g, b[, a])",
+    "description": "Sets the backdrop background color."
+  },
+  {
+    "name": "Frame:SetBackdropBorderColor",
+    "signature": "frame:SetBackdropBorderColor(r, g, b[, a])",
+    "description": "Sets the backdrop border color."
+  },
+  {
+    "name": "Frame:IsVisible",
+    "signature": "frame:IsVisible() -> boolean",
+    "description": "Returns true if the frame and all parents are shown."
+  },
+  {
+    "name": "Frame:SetAllPoints",
+    "signature": "frame:SetAllPoints([relativeTo])",
+    "description": "Anchors all edges to match another frame."
+  },
+  {
+    "name": "Frame:GetScript",
+    "signature": "frame:GetScript(handler) -> func",
+    "description": "Returns the current script handler function."
+  },
+  {
+    "name": "Frame:HookScript",
+    "signature": "frame:HookScript(handler, func)",
+    "description": "Hooks a script handler without replacing the original."
+  },
+  {
+    "name": "Frame:HasScript",
+    "signature": "frame:HasScript(handler) -> boolean",
+    "description": "Returns true if the frame supports the script handler."
+  },
+  {
+    "name": "Frame:UnregisterAllEvents",
+    "signature": "frame:UnregisterAllEvents()",
+    "description": "Stops listening to all events."
+  },
+  {
+    "name": "Frame:IsEventRegistered",
+    "signature": "frame:IsEventRegistered(event) -> boolean",
+    "description": "Returns true if the frame is listening to the event."
+  },
+  {
+    "name": "Frame:EnableKeyboard",
+    "signature": "frame:EnableKeyboard(enable)",
+    "description": "Enables or disables keyboard input for the frame."
+  },
+  {
+    "name": "Frame:EnableMouseWheel",
+    "signature": "frame:EnableMouseWheel(enable)",
+    "description": "Enables or disables mouse wheel input."
+  },
+  {
+    "name": "Frame:SetResizable",
+    "signature": "frame:SetResizable(bool)",
+    "description": "Allows the frame to be resized."
+  },
+  {
+    "name": "Frame:SetResizeBounds",
+    "signature": "frame:SetResizeBounds(minWidth, minHeight[, maxWidth, maxHeight])",
+    "description": "Sets minimum and maximum resize dimensions."
+  },
+  {
+    "name": "Frame:SetUserPlaced",
+    "signature": "frame:SetUserPlaced(bool)",
+    "description": "Marks the frame as user-placed to save position."
+  },
+  {
+    "name": "Frame:SetPropagateKeyboardInput",
+    "signature": "frame:SetPropagateKeyboardInput(propagate)",
+    "description": "Controls whether keyboard input propagates to lower frames."
+  },
+
+  {
+    "name": "Frame:CreateAnimationGroup",
+    "signature": "frame:CreateAnimationGroup([name][, inherits]) -> animGroup",
+    "description": "Creates an animation group on the frame."
+  },
+  {
+    "name": "AnimationGroup:Play",
+    "signature": "animGroup:Play()",
+    "description": "Starts playing the animation group."
+  },
+  {
+    "name": "AnimationGroup:Stop",
+    "signature": "animGroup:Stop()",
+    "description": "Stops the animation group."
+  },
+  {
+    "name": "AnimationGroup:SetLooping",
+    "signature": "animGroup:SetLooping(loopType)",
+    "description": "Sets loop type: NONE, REPEAT, or BOUNCE."
+  },
+  {
+    "name": "AnimationGroup:CreateAnimation",
+    "signature": "animGroup:CreateAnimation(animType[, name][, inherits]) -> animation",
+    "description": "Creates an animation (Alpha, Scale, Translation, Rotation, etc.)."
+  },
+  {
+    "name": "AnimationGroup:IsPlaying",
+    "signature": "animGroup:IsPlaying() -> boolean",
+    "description": "Returns whether the animation group is currently playing."
+  },
+  {
+    "name": "Animation:SetDuration",
+    "signature": "animation:SetDuration(seconds)",
+    "description": "Sets the duration of the animation in seconds."
+  },
+  {
+    "name": "Animation:SetOrder",
+    "signature": "animation:SetOrder(order)",
+    "description": "Sets the play order within the animation group."
+  },
+  {
+    "name": "Animation:SetSmoothing",
+    "signature": "animation:SetSmoothing(smoothType)",
+    "description": "Sets easing: IN, OUT, IN_OUT, or NONE."
+  },
+  {
+    "name": "Animation:SetStartDelay",
+    "signature": "animation:SetStartDelay(seconds)",
+    "description": "Sets delay before the animation starts."
+  },
+
+  {
+    "name": "C_PlayerInfo.GetPlayerMythicPlusRatingSummary",
+    "signature": "C_PlayerInfo.GetPlayerMythicPlusRatingSummary(unit) -> ratingSummary",
+    "description": "Returns Mythic+ rating summary for a player."
+  },
+  {
+    "name": "C_LFGList.GetSearchResultInfo",
+    "signature": "C_LFGList.GetSearchResultInfo(searchResultID) -> searchResultInfo",
+    "description": "Returns info about an LFG search result."
+  },
+  {
+    "name": "C_LFGList.GetActiveEntryInfo",
+    "signature": "C_LFGList.GetActiveEntryInfo() -> entryInfo",
+    "description": "Returns info about the player's active LFG listing."
+  },
+  {
+    "name": "C_LFGList.HasActiveEntryInfo",
+    "signature": "C_LFGList.HasActiveEntryInfo() -> boolean",
+    "description": "Returns whether the player has an active LFG listing."
+  },
+  {
+    "name": "C_LFGList.GetSearchResults",
+    "signature": "C_LFGList.GetSearchResults() -> totalResults, results",
+    "description": "Returns current LFG search results."
+  },
+  {
+    "name": "C_LFGList.GetApplicantInfo",
+    "signature": "C_LFGList.GetApplicantInfo(applicantID) -> applicantInfo",
+    "description": "Returns info about an applicant to your LFG group."
+  },
+  {
+    "name": "C_LFGList.Search",
+    "signature": "C_LFGList.Search(categoryID, filter[, preferredFilters[, languageFilter]])",
+    "description": "Initiates an LFG search."
+  },
+
+  {
+    "name": "Texture:SetTexCoord",
+    "signature": "texture:SetTexCoord(left, right, top, bottom)",
+    "description": "Sets the texture coordinates for cropping/atlas selection."
+  },
+  {
+    "name": "Texture:SetVertexColor",
+    "signature": "texture:SetVertexColor(r, g, b[, a])",
+    "description": "Tints the texture with a color."
+  },
+  {
+    "name": "Texture:SetAllPoints",
+    "signature": "texture:SetAllPoints([relativeTo])",
+    "description": "Anchors all edges to match another region."
+  },
+  {
+    "name": "Texture:SetBlendMode",
+    "signature": "texture:SetBlendMode(mode)",
+    "description": "Sets the blend mode: ADD, BLEND, DISABLE, MOD."
+  },
+  {
+    "name": "Texture:SetAtlas",
+    "signature": "texture:SetAtlas(atlas[, useAtlasSize])",
+    "description": "Sets the texture to a named atlas region."
+  },
+  {
+    "name": "Texture:SetDesaturated",
+    "signature": "texture:SetDesaturated(desaturate)",
+    "description": "Removes color, making the texture grayscale."
+  },
+  {
+    "name": "Texture:SetRotation",
+    "signature": "texture:SetRotation(radians[, normalizedRotationPoint])",
+    "description": "Rotates the texture by the given angle."
+  },
+
+  {
+    "name": "FontString:GetText",
+    "signature": "fontString:GetText() -> string",
+    "description": "Returns the current text of the font string."
+  },
+  {
+    "name": "FontString:SetFont",
+    "signature": "fontString:SetFont(fontFile, height[, flags]) -> boolean",
+    "description": "Sets the font face, size, and outline flags."
+  },
+  {
+    "name": "FontString:SetTextColor",
+    "signature": "fontString:SetTextColor(r, g, b[, a])",
+    "description": "Sets the text color."
+  },
+  {
+    "name": "FontString:SetJustifyH",
+    "signature": "fontString:SetJustifyH(justify)",
+    "description": "Sets horizontal justification: LEFT, CENTER, or RIGHT."
+  },
+  {
+    "name": "FontString:SetJustifyV",
+    "signature": "fontString:SetJustifyV(justify)",
+    "description": "Sets vertical justification: TOP, MIDDLE, or BOTTOM."
+  },
+  {
+    "name": "FontString:SetWordWrap",
+    "signature": "fontString:SetWordWrap(wrap)",
+    "description": "Enables or disables word wrapping."
+  },
+  {
+    "name": "FontString:GetStringWidth",
+    "signature": "fontString:GetStringWidth() -> number",
+    "description": "Returns the rendered width of the text."
+  },
+  {
+    "name": "FontString:GetStringHeight",
+    "signature": "fontString:GetStringHeight() -> number",
+    "description": "Returns the rendered height of the text."
+  },
+  {
+    "name": "FontString:SetFontObject",
+    "signature": "fontString:SetFontObject(fontObject)",
+    "description": "Inherits font settings from a FontObject."
+  },
+  {
+    "name": "FontString:SetFormattedText",
+    "signature": "fontString:SetFormattedText(fmt, ...)",
+    "description": "Sets text using string.format style formatting."
+  },
+
+  {
+    "name": "Button:GetText",
+    "signature": "button:GetText() -> string",
+    "description": "Returns the button label text."
+  },
+  {
+    "name": "Button:SetNormalTexture",
+    "signature": "button:SetNormalTexture(texture)",
+    "description": "Sets the texture shown in normal state."
+  },
+  {
+    "name": "Button:SetHighlightTexture",
+    "signature": "button:SetHighlightTexture(texture[, mode])",
+    "description": "Sets the texture shown on mouseover."
+  },
+  {
+    "name": "Button:SetPushedTexture",
+    "signature": "button:SetPushedTexture(texture)",
+    "description": "Sets the texture shown when pressed."
+  },
+  {
+    "name": "Button:SetDisabledTexture",
+    "signature": "button:SetDisabledTexture(texture)",
+    "description": "Sets the texture shown when disabled."
+  },
+  {
+    "name": "Button:SetEnabled",
+    "signature": "button:SetEnabled(enabled)",
+    "description": "Enables or disables the button."
+  },
+  {
+    "name": "Button:IsEnabled",
+    "signature": "button:IsEnabled() -> boolean",
+    "description": "Returns whether the button is enabled."
+  },
+  {
+    "name": "Button:Click",
+    "signature": "button:Click([button[, isDown]])",
+    "description": "Programmatically clicks the button."
+  },
+  {
+    "name": "Button:RegisterForClicks",
+    "signature": "button:RegisterForClicks([button1[, button2, ...]])",
+    "description": "Registers mouse buttons that trigger OnClick."
+  },
+
+  {
+    "name": "EditBox:SetMultiLine",
+    "signature": "editbox:SetMultiLine(multiLine)",
+    "description": "Enables or disables multi-line editing."
+  },
+  {
+    "name": "EditBox:SetFocus",
+    "signature": "editbox:SetFocus()",
+    "description": "Sets keyboard focus to this edit box."
+  },
+  {
+    "name": "EditBox:ClearFocus",
+    "signature": "editbox:ClearFocus()",
+    "description": "Removes keyboard focus from this edit box."
+  },
+  {
+    "name": "EditBox:HasFocus",
+    "signature": "editbox:HasFocus() -> boolean",
+    "description": "Returns true if this edit box has keyboard focus."
+  },
+  {
+    "name": "EditBox:SetCursorPosition",
+    "signature": "editbox:SetCursorPosition(pos)",
+    "description": "Sets the cursor position within the text."
+  },
+  {
+    "name": "EditBox:GetCursorPosition",
+    "signature": "editbox:GetCursorPosition() -> number",
+    "description": "Returns the cursor position within the text."
+  },
+  {
+    "name": "EditBox:SetNumeric",
+    "signature": "editbox:SetNumeric(numeric)",
+    "description": "Restricts input to numeric characters only."
+  },
+  {
+    "name": "EditBox:GetNumber",
+    "signature": "editbox:GetNumber() -> number",
+    "description": "Returns the text content as a number."
+  },
+  {
+    "name": "EditBox:HighlightText",
+    "signature": "editbox:HighlightText([start[, stop]])",
+    "description": "Highlights (selects) text in the edit box."
+  },
+  {
+    "name": "EditBox:Insert",
+    "signature": "editbox:Insert(text)",
+    "description": "Inserts text at the cursor position."
+  },
+
+  {
+    "name": "Slider:SetMinMaxValues",
+    "signature": "slider:SetMinMaxValues(min, max)",
+    "description": "Sets the minimum and maximum slider values."
+  },
+  {
+    "name": "Slider:SetValue",
+    "signature": "slider:SetValue(value)",
+    "description": "Sets the current slider value."
+  },
+  {
+    "name": "Slider:GetValue",
+    "signature": "slider:GetValue() -> number",
+    "description": "Returns the current slider value."
+  },
+  {
+    "name": "Slider:SetValueStep",
+    "signature": "slider:SetValueStep(step)",
+    "description": "Sets the step increment for slider changes."
+  },
+  {
+    "name": "Slider:SetOrientation",
+    "signature": "slider:SetOrientation(orientation)",
+    "description": "Sets orientation: HORIZONTAL or VERTICAL."
+  },
+
+  {
+    "name": "CheckButton:SetChecked",
+    "signature": "checkButton:SetChecked(checked)",
+    "description": "Sets the checked state of a check button."
+  },
+  {
+    "name": "CheckButton:GetChecked",
+    "signature": "checkButton:GetChecked() -> boolean",
+    "description": "Returns whether the check button is checked."
+  },
+
+  {
+    "name": "StatusBar:SetMinMaxValues",
+    "signature": "statusBar:SetMinMaxValues(min, max)",
+    "description": "Sets the min and max range of a status bar."
+  },
+  {
+    "name": "StatusBar:SetValue",
+    "signature": "statusBar:SetValue(value)",
+    "description": "Sets the current fill value."
+  },
+  {
+    "name": "StatusBar:GetValue",
+    "signature": "statusBar:GetValue() -> number",
+    "description": "Returns the current fill value."
+  },
+  {
+    "name": "StatusBar:SetStatusBarTexture",
+    "signature": "statusBar:SetStatusBarTexture(texture)",
+    "description": "Sets the fill texture."
+  },
+  {
+    "name": "StatusBar:SetStatusBarColor",
+    "signature": "statusBar:SetStatusBarColor(r, g, b[, a])",
+    "description": "Sets the fill color."
+  },
+  {
+    "name": "StatusBar:SetOrientation",
+    "signature": "statusBar:SetOrientation(orientation)",
+    "description": "Sets fill direction: HORIZONTAL or VERTICAL."
+  },
+  {
+    "name": "StatusBar:SetReverseFill",
+    "signature": "statusBar:SetReverseFill(reverse)",
+    "description": "Reverses the fill direction."
+  },
+
+  {
+    "name": "ScrollFrame:GetVerticalScroll",
+    "signature": "scrollFrame:GetVerticalScroll() -> number",
+    "description": "Returns the current vertical scroll offset."
+  },
+  {
+    "name": "ScrollFrame:SetVerticalScroll",
+    "signature": "scrollFrame:SetVerticalScroll(offset)",
+    "description": "Sets the vertical scroll offset."
+  },
+  {
+    "name": "ScrollFrame:GetVerticalScrollRange",
+    "signature": "scrollFrame:GetVerticalScrollRange() -> number",
+    "description": "Returns the maximum vertical scroll range."
+  },
+
+  {
+    "name": "GameTooltip:SetUnitBuff",
+    "signature": "GameTooltip:SetUnitBuff(unit, index[, filter])",
+    "description": "Shows tooltip for a unit's buff by index."
+  },
+  {
+    "name": "GameTooltip:SetUnitDebuff",
+    "signature": "GameTooltip:SetUnitDebuff(unit, index[, filter])",
+    "description": "Shows tooltip for a unit's debuff by index."
+  },
+  {
+    "name": "GameTooltip:SetHyperlink",
+    "signature": "GameTooltip:SetHyperlink(link)",
+    "description": "Shows tooltip for an item/spell/achievement hyperlink."
+  },
+  {
+    "name": "GameTooltip:SetSpellByID",
+    "signature": "GameTooltip:SetSpellByID(spellID)",
+    "description": "Shows tooltip for a spell by ID."
+  },
+  {
+    "name": "GameTooltip:SetItemByID",
+    "signature": "GameTooltip:SetItemByID(itemID)",
+    "description": "Shows tooltip for an item by ID."
+  },
+  {
+    "name": "GameTooltip:SetInventoryItem",
+    "signature": "GameTooltip:SetInventoryItem(unit, slot)",
+    "description": "Shows tooltip for an equipped item."
+  },
+  {
+    "name": "GameTooltip:SetBagItem",
+    "signature": "GameTooltip:SetBagItem(bag, slot)",
+    "description": "Shows tooltip for an item in a bag slot."
+  },
+  {
+    "name": "GameTooltip:GetItem",
+    "signature": "GameTooltip:GetItem() -> name, link",
+    "description": "Returns the item currently shown in the tooltip."
+  },
+  {
+    "name": "GameTooltip:GetSpell",
+    "signature": "GameTooltip:GetSpell() -> name, rank, id",
+    "description": "Returns the spell currently shown in the tooltip."
+  },
+
+  {
+    "name": "GetInventoryItemTexture",
+    "signature": "GetInventoryItemTexture(unit, slot) -> texture",
+    "description": "Returns the icon texture of an equipped item."
+  },
+  {
+    "name": "GetInventoryItemID",
+    "signature": "GetInventoryItemID(unit, slot) -> itemID",
+    "description": "Returns the item ID of an equipped item."
+  },
+  {
+    "name": "GetInventorySlotInfo",
+    "signature": "GetInventorySlotInfo(slotName) -> slotID, textureName",
+    "description": "Returns slot ID for a named equipment slot."
+  },
+  {
+    "name": "EquipItemByName",
+    "signature": "EquipItemByName(itemName[, slot])",
+    "description": "Equips an item by name or link."
+  },
+  {
+    "name": "UseItemByName",
+    "signature": "UseItemByName(itemName[, unit])",
+    "description": "Uses an item by name or link."
+  },
+  {
+    "name": "GetItemIcon",
+    "signature": "GetItemIcon(itemID) -> textureID",
+    "description": "Returns the icon texture for an item ID."
+  },
+  {
+    "name": "GetItemSpell",
+    "signature": "GetItemSpell(item) -> spellName, spellID",
+    "description": "Returns the on-use spell of an item."
+  },
+  {
+    "name": "IsEquippableItem",
+    "signature": "IsEquippableItem(item) -> boolean",
+    "description": "Returns true if the item can be equipped."
+  },
+  {
+    "name": "IsConsumableItem",
+    "signature": "IsConsumableItem(item) -> boolean",
+    "description": "Returns true if the item is consumable."
+  },
+
+  {
+    "name": "C_Container.GetContainerNumFreeSlots",
+    "signature": "C_Container.GetContainerNumFreeSlots(bagID) -> numFreeSlots, bagType",
+    "description": "Returns the number of free slots in a bag."
+  },
+  {
+    "name": "C_Container.GetContainerItemLink",
+    "signature": "C_Container.GetContainerItemLink(bagID, slot) -> link",
+    "description": "Returns the item link for a bag slot."
+  },
+  {
+    "name": "C_Container.GetContainerItemID",
+    "signature": "C_Container.GetContainerItemID(bagID, slot) -> itemID",
+    "description": "Returns the item ID for a bag slot."
+  },
+  {
+    "name": "C_Container.SortBags",
+    "signature": "C_Container.SortBags()",
+    "description": "Sorts all bag contents."
+  },
+
+  {
+    "name": "GetSpellTexture",
+    "signature": "GetSpellTexture(spell) -> textureID",
+    "description": "Returns the icon texture for a spell."
+  },
+  {
+    "name": "GetSpellCount",
+    "signature": "GetSpellCount(spell) -> count",
+    "description": "Returns the number of charges or reagent count for a spell."
+  },
+  {
+    "name": "GetSpellCharges",
+    "signature": "GetSpellCharges(spell) -> currentCharges, maxCharges, cooldownStart, cooldownDuration, chargeModRate",
+    "description": "Returns charge info for spells with a charge system."
+  },
+  {
+    "name": "GetSpellLink",
+    "signature": "GetSpellLink(spell) -> link",
+    "description": "Returns a hyperlink for a spell."
+  },
+  {
+    "name": "GetSpellDescription",
+    "signature": "GetSpellDescription(spellID) -> string",
+    "description": "Returns the tooltip description of a spell."
+  },
+
+  {
+    "name": "UnitBuff",
+    "signature": "UnitBuff(unit, index[, filter]) -> name, icon, count, debuffType, duration, expirationTime, source, ...",
+    "description": "Returns info about a buff on a unit (legacy API)."
+  },
+  {
+    "name": "UnitDebuff",
+    "signature": "UnitDebuff(unit, index[, filter]) -> name, icon, count, debuffType, duration, expirationTime, source, ...",
+    "description": "Returns info about a debuff on a unit (legacy API)."
+  },
+  {
+    "name": "UnitAura",
+    "signature": "UnitAura(unit, index[, filter]) -> name, icon, count, debuffType, duration, expirationTime, source, ...",
+    "description": "Returns info about an aura on a unit (legacy API)."
+  },
+  {
+    "name": "C_UnitAuras.GetAuraDataByAuraInstanceID",
+    "signature": "C_UnitAuras.GetAuraDataByAuraInstanceID(unit, auraInstanceID) -> aura",
+    "description": "Returns aura data by its unique instance ID."
+  },
+  {
+    "name": "C_UnitAuras.GetBuffDataByIndex",
+    "signature": "C_UnitAuras.GetBuffDataByIndex(unit, index[, filter]) -> aura",
+    "description": "Returns buff aura data by index."
+  },
+  {
+    "name": "C_UnitAuras.GetDebuffDataByIndex",
+    "signature": "C_UnitAuras.GetDebuffDataByIndex(unit, index[, filter]) -> aura",
+    "description": "Returns debuff aura data by index."
+  },
+
+  {
+    "name": "UnitPowerType",
+    "signature": "UnitPowerType(unit) -> powerType, powerToken, altR, altG, altB",
+    "description": "Returns the primary power type of a unit."
+  },
+  {
+    "name": "UnitAttackSpeed",
+    "signature": "UnitAttackSpeed(unit) -> mainSpeed, offSpeed",
+    "description": "Returns the unit's main-hand and off-hand attack speed."
+  },
+  {
+    "name": "UnitAttackPower",
+    "signature": "UnitAttackPower(unit) -> base, posBuff, negBuff",
+    "description": "Returns the unit's attack power values."
+  },
+  {
+    "name": "UnitRangedAttackPower",
+    "signature": "UnitRangedAttackPower(unit) -> base, posBuff, negBuff",
+    "description": "Returns the unit's ranged attack power."
+  },
+  {
+    "name": "GetCritChance",
+    "signature": "GetCritChance() -> number",
+    "description": "Returns the player's melee critical strike chance."
+  },
+  {
+    "name": "GetSpellCritChance",
+    "signature": "GetSpellCritChance(school) -> number",
+    "description": "Returns the player's spell critical strike chance."
+  },
+  {
+    "name": "GetHaste",
+    "signature": "GetHaste() -> number",
+    "description": "Returns the player's haste percentage."
+  },
+  {
+    "name": "GetMastery",
+    "signature": "GetMastery() -> number",
+    "description": "Returns the player's mastery rating."
+  },
+  {
+    "name": "GetVersatilityBonus",
+    "signature": "GetVersatilityBonus(statIndex) -> number",
+    "description": "Returns the percentage bonus from versatility."
+  },
+  {
+    "name": "GetCombatRating",
+    "signature": "GetCombatRating(ratingIndex) -> number",
+    "description": "Returns raw combat rating for a stat."
+  },
+  {
+    "name": "GetCombatRatingBonus",
+    "signature": "GetCombatRatingBonus(ratingIndex) -> number",
+    "description": "Returns the percentage bonus from a combat rating."
+  },
+
+  {
+    "name": "TargetUnit",
+    "signature": "TargetUnit(unitID)",
+    "description": "Targets a unit by unit ID (protected, combat restrictions)."
+  },
+  {
+    "name": "AssistUnit",
+    "signature": "AssistUnit(unitID)",
+    "description": "Targets the target of a unit (assist)."
+  },
+  {
+    "name": "FocusUnit",
+    "signature": "FocusUnit(unitID)",
+    "description": "Sets the focus target."
+  },
+  {
+    "name": "ClearTarget",
+    "signature": "ClearTarget()",
+    "description": "Clears the current target."
+  },
+  {
+    "name": "ClearFocus",
+    "signature": "ClearFocus()",
+    "description": "Clears the focus target."
+  },
+
+  {
+    "name": "SecureHandlerSetFrameRef",
+    "signature": "SecureHandlerSetFrameRef(frame, label, refFrame)",
+    "description": "Stores a frame reference for secure handler snippets."
+  },
+  {
+    "name": "SecureHandlerWrapScript",
+    "signature": "SecureHandlerWrapScript(frame, script, header[, preBody[, postBody]])",
+    "description": "Wraps a frame's script in secure handler code."
+  },
+  {
+    "name": "RegisterStateDriver",
+    "signature": "RegisterStateDriver(frame, stateName, stateCondition)",
+    "description": "Registers a macro conditional state driver on a frame."
+  },
+  {
+    "name": "UnregisterStateDriver",
+    "signature": "UnregisterStateDriver(frame, stateName)",
+    "description": "Unregisters a state driver."
+  },
+  {
+    "name": "RegisterAttributeDriver",
+    "signature": "RegisterAttributeDriver(frame, attribute, stateCondition)",
+    "description": "Drives a frame attribute from macro conditionals."
+  },
+
+  {
+    "name": "SecureActionButtonTemplate",
+    "signature": "SecureActionButtonTemplate",
+    "description": "Template for creating secure action buttons that work in combat."
+  },
+
+  {
+    "name": "Mixin",
+    "signature": "Mixin(obj, ...) -> obj",
+    "description": "Copies fields from mixin tables onto an object."
+  },
+  {
+    "name": "CreateFromMixins",
+    "signature": "CreateFromMixins(...) -> obj",
+    "description": "Creates a new table with fields from mixin tables."
+  },
+  {
+    "name": "CreateAndInitFromMixin",
+    "signature": "CreateAndInitFromMixin(mixin, ...) -> obj",
+    "description": "Creates from mixin and calls Init with extra args."
+  },
+  {
+    "name": "ObjectPoolMixin",
+    "signature": "CreateObjectPool(creationFunc, resetFunc) -> pool",
+    "description": "Creates an object pool for reusing frames/objects."
+  },
+  {
+    "name": "CreateDataProvider",
+    "signature": "CreateDataProvider(tbl) -> dataProvider",
+    "description": "Creates a data provider for ScrollBox views."
+  },
+
+  {
+    "name": "SlashCmdList",
+    "signature": "SlashCmdList['COMMANDNAME'] = function(msg) end",
+    "description": "Table to register slash command handlers."
+  },
+  {
+    "name": "GetAddOnEnableState",
+    "signature": "GetAddOnEnableState(character, addon) -> number",
+    "description": "Returns the enable state of an addon (0=disabled, 1=charOnly, 2=enabled)."
+  },
+  {
+    "name": "GetNumAddOns",
+    "signature": "GetNumAddOns() -> number",
+    "description": "Returns the total number of addons."
+  },
+  {
+    "name": "GetAddOnInfo",
+    "signature": "GetAddOnInfo(indexOrName) -> name, title, notes, loadable, reason, security, newVersion",
+    "description": "Returns info about an addon."
+  },
+  {
+    "name": "EnableAddOn",
+    "signature": "EnableAddOn(addon[, character])",
+    "description": "Enables an addon for next login."
+  },
+  {
+    "name": "DisableAddOn",
+    "signature": "DisableAddOn(addon[, character])",
+    "description": "Disables an addon for next login."
+  },
+  {
+    "name": "LoadAddOn",
+    "signature": "LoadAddOn(addon) -> loaded, reason",
+    "description": "Loads a load-on-demand addon."
+  },
+
+  {
+    "name": "GetSpellBookItemName",
+    "signature": "GetSpellBookItemName(index, bookType) -> name, subName",
+    "description": "Returns the name of a spell book entry."
+  },
+  {
+    "name": "GetNumSpellTabs",
+    "signature": "GetNumSpellTabs() -> number",
+    "description": "Returns the number of spell book tabs."
+  },
+  {
+    "name": "GetSpellTabInfo",
+    "signature": "GetSpellTabInfo(tabIndex) -> name, texture, offset, numEntries, isGuild, offSpecID",
+    "description": "Returns info about a spell book tab."
+  },
+
+  {
+    "name": "GetSpellPowerCost",
+    "signature": "GetSpellPowerCost(spellID) -> costTable",
+    "description": "Returns the resource cost info for a spell."
+  },
+  {
+    "name": "GetSpellBaseCooldown",
+    "signature": "GetSpellBaseCooldown(spellID) -> cooldownMS",
+    "description": "Returns base cooldown in milliseconds."
+  },
+
+  {
+    "name": "C_NamePlate.GetNamePlateForUnit",
+    "signature": "C_NamePlate.GetNamePlateForUnit(unit) -> nameplate",
+    "description": "Returns the nameplate frame for a unit."
+  },
+  {
+    "name": "C_NamePlate.GetNamePlates",
+    "signature": "C_NamePlate.GetNamePlates() -> nameplates",
+    "description": "Returns all visible nameplate frames."
+  },
+
+  {
+    "name": "ItemLocation:CreateFromBagAndSlot",
+    "signature": "ItemLocation:CreateFromBagAndSlot(bagID, slotIndex) -> itemLocation",
+    "description": "Creates an ItemLocation from bag and slot."
+  },
+  {
+    "name": "ItemLocation:CreateFromEquipmentSlot",
+    "signature": "ItemLocation:CreateFromEquipmentSlot(equipmentSlotIndex) -> itemLocation",
+    "description": "Creates an ItemLocation from an equipment slot."
+  },
+
+  {
+    "name": "C_Texture.GetAtlasInfo",
+    "signature": "C_Texture.GetAtlasInfo(atlas) -> atlasInfo",
+    "description": "Returns info about a named texture atlas."
+  },
+
+  {
+    "name": "C_FriendList.GetNumFriends",
+    "signature": "C_FriendList.GetNumFriends() -> number",
+    "description": "Returns the number of friends on the friends list."
+  },
+  {
+    "name": "C_FriendList.GetFriendInfoByIndex",
+    "signature": "C_FriendList.GetFriendInfoByIndex(index) -> friendInfo",
+    "description": "Returns info about a friend by list index."
+  },
+  {
+    "name": "BNGetNumFriends",
+    "signature": "BNGetNumFriends() -> numBNetTotal, numBNetOnline",
+    "description": "Returns count of Battle.net friends."
+  },
+  {
+    "name": "C_BattleNet.GetFriendAccountInfo",
+    "signature": "C_BattleNet.GetFriendAccountInfo(friendIndex) -> accountInfo",
+    "description": "Returns Battle.net friend info."
+  },
+  {
+    "name": "C_BattleNet.GetFriendNumGameAccounts",
+    "signature": "C_BattleNet.GetFriendNumGameAccounts(friendIndex) -> number",
+    "description": "Returns number of game accounts for a Battle.net friend."
+  },
+
+  {
+    "name": "C_GuildInfo.GetGuildRankOrder",
+    "signature": "C_GuildInfo.GetGuildRankOrder(guid) -> rankOrder",
+    "description": "Returns the guild rank order for a member GUID."
+  },
+  {
+    "name": "GetGuildInfo",
+    "signature": "GetGuildInfo(unit) -> guildName, guildRankName, guildRankIndex, realm",
+    "description": "Returns guild info for a unit."
+  },
+  {
+    "name": "GetNumGuildMembers",
+    "signature": "GetNumGuildMembers() -> totalMembers, onlineMembers, onlineAndMobileMembers",
+    "description": "Returns guild member counts."
+  },
+  {
+    "name": "GetGuildRosterInfo",
+    "signature": "GetGuildRosterInfo(index) -> name, rankName, rankIndex, level, classDisplayName, zone, publicNote, officerNote, isOnline, status, class, ...",
+    "description": "Returns info about a guild member."
+  },
+  {
+    "name": "IsInGuild",
+    "signature": "IsInGuild() -> boolean",
+    "description": "Returns true if the player is in a guild."
+  },
+
+  {
+    "name": "C_Reputation.GetFactionDataByID",
+    "signature": "C_Reputation.GetFactionDataByID(factionID) -> factionData",
+    "description": "Returns reputation data for a faction ID."
+  },
+  {
+    "name": "C_Reputation.GetNumFactions",
+    "signature": "C_Reputation.GetNumFactions() -> number",
+    "description": "Returns the number of factions in the reputation panel."
+  },
+  {
+    "name": "C_Reputation.IsFactionParagon",
+    "signature": "C_Reputation.IsFactionParagon(factionID) -> boolean",
+    "description": "Returns whether a faction has paragon reputation."
+  },
+
+  {
+    "name": "C_Covenants.GetActiveCovenantID",
+    "signature": "C_Covenants.GetActiveCovenantID() -> covenantID",
+    "description": "Returns the player's active covenant ID."
+  },
+  {
+    "name": "C_Covenants.GetCovenantData",
+    "signature": "C_Covenants.GetCovenantData(covenantID) -> covenantData",
+    "description": "Returns data about a covenant."
+  },
+
+  {
+    "name": "C_Garrison.GetFollowerInfo",
+    "signature": "C_Garrison.GetFollowerInfo(followerID) -> followerInfo",
+    "description": "Returns info about a garrison/mission table follower."
+  },
+
+  {
+    "name": "InterfaceOptions_AddCategory",
+    "signature": "InterfaceOptions_AddCategory(frame)",
+    "description": "Legacy: adds a frame to the Interface Options (deprecated)."
+  },
+  {
+    "name": "InterfaceOptionsFrame_OpenToCategory",
+    "signature": "InterfaceOptionsFrame_OpenToCategory(frame|name)",
+    "description": "Legacy: opens Interface Options to a category (deprecated)."
+  },
+
+  {
+    "name": "CreateColor",
+    "signature": "CreateColor(r, g, b, a) -> colorMixin",
+    "description": "Creates a ColorMixin object."
+  },
+  {
+    "name": "ColorMixin:GetRGBA",
+    "signature": "color:GetRGBA() -> r, g, b, a",
+    "description": "Returns RGBA components from a ColorMixin."
+  },
+  {
+    "name": "ColorMixin:GenerateHexColor",
+    "signature": "color:GenerateHexColor() -> string",
+    "description": "Returns hex string representation (aarrggbb)."
+  },
+  {
+    "name": "ColorMixin:WrapTextInColorCode",
+    "signature": "color:WrapTextInColorCode(text) -> string",
+    "description": "Wraps text in escape-code color tags."
+  },
+
+  {
+    "name": "WrapTextInColorCode",
+    "signature": "WrapTextInColorCode(text, colorHexString) -> string",
+    "description": "Wraps text with color escape codes."
+  },
+  {
+    "name": "CreateVector2D",
+    "signature": "CreateVector2D(x, y) -> vector",
+    "description": "Creates a 2D vector object."
+  },
+
+  {
+    "name": "C_AddOns.GetAddOnMetadata",
+    "signature": "C_AddOns.GetAddOnMetadata(addon, field) -> value",
+    "description": "Modern API to read TOC metadata fields."
+  },
+  {
+    "name": "C_AddOns.IsAddOnLoaded",
+    "signature": "C_AddOns.IsAddOnLoaded(addon) -> loaded, finished",
+    "description": "Modern API to check if an addon is loaded."
+  },
+
+  {
+    "name": "GetSpellBookItemInfo",
+    "signature": "GetSpellBookItemInfo(index, bookType) -> itemType, itemID",
+    "description": "Returns type and ID of a spellbook entry."
+  },
+
+  {
+    "name": "Enum.PowerType",
+    "signature": "Enum.PowerType.Mana|Rage|Focus|Energy|ComboPoints|...",
+    "description": "Power type enum values used with UnitPower/UnitPowerMax."
+  },
+  {
+    "name": "Enum.ItemQuality",
+    "signature": "Enum.ItemQuality.Poor|Common|Uncommon|Rare|Epic|Legendary",
+    "description": "Item quality enum values."
+  },
+
+  {
+    "name": "CreateTextureMarkup",
+    "signature": "CreateTextureMarkup(file, fileWidth, fileHeight, width, height, left, right, top, bottom[, xOffset, yOffset]) -> string",
+    "description": "Creates an inline texture escape sequence for use in text."
+  },
+  {
+    "name": "CreateAtlasMarkup",
+    "signature": "CreateAtlasMarkup(atlasName[, width, height[, offsetX, offsetY]]) -> string",
+    "description": "Creates an inline atlas texture escape sequence."
+  },
+  {
+    "name": "CreateSimpleTextureMarkup",
+    "signature": "CreateSimpleTextureMarkup(file, width, height) -> string",
+    "description": "Creates a simple inline texture escape sequence."
+  },
+
+  {
+    "name": "GetPhysicalScreenSize",
+    "signature": "GetPhysicalScreenSize() -> width, height",
+    "description": "Returns the physical pixel resolution of the screen."
+  },
+  {
+    "name": "GetMaxPlayerLevel",
+    "signature": "GetMaxPlayerLevel() -> number",
+    "description": "Returns the current expansion's maximum player level."
+  },
+  {
+    "name": "GetBuildInfo",
+    "signature": "GetBuildInfo() -> version, build, date, tocVersion, localizedVersion, buildType",
+    "description": "Returns WoW client build information."
+  },
+  {
+    "name": "GetExpansionLevel",
+    "signature": "GetExpansionLevel() -> number",
+    "description": "Returns the player's highest owned expansion level."
+  },
+
+  {
+    "name": "debugprofilestop",
+    "signature": "debugprofilestop() -> elapsedMilliseconds",
+    "description": "Returns milliseconds since last debugprofilestart."
+  },
+  {
+    "name": "debugprofilestart",
+    "signature": "debugprofilestart()",
+    "description": "Starts the debug profiling timer."
+  },
+  {
+    "name": "debugstack",
+    "signature": "debugstack([start[, count1[, count2]]]) -> string",
+    "description": "Returns a string of the current call stack."
+  },
+  {
+    "name": "geterrorhandler",
+    "signature": "geterrorhandler() -> func",
+    "description": "Returns the current error handler function."
+  },
+  {
+    "name": "seterrorhandler",
+    "signature": "seterrorhandler(func)",
+    "description": "Sets the error handler function."
+  },
+
+  {
+    "name": "C_Timer.Cancel",
+    "signature": "ticker:Cancel()",
+    "description": "Cancels a running ticker or timer."
+  },
+
+  {
+    "name": "Mixin:GenerateCallbackEvents",
+    "signature": "CallbackRegistryMixin:GenerateCallbackEvents(events)",
+    "description": "Generates callback event constants for a mixin."
+  },
+  {
+    "name": "EventUtil.ContinueOnAddOnLoaded",
+    "signature": "EventUtil.ContinueOnAddOnLoaded(addonName, callback)",
+    "description": "Fires callback when a specific addon is loaded."
+  },
+  {
+    "name": "EventRegistry:RegisterCallback",
+    "signature": "EventRegistry:RegisterCallback(event, callback, owner)",
+    "description": "Registers a callback for a custom event."
+  },
+
+  {
+    "name": "C_Spell.GetSpellPowerCost",
+    "signature": "C_Spell.GetSpellPowerCost(spellIdentifier) -> costTable",
+    "description": "Returns the resource cost table for a spell (modern API)."
+  },
+
+  {
+    "name": "IsShiftKeyDown",
+    "signature": "IsShiftKeyDown() -> boolean",
+    "description": "Returns true if the Shift key is pressed."
+  },
+  {
+    "name": "IsControlKeyDown",
+    "signature": "IsControlKeyDown() -> boolean",
+    "description": "Returns true if the Control key is pressed."
+  },
+  {
+    "name": "IsAltKeyDown",
+    "signature": "IsAltKeyDown() -> boolean",
+    "description": "Returns true if the Alt key is pressed."
+  },
+  {
+    "name": "IsModifiedClick",
+    "signature": "IsModifiedClick(action) -> boolean",
+    "description": "Returns true if the modified click action is active."
+  },
+  {
+    "name": "GetMouseButtonClicked",
+    "signature": "GetMouseButtonClicked() -> string",
+    "description": "Returns the name of the mouse button that triggered the click."
+  },
+
+  {
+    "name": "C_QuestLog.GetQuestTagInfo",
+    "signature": "C_QuestLog.GetQuestTagInfo(questID) -> tagInfo",
+    "description": "Returns tag info (elite, dungeon, raid, etc.) for a quest."
+  },
+  {
+    "name": "C_QuestLog.RequestLoadQuestByID",
+    "signature": "C_QuestLog.RequestLoadQuestByID(questID)",
+    "description": "Requests asynchronous loading of quest data."
+  },
+  {
+    "name": "C_QuestLog.GetQuestDifficultyLevel",
+    "signature": "C_QuestLog.GetQuestDifficultyLevel(questID) -> level",
+    "description": "Returns the difficulty level of a quest."
+  },
+
+  {
+    "name": "C_MythicPlus.GetOwnedKeystoneLevel",
+    "signature": "C_MythicPlus.GetOwnedKeystoneLevel() -> level",
+    "description": "Returns the level of the player's keystone."
+  },
+  {
+    "name": "C_MythicPlus.GetOwnedKeystoneChallengeMapID",
+    "signature": "C_MythicPlus.GetOwnedKeystoneChallengeMapID() -> mapID",
+    "description": "Returns the map ID of the player's keystone."
+  },
+  {
+    "name": "C_MythicPlus.GetRunHistory",
+    "signature": "C_MythicPlus.GetRunHistory(includePreviousWeek, includeIncompleteRuns) -> runs",
+    "description": "Returns the player's Mythic+ run history."
+  },
+  {
+    "name": "C_ChallengeMode.GetMapUIInfo",
+    "signature": "C_ChallengeMode.GetMapUIInfo(mapID) -> name, id, timeLimit, texture, backgroundTexture",
+    "description": "Returns display info for a Challenge Mode map."
   }
 ]
