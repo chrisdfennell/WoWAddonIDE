@@ -133,13 +133,13 @@ namespace WoWAddonIDE
 
             editor.Text = File.ReadAllText(path);
 
+            LuaDiagnosticsTransformer? diag = null;
             if (path.EndsWith(".lua", StringComparison.OrdinalIgnoreCase))
             {
-                var diag = new LuaDiagnosticsTransformer();
+                diag = new LuaDiagnosticsTransformer();
                 diag.ApiEntries = _completion.ApiEntries;
                 editor.TextArea.TextView.LineTransformers.Add(diag);
-                editor.TextChanged += (s, e) => diag.Reanalyze(editor.Text);
-                diag.Reanalyze(editor.Text);
+                diag.Reanalyze(editor.Text); // initial pass; live updates are debounced below
             }
 
             editor.TextArea.TextEntered += (s, e) =>
@@ -188,13 +188,31 @@ namespace WoWAddonIDE
             };
             tv.MouseHoverStopped += (s, e) => { editor.ToolTip = null; };
 
+            // Debounce the expensive per-keystroke work (Lua diagnostics re-analysis,
+            // outline rebuild, color-swatch rebuild). These full-document passes ran on
+            // every keystroke; now they run ~250ms after typing pauses. Dirty-marking
+            // stays immediate so the tab header updates without lag.
+            bool isLua = path.EndsWith(".lua", StringComparison.OrdinalIgnoreCase);
+            var analyzeTimer = new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(250)
+            };
+            analyzeTimer.Tick += (s, e) =>
+            {
+                analyzeTimer.Stop();
+                if (isLua)
+                {
+                    diag?.Reanalyze(editor.Text);
+                    RefreshOutlineForActive();
+                }
+                RefreshColorSwatches(editor.Text);
+            };
+
             editor.TextChanged += (s, e) =>
             {
-                MarkTabDirty(path, true);
-                if (path.EndsWith(".lua", StringComparison.OrdinalIgnoreCase))
-                    RefreshOutlineForActive();
-
-                RefreshColorSwatches(editor.Text);
+                MarkTabDirty(path, true);   // immediate: keeps the dirty indicator responsive
+                analyzeTimer.Stop();
+                analyzeTimer.Start();       // (re)start the debounce window
             };
 
             RefreshColorSwatches(editor.Text);

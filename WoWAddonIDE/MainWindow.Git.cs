@@ -14,10 +14,9 @@ namespace WoWAddonIDE
 {
     public partial class MainWindow : Window
     {
-        // Optional hardcoded fallbacks in case Settings are blank.
-        // You can safely leave these empty and only use Settings.
+        // Optional hardcoded fallback in case Settings are blank.
+        // You can safely leave this empty and only use Settings.
         private const string DefaultGitHubClientId = ""; // e.g. "Iv1...."
-        private const string DefaultGitHubClientSecret = ""; // e.g. "abcd1234..."  (User-scope settings preferred)
 
         private void UpdateGitStatusStrip()
         {
@@ -388,16 +387,13 @@ namespace WoWAddonIDE
 
         private async void GitSignIn_Click(object sender, RoutedEventArgs e)
         {
-            // All values trimmed; secret may be blank for PKCE.
+            // Pure PKCE public-client flow — no client secret involved.
             var clientId = (Properties.Settings.Default.GitHubOAuthClientId ?? "").Trim();
-            string? clientSecret = string.IsNullOrWhiteSpace(Properties.Settings.Default.GitHubOAuthClientSecret)
-                ? null
-                : Properties.Settings.Default.GitHubOAuthClientSecret.Trim();
 
-            // NEW: make redirect configurable so it can exactly match what's on GitHub
+            // Redirect is configurable so it can exactly match what's on GitHub.
             var redirect = (Properties.Settings.Default.GitHubOAuthRedirect ?? "http://localhost:53117/callback/").Trim();
 
-            var w = new Windows.GitHubSignInWindow(clientId, clientSecret, redirect) { Owner = this };
+            var w = new Windows.GitHubSignInWindow(clientId, redirect) { Owner = this };
             if (w.ShowDialog() == true && !string.IsNullOrWhiteSpace(w.AccessToken))
             {
                 _settings.GitHubToken = w.AccessToken!;

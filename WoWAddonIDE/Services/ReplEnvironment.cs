@@ -28,53 +28,93 @@ namespace WoWAddonIDE.Services
             _script = CreateSandbox();
         }
 
+        /// <summary>Default wall-clock budget for a single REPL evaluation.</summary>
+        private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(5);
+
+        /// <summary>Instructions between coroutine auto-yields (how often we check the clock).</summary>
+        private const int AutoYieldInstructions = 20000;
+
+        private enum RunStatus { Ok, SyntaxError, RuntimeError, Timeout, Error }
+
         /// <summary>
         /// Execute a line of Lua. Tries as expression first ("return input"),
         /// then as a statement if that fails with a syntax error.
         /// Returns (success, resultText).
         /// </summary>
-        public (bool Success, string Result) Execute(string input)
+        public (bool Success, string Result) Execute(string input) => Execute(input, DefaultTimeout);
+
+        /// <summary>
+        /// Execute a line of Lua with a wall-clock timeout. Execution is driven through a
+        /// coroutine with an instruction budget, so a runaway/infinite-loop script is
+        /// actually aborted (rather than leaking a thread that runs until the app exits).
+        /// </summary>
+        public (bool Success, string Result) Execute(string input, TimeSpan timeout)
         {
             if (string.IsNullOrWhiteSpace(input))
                 return (true, "");
 
             _printBuffer.Clear();
 
-            // Try as expression first (prefix with "return")
-            try
+            // Try as an expression first.
+            var expr = RunGuarded("return " + input, timeout);
+            switch (expr.Status)
             {
-                var result = _script.DoString("return " + input);
-                var output = FormatResult(result);
-                return (true, CombineOutput(output));
-            }
-            catch (SyntaxErrorException)
-            {
-                // Not an expression, try as statement
-            }
-            catch (ScriptRuntimeException ex)
-            {
-                return (false, CombineOutput($"[Runtime Error] {ex.DecoratedMessage ?? ex.Message}"));
+                case RunStatus.Ok:
+                    return (true, CombineOutput(expr.Text));
+                case RunStatus.Timeout:
+                    return (false, CombineOutput($"[Timeout] Execution exceeded {timeout.TotalSeconds:0.#}s and was aborted."));
+                case RunStatus.RuntimeError:
+                    return (false, CombineOutput(expr.Text));
+                // SyntaxError / Error → fall through and try as a statement.
             }
 
-            // Try as statement
+            // Try as a statement.
+            _printBuffer.Clear();
+            var stmt = RunGuarded(input, timeout);
+            return stmt.Status switch
+            {
+                RunStatus.Ok => (true, CombineOutput(stmt.Text)),
+                RunStatus.Timeout => (false, CombineOutput($"[Timeout] Execution exceeded {timeout.TotalSeconds:0.#}s and was aborted.")),
+                _ => (false, CombineOutput(stmt.Text)),
+            };
+        }
+
+        /// <summary>
+        /// Compile <paramref name="code"/> wrapped in a function and run it via a coroutine
+        /// with an instruction budget, aborting if <paramref name="timeout"/> elapses.
+        /// </summary>
+        private (RunStatus Status, string Text) RunGuarded(string code, TimeSpan timeout)
+        {
             try
             {
-                _printBuffer.Clear();
-                var result = _script.DoString(input);
-                var output = FormatResult(result);
-                return (true, CombineOutput(output));
+                // Wrapping in a function lets us create a coroutine and drive it with an
+                // auto-yield instruction counter — the mechanism that makes abort possible.
+                var chunk = _script.DoString("return function() " + code + " end");
+                var co = _script.CreateCoroutine(chunk);
+                co.Coroutine.AutoYieldCounter = AutoYieldInstructions;
+
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                var r = co.Coroutine.Resume();
+                while (r.Type == DataType.YieldRequest)
+                {
+                    if (sw.Elapsed > timeout)
+                        return (RunStatus.Timeout, "");
+                    r = co.Coroutine.Resume();
+                }
+
+                return (RunStatus.Ok, FormatResult(r));
             }
             catch (SyntaxErrorException ex)
             {
-                return (false, CombineOutput($"[Syntax Error] {ex.DecoratedMessage ?? ex.Message}"));
+                return (RunStatus.SyntaxError, $"[Syntax Error] {ex.DecoratedMessage ?? ex.Message}");
             }
             catch (ScriptRuntimeException ex)
             {
-                return (false, CombineOutput($"[Runtime Error] {ex.DecoratedMessage ?? ex.Message}"));
+                return (RunStatus.RuntimeError, $"[Runtime Error] {ex.DecoratedMessage ?? ex.Message}");
             }
             catch (Exception ex)
             {
-                return (false, CombineOutput($"[Error] {ex.Message}"));
+                return (RunStatus.Error, $"[Error] {ex.Message}");
             }
         }
 

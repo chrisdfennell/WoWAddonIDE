@@ -22,7 +22,7 @@ namespace WoWAddonIDE
             ReplOutput.AppendText("-- WoW API stubs are available (CreateFrame, C_Timer, etc.)\n\n");
         }
 
-        private async void Repl_Execute()
+        private async Task Repl_Execute()
         {
             var input = ReplInput?.Text?.Trim();
             if (string.IsNullOrWhiteSpace(input)) return;
@@ -36,23 +36,15 @@ namespace WoWAddonIDE
 
             if (_replEnv == null) Repl_Init();
 
-            // Run on background thread with timeout
+            // Execute on a background thread. The timeout is enforced inside Execute via a
+            // coroutine instruction budget, so a runaway script is aborted rather than
+            // leaking a thread — the awaited task always completes.
             try
             {
                 var env = _replEnv!;
-                var task = Task.Run(() => env.Execute(input));
-                var completed = await Task.WhenAny(task, Task.Delay(5000));
-
-                if (completed == task)
-                {
-                    var (success, result) = task.Result;
-                    if (!string.IsNullOrEmpty(result))
-                        ReplOutput.AppendText(result + "\n");
-                }
-                else
-                {
-                    ReplOutput.AppendText("[Timeout] Execution exceeded 5 seconds.\n");
-                }
+                var (success, result) = await Task.Run(() => env.Execute(input));
+                if (!string.IsNullOrEmpty(result))
+                    ReplOutput.AppendText(result + "\n");
             }
             catch (Exception ex)
             {
@@ -110,7 +102,7 @@ namespace WoWAddonIDE
             switch (e.Key)
             {
                 case Key.Enter:
-                    Repl_Execute();
+                    _ = Repl_Execute();
                     e.Handled = true;
                     break;
 
@@ -143,7 +135,7 @@ namespace WoWAddonIDE
 
         private void Repl_Run_Click(object sender, RoutedEventArgs e)
         {
-            Repl_Execute();
+            _ = Repl_Execute();
         }
     }
 }

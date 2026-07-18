@@ -20,20 +20,17 @@ namespace WoWAddonIDE.Services
         // ---- Public entry point --------------------------------------------------
 
         /// <summary>
-        /// Runs a full GitHub OAuth (Authorization Code + PKCE) flow.
+        /// Runs a full GitHub OAuth (Authorization Code + PKCE) flow as a public client.
+        /// No client secret is used or required — a desktop app cannot keep one secret,
+        /// and PKCE is the correct protection for public clients.
         /// </summary>
         /// <param name="clientId">OAuth App client_id.</param>
-        /// <param name="clientSecret">
-        /// Optional. Leave empty when you want a “public client” style flow (PKCE without secret).
-        /// If you provide it, GitHub will accept it too.
-        /// </param>
         /// <param name="redirect">Must EXACTLY match your OAuth App's callback URL.</param>
         /// <param name="scope">Scopes, e.g. "repo read:user".</param>
         /// <param name="ct">Cancellation token.</param>
         /// <returns>access_token or null if user cancelled/failed.</returns>
         public static async Task<string?> SignInWithPkceAsync(
             string clientId,
-            string? clientSecret,
             string redirect,
             string scope,
             CancellationToken ct)
@@ -87,7 +84,7 @@ namespace WoWAddonIDE.Services
                 }
 
                 // 5) Exchange for token — THIS includes code_verifier ✅
-                var token = await ExchangeCodeForTokenAsync(clientId, clientSecret, redirect, code, verifier, ct);
+                var token = await ExchangeCodeForTokenAsync(clientId, redirect, code, verifier, ct);
                 if (string.IsNullOrWhiteSpace(token))
                 {
                     await WriteHtml(ctx, 500,
@@ -109,17 +106,16 @@ namespace WoWAddonIDE.Services
 
         private static async Task<string?> ExchangeCodeForTokenAsync(
             string clientId,
-            string? clientSecret,
             string redirect,
             string code,
             string codeVerifier,
             CancellationToken ct)
         {
-            using var http = new HttpClient();
+            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
             using var req = new HttpRequestMessage(HttpMethod.Post, TokenEndpoint);
             req.Headers.Accept.ParseAdd("application/json");
 
-            // Build form — include code_verifier for PKCE
+            // Build form — PKCE public-client exchange (code_verifier, no secret).
             var form = new Dictionary<string, string>
             {
                 ["client_id"] = clientId,
@@ -127,10 +123,6 @@ namespace WoWAddonIDE.Services
                 ["redirect_uri"] = redirect,
                 ["code_verifier"] = codeVerifier
             };
-
-            // Optional secret (OK to omit for PKCE “public client”)
-            if (!string.IsNullOrWhiteSpace(clientSecret))
-                form["client_secret"] = clientSecret;
 
             req.Content = new FormUrlEncodedContent(form);
 

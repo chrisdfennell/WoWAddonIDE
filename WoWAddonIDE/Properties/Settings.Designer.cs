@@ -37,18 +37,6 @@ namespace WoWAddonIDE.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("7e032df3e9cdfd116b216c6ccf6731e2bf860da7")]
-        public string GitHubOAuthClientSecret {
-            get {
-                return ((string)(this["GitHubOAuthClientSecret"]));
-            }
-            set {
-                this["GitHubOAuthClientSecret"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("http://localhost:53117/callback/")]
         public string GitHubOAuthRedirect {
             get {
