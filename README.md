@@ -171,7 +171,7 @@ git push origin v1.4.0
 ```
 WoWAddonIDE/
  ├── Models/              # Data models (IDESettings, AddonProject)
- ├── ViewModels/           # MVVM foundation (ViewModelBase, DelegateCommand)
+ ├── ViewModels/           # MVVM foundation (ViewModelBase, MainWindowViewModel)
  ├── Services/             # Core services
  │   ├── LogService.cs         # Structured logging with rotation
  │   ├── ThemeManager.cs       # Theme management
