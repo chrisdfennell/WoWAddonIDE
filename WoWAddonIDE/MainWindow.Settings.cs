@@ -11,35 +11,10 @@ namespace WoWAddonIDE
 {
     public partial class MainWindow : Window
     {
-        private IDESettings LoadSettings()
-        {
-            try
-            {
-                if (File.Exists(_settingsPath))
-                {
-                    var json = File.ReadAllText(_settingsPath);
-                    return JsonConvert.DeserializeObject<IDESettings>(json) ?? new IDESettings();
-                }
-            }
-            catch (Exception ex) { LogService.Error("LoadSettings: failed to read settings file", ex); }
-            return new IDESettings();
-        }
-
-        // Changed from private to internal to be accessible across partial class files.
-        internal void SaveSettings()
-        {
-            try
-            {
-                var dir = Path.GetDirectoryName(_settingsPath)!;
-                if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
-                File.WriteAllText(_settingsPath,
-                    JsonConvert.SerializeObject(_settings, Formatting.Indented));
-            }
-            catch (Exception ex)
-            {
-                Log($"Failed to save settings: {ex.Message}");
-            }
-        }
+        // All settings persistence goes through SettingsService (single Newtonsoft writer),
+        // which honors the IDESettings JSON attributes so the GitHub token stays in
+        // DPAPI-encrypted secure storage and is never written to settings.json.
+        internal void SaveSettings() => SettingsService.Save(_settings);
 
         private static string DetectAddOnsPath()
         {

@@ -39,24 +39,9 @@ namespace WoWAddonIDE
             // 2) Initialize theme manager
             ThemeManager.Initialize(settings);
 
-            // 3) Wire up your persistence delegate (exactly as requested)
-            ThemeManager.Persist = () =>
-            {
-                try
-                {
-                    var path = Path.Combine(
-                        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                        "WoWAddonIDE", "settings.json");
-
-                    Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-                    var json = JsonSerializer.Serialize(
-                        ThemeManager.Settings,
-                        new JsonSerializerOptions { WriteIndented = true });
-
-                    File.WriteAllText(path, json);
-                }
-                catch (Exception ex) { LogService.Warn("Failed to persist theme settings", ex); }
-            };
+            // 3) Wire persistence through the single SettingsService writer (Newtonsoft),
+            //    so the GitHub token is never serialized into settings.json in plaintext.
+            ThemeManager.Persist = () => SettingsService.Save(ThemeManager.Settings);
 
             base.OnStartup(e);
         }
@@ -70,41 +55,8 @@ namespace WoWAddonIDE
 
         // ---------- helpers ----------
 
-        private static IDESettings LoadSettings()
-        {
-            try
-            {
-                var path = GetSettingsPath();
-                if (File.Exists(path))
-                {
-                    var json = File.ReadAllText(path);
-                    // Be tolerant of older files (comments/trailing commas)
-                    var opts = new JsonSerializerOptions
-                    {
-                        AllowTrailingCommas = true,
-                        ReadCommentHandling = JsonCommentHandling.Skip,
-                        PropertyNameCaseInsensitive = true
-                    };
-                    var loaded = JsonSerializer.Deserialize<IDESettings>(json, opts);
-                    if (loaded != null) return loaded;
-                }
-            }
-            catch (Exception ex)
-            {
-                LogService.Warn("Failed to load settings at startup", ex);
-            }
-
-            return new IDESettings();
-        }
-
-        private static string GetSettingsPath()
-        {
-            var dir = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "WoWAddonIDE");
-            Directory.CreateDirectory(dir);
-            return Path.Combine(dir, "settings.json");
-        }
+        // Settings load/save is centralized in SettingsService (single Newtonsoft writer).
+        private static IDESettings LoadSettings() => SettingsService.Load();
 
         private static void LogCrash(string kind, Exception ex)
         {

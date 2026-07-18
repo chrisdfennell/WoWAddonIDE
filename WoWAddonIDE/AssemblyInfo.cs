@@ -1,4 +1,8 @@
+using System.Runtime.CompilerServices;
 using System.Windows;
+
+// Allow the test project to exercise internal services (SecureStorage, PkceHelper, etc.).
+[assembly: InternalsVisibleTo("WoWAddonIDE.Tests")]
 
 [assembly: ThemeInfo(
     ResourceDictionaryLocation.None,            //where theme specific resource dictionaries are located

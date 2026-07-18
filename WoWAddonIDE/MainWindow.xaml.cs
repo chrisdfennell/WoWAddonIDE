@@ -20,7 +20,6 @@ namespace WoWAddonIDE
     public partial class MainWindow : Window
     {
         private AddonProject? _project;
-        private readonly string _settingsPath;
         private IDESettings _settings = new();
 
         // Editor toggles (session-scoped)
@@ -50,17 +49,18 @@ namespace WoWAddonIDE
             InitializeComponent();
             InitializeLogging();
 
+            // Share the single settings instance loaded at startup (ThemeManager.Settings)
+            // so this window, the Settings dialog, and theme persistence all read/write ONE
+            // object through ONE serializer (SettingsService). This avoids dual-writer
+            // clobbering and the plaintext-token leak that System.Text.Json would cause.
+            // Assigned before the steps below so formatter autodetect persists correctly.
+            _settings = ThemeManager.Settings;
+
             // ===== your original startup steps =====
             Formatter_Autodetect();
             Recent_Init();
             Autosave_Init();
             Formatter_MigrateArgsIfNeeded();
-
-            _settingsPath = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "WoWAddonIDE", "settings.json");
-
-            _settings = LoadSettings();
 
             // Initialize completion/highlighting (loads wow_api.json for completion)
             _completion = new CompletionService();

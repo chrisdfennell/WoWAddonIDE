@@ -38,17 +38,28 @@ jobs:
       - name: Publish single-exe
         run: dotnet publish WoWAddonIDE/WoWAddonIDE.csproj --configuration Release --output ./publish --self-contained true -r win-x64 -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true
 
+      - name: Generate SHA-256 checksum
+        shell: pwsh
+        run: |
+          $hash = (Get-FileHash ./publish/WoWAddonIDE.exe -Algorithm SHA256).Hash.ToLower()
+          "$hash  WoWAddonIDE.exe" | Out-File -FilePath ./publish/WoWAddonIDE.exe.sha256 -Encoding ascii -NoNewline
+          Write-Host "SHA-256: $hash"
+
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: WoWAddonIDE
-          path: ./publish/WoWAddonIDE.exe
+          path: |
+            ./publish/WoWAddonIDE.exe
+            ./publish/WoWAddonIDE.exe.sha256
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: ./publish/WoWAddonIDE.exe
+          files: |
+            ./publish/WoWAddonIDE.exe
+            ./publish/WoWAddonIDE.exe.sha256
           generate_release_notes: true
           draft: false
           prerelease: false

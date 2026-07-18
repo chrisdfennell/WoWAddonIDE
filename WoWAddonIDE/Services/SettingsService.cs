@@ -1,13 +1,20 @@
 ﻿// File: WoWAddonIDE/Services/SettingsService.cs
 using System;
 using System.IO;
-using System.Text.Json;
+using Newtonsoft.Json;
 using WoWAddonIDE.Models;
 
 namespace WoWAddonIDE.Services
 {
     /// <summary>
-    /// Tiny helper to persist IDESettings to %AppData%\WoWAddonIDE\settings.json
+    /// Single source of truth for persisting IDESettings to
+    /// %AppData%\WoWAddonIDE\settings.json.
+    ///
+    /// IMPORTANT: this uses Newtonsoft.Json because IDESettings relies on Newtonsoft
+    /// attributes ([JsonIgnore] on GitHubToken, [JsonProperty] on the legacy token
+    /// field) to keep the GitHub token OUT of settings.json (it lives in DPAPI secure
+    /// storage). Serializing with System.Text.Json would ignore those attributes and
+    /// leak the token in plaintext, so all persistence must go through here.
     /// </summary>
     public static class SettingsService
     {
@@ -25,11 +32,7 @@ namespace WoWAddonIDE.Services
                 if (File.Exists(_path))
                 {
                     var json = File.ReadAllText(_path);
-                    var opts = new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    };
-                    return JsonSerializer.Deserialize<IDESettings>(json, opts) ?? new IDESettings();
+                    return JsonConvert.DeserializeObject<IDESettings>(json) ?? new IDESettings();
                 }
             }
             catch (Exception ex)
@@ -45,8 +48,7 @@ namespace WoWAddonIDE.Services
             try
             {
                 Directory.CreateDirectory(_dir);
-                var opts = new JsonSerializerOptions { WriteIndented = true };
-                var json = JsonSerializer.Serialize(settings, opts);
+                var json = JsonConvert.SerializeObject(settings, Formatting.Indented);
                 File.WriteAllText(_path, json);
             }
             catch (Exception ex)

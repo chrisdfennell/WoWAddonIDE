@@ -119,6 +119,34 @@ namespace WoWAddonIDE.Services
             {
                 // scope analysis is best-effort
             }
+
+            // Keep diagnostics ordered by start offset so ColorizeLine can stop scanning
+            // as soon as it passes the end of the line being rendered.
+            _diags.Sort((a, b) => a.Start.CompareTo(b.Start));
+        }
+
+        // Cached, frozen brushes/pens per severity. ColorizeLine runs on every rendered
+        // line, so allocating a brush + pen per diagnostic per line (the old behavior)
+        // created heavy GC churn. Freezing makes them safe to share across renders.
+        private static readonly Media.Brush ErrorBrush = FreezeBrush(0xE0, 0x5A, 0x4A);
+        private static readonly Media.Brush WarningBrush = FreezeBrush(0xD7, 0x91, 0x00);
+        private static readonly Media.Brush InfoBrush = FreezeBrush(0x2A, 0x88, 0xD8);
+        private static readonly Media.Pen ErrorPen = FreezePen(ErrorBrush);
+        private static readonly Media.Pen WarningPen = FreezePen(WarningBrush);
+        private static readonly Media.Pen InfoPen = FreezePen(InfoBrush);
+
+        private static Media.Brush FreezeBrush(byte r, byte g, byte b)
+        {
+            var brush = new Media.SolidColorBrush(Media.Color.FromRgb(r, g, b));
+            brush.Freeze();
+            return brush;
+        }
+
+        private static Media.Pen FreezePen(Media.Brush brush)
+        {
+            var pen = new Media.Pen(brush, 1) { DashStyle = Media.DashStyles.Dash };
+            pen.Freeze();
+            return pen;
         }
 
         protected override void ColorizeLine(DocumentLine line)
@@ -130,12 +158,16 @@ namespace WoWAddonIDE.Services
 
             foreach (var d in _diags)
             {
+                // _diags is sorted by Start (see Reanalyze), so once a diagnostic starts at
+                // or after the end of this line, no later one can overlap it either.
+                if (d.Start >= lineEnd) break;
+
                 int start = Math.Max(d.Start, lineStart);
                 int end = Math.Min(d.Start + d.Length, lineEnd);
                 if (start >= end) continue;
 
                 var brush = BrushFor(d.Sev);
-                var pen = new Media.Pen(brush, 1) { DashStyle = Media.DashStyles.Dash };
+                var pen = PenFor(d.Sev);
 
                 ChangeLinePart(start, end, element =>
                 {
@@ -161,9 +193,16 @@ namespace WoWAddonIDE.Services
 
         private static Media.Brush BrushFor(Severity sev) => sev switch
         {
-            Severity.Error => new Media.SolidColorBrush(Media.Color.FromRgb(0xE0, 0x5A, 0x4A)),
-            Severity.Warning => new Media.SolidColorBrush(Media.Color.FromRgb(0xD7, 0x91, 0x00)),
-            _ => new Media.SolidColorBrush(Media.Color.FromRgb(0x2A, 0x88, 0xD8)),
+            Severity.Error => ErrorBrush,
+            Severity.Warning => WarningBrush,
+            _ => InfoBrush,
+        };
+
+        private static Media.Pen PenFor(Severity sev) => sev switch
+        {
+            Severity.Error => ErrorPen,
+            Severity.Warning => WarningPen,
+            _ => InfoPen,
         };
     }
 }
