@@ -515,11 +515,11 @@ print(ADDON_NAME .. ' loaded!')
 
             if (ed == null)
             {
-                CaretPosText.Text = "";
-                SelText.Text = "";
-                LangText.Text = "";
-                EncodingText.Text = "";
-                EolText.Text = "";
+                _vm.CaretPositionText = "";
+                _vm.SelectionText = "";
+                _vm.LanguageText = "";
+                _vm.EncodingText = "";
+                _vm.EolText = "";
                 return;
             }
 
@@ -528,21 +528,21 @@ print(ADDON_NAME .. ' loaded!')
             var line = ed.Document.GetLineByOffset(offset);
             int col = offset - line.Offset + 1;      // 1-based
             int ln = line.LineNumber;               // 1-based
-            CaretPosText.Text = $"Ln {ln}, Col {col}";
+            _vm.CaretPositionText = $"Ln {ln}, Col {col}";
 
             // Selection length
             int selLen = ed.SelectionLength;
-            SelText.Text = selLen > 0 ? $"Sel {selLen}" : "Sel 0";
+            _vm.SelectionText = selLen > 0 ? $"Sel {selLen}" : "Sel 0";
 
             // Language (from file extension)
             string? path = (EditorTabs.SelectedItem as TabItem)?.Tag as string;
-            LangText.Text = GetLanguageLabelFromPath(path);
+            _vm.LanguageText = GetLanguageLabelFromPath(path);
 
             // Encoding (quick BOM sniff; default UTF-8)
-            EncodingText.Text = DetectEncodingLabel(path);
+            _vm.EncodingText = DetectEncodingLabel(path);
 
             // EOL type
-            EolText.Text = $"EOL {GetEolLabel(ed.Text)}";
+            _vm.EolText = $"EOL {GetEolLabel(ed.Text)}";
         }
 
         private static string GetLanguageLabelFromPath(string? path)

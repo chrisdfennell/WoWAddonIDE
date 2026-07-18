@@ -20,16 +20,16 @@ namespace WoWAddonIDE
 
         private void UpdateGitStatusStrip()
         {
-            if (_project == null) { GitBranchText.Text = ""; return; }
+            if (_project == null) { _vm.GitBranchText = ""; return; }
             try
             {
                 var info = GitService.GetRepoInfo(_project.RootPath);
-                GitBranchText.Text =
+                _vm.GitBranchText =
                     $"{info.Branch ?? "(no branch)"}  ·  +{info.Ahead}/-{info.Behind}  " +
                     $"Δ {info.Added} / −{info.Deleted}  " +
                     (info.Conflicts > 0 ? $"⚠ {info.Conflicts} conflicts" : "");
             }
-            catch (Exception ex) { LogService.Warn("UpdateGitStatusStrip: failed to read git repo info", ex); GitBranchText.Text = ""; }
+            catch (Exception ex) { LogService.Warn("UpdateGitStatusStrip: failed to read git repo info", ex); _vm.GitBranchText = ""; }
         }
 
         private void GitBlameActive_Click(object sender, RoutedEventArgs e)

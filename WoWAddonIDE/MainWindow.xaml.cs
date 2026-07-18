@@ -22,6 +22,11 @@ namespace WoWAddonIDE
         private AddonProject? _project;
         private IDESettings _settings = new();
 
+        // View model backing the status bar (bound via DataContext). First real MVVM
+        // wiring — status text, caret position, selection, language, encoding, EOL, and
+        // git branch now flow through here instead of direct TextBlock.Text assignments.
+        private readonly ViewModels.MainWindowViewModel _vm = new();
+
         // Editor toggles (session-scoped)
         private bool _wordWrap = false;
         private bool _showInvisibles = false;
@@ -48,6 +53,9 @@ namespace WoWAddonIDE
         {
             InitializeComponent();
             InitializeLogging();
+
+            // Status-bar bindings resolve against the view model.
+            DataContext = _vm;
 
             // Share the single settings instance loaded at startup (ThemeManager.Settings)
             // so this window, the Settings dialog, and theme persistence all read/write ONE
@@ -862,7 +870,7 @@ namespace WoWAddonIDE
         }
 
         // Single status helper (ensure there is ONLY ONE across all partials)
-        private void Status(string text) => StatusText.Text = text;
+        private void Status(string text) => _vm.StatusText = text;
 
 
         private void OpenPathFallback(string path)

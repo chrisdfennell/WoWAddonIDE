@@ -1058,7 +1058,7 @@
             <!-- Status bar -->
             <StatusBar Grid.Row="2" Grid.ColumnSpan="3">
                 <StatusBarItem>
-                    <TextBlock x:Name="StatusText" />
+                    <TextBlock x:Name="StatusText" Text="{Binding StatusText}" />
                 </StatusBarItem>
                 <StatusBarItem>
                     <TextBlock x:Name="BranchText" />
@@ -1067,22 +1067,22 @@
                     <TextBlock x:Name="VcsText" />
                 </StatusBarItem>
                 <StatusBarItem>
-                    <TextBlock x:Name="GitBranchText" />
+                    <TextBlock x:Name="GitBranchText" Text="{Binding GitBranchText}" />
                 </StatusBarItem>
                 <StatusBarItem>
-                    <TextBlock x:Name="CaretPosText" />
+                    <TextBlock x:Name="CaretPosText" Text="{Binding CaretPositionText}" />
                 </StatusBarItem>
                 <StatusBarItem>
-                    <TextBlock x:Name="SelText" />
+                    <TextBlock x:Name="SelText" Text="{Binding SelectionText}" />
                 </StatusBarItem>
                 <StatusBarItem>
-                    <TextBlock x:Name="LangText" />
+                    <TextBlock x:Name="LangText" Text="{Binding LanguageText}" />
                 </StatusBarItem>
                 <StatusBarItem>
-                    <TextBlock x:Name="EncodingText" />
+                    <TextBlock x:Name="EncodingText" Text="{Binding EncodingText}" />
                 </StatusBarItem>
                 <StatusBarItem>
-                    <TextBlock x:Name="EolText" />
+                    <TextBlock x:Name="EolText" Text="{Binding EolText}" />
                 </StatusBarItem>
                 <StatusBarItem HorizontalAlignment="Right">
                     <TextBlock x:Name="PathText" />
